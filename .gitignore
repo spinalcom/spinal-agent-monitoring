@@ -24,3 +24,6 @@ config.js
 .DS_Store
 Thumbs.db
 .env
+
+old_src
+.vscode

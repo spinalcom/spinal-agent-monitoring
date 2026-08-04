@@ -1,0 +1,645 @@
+{
+	"openapi": "3.0.0",
+	"components": {
+		"examples": {},
+		"headers": {},
+		"parameters": {},
+		"requestBodies": {},
+		"responses": {},
+		"schemas": {
+			"HealthResponse": {
+				"properties": {
+					"status": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"status"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ErrorResponse": {
+				"properties": {
+					"error": {
+						"type": "string"
+					},
+					"status": {
+						"type": "number",
+						"format": "double"
+					},
+					"message": {
+						"type": "string"
+					}
+				},
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ISystemMetrics": {
+				"properties": {
+					"cpuUsage": {
+						"type": "string"
+					},
+					"ramUsage": {
+						"type": "string"
+					},
+					"totalRam": {
+						"type": "string"
+					},
+					"ramUsagePercent": {
+						"type": "string"
+					},
+					"freeRam": {
+						"type": "string"
+					},
+					"totalDisk": {
+						"type": "string"
+					},
+					"freeDisk": {
+						"type": "string"
+					},
+					"diskUsage": {
+						"type": "string"
+					},
+					"diskUsagePercent": {
+						"type": "string"
+					},
+					"macAddress": {
+						"type": "string"
+					},
+					"ipAddress": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"cpuUsage",
+					"ramUsage",
+					"totalRam",
+					"freeRam",
+					"totalDisk",
+					"freeDisk",
+					"diskUsage"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"Pm2ProcessResponse": {
+				"properties": {
+					"name": {
+						"type": "string"
+					},
+					"pid": {
+						"type": "number",
+						"format": "double"
+					},
+					"pm_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"status": {
+						"type": "string"
+					},
+					"cpu": {
+						"type": "number",
+						"format": "double"
+					},
+					"memory": {
+						"type": "number",
+						"format": "double"
+					},
+					"uptime": {
+						"type": "number",
+						"format": "double"
+					},
+					"cwd": {
+						"type": "string"
+					},
+					"createdAt": {
+						"type": "number",
+						"format": "double"
+					},
+					"outLogPath": {
+						"type": "string"
+					},
+					"errLogPath": {
+						"type": "string"
+					}
+				},
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ActionResponse": {
+				"properties": {
+					"message": {
+						"type": "string"
+					},
+					"success": {
+						"type": "boolean"
+					},
+					"key": {
+						"anyOf": [
+							{
+								"type": "string"
+							},
+							{
+								"type": "number",
+								"format": "double"
+							}
+						]
+					}
+				},
+				"required": [
+					"message"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"Pm2Discovery": {
+				"properties": {
+					"data": {
+						"items": {
+							"properties": {
+								"{#PMID}": {
+									"type": "string"
+								},
+								"{#PROCNAME}": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"{#PMID}",
+								"{#PROCNAME}"
+							],
+							"type": "object"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"data"
+				],
+				"type": "object"
+			}
+		},
+		"securitySchemes": {}
+	},
+	"info": {
+		"title": "spinal-organ-health",
+		"version": "1.0.1",
+		"description": "API for Spinal Organ Health Monitoring",
+		"license": {
+			"name": "ISC"
+		},
+		"contact": {
+			"name": "SpinalCom",
+			"email": "developers@spinalcom.com"
+		}
+	},
+	"paths": {
+		"/health": {
+			"get": {
+				"operationId": "GetHealth",
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"application/json": {
+								"schema": {
+									"anyOf": [
+										{
+											"$ref": "#/components/schemas/HealthResponse"
+										},
+										{
+											"$ref": "#/components/schemas/ErrorResponse"
+										}
+									]
+								}
+							}
+						}
+					}
+				},
+				"description": "Returns a simple health status to confirm the monitoring API is reachable.",
+				"tags": [
+					"Monitoring"
+				],
+				"security": [],
+				"parameters": []
+			}
+		},
+		"/system": {
+			"get": {
+				"operationId": "GetSystemMetrics",
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"application/json": {
+								"schema": {
+									"anyOf": [
+										{
+											"$ref": "#/components/schemas/ISystemMetrics"
+										},
+										{
+											"$ref": "#/components/schemas/ErrorResponse"
+										}
+									]
+								}
+							}
+						}
+					}
+				},
+				"description": "Returns current CPU, memory, and system-level metrics collected by the agent.",
+				"tags": [
+					"Monitoring"
+				],
+				"security": [],
+				"parameters": []
+			}
+		},
+		"/apps": {
+			"get": {
+				"operationId": "GetApps",
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"application/json": {
+								"schema": {
+									"anyOf": [
+										{
+											"items": {
+												"$ref": "#/components/schemas/Pm2ProcessResponse"
+											},
+											"type": "array"
+										},
+										{
+											"$ref": "#/components/schemas/ErrorResponse"
+										}
+									]
+								}
+							}
+						}
+					}
+				},
+				"description": "Lists all PM2-managed applications with their current runtime state.",
+				"tags": [
+					"Monitoring"
+				],
+				"security": [],
+				"parameters": []
+			}
+		},
+		"/apps/{key}": {
+			"get": {
+				"operationId": "GetAppByKey",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"anyOf": [
+										{
+											"$ref": "#/components/schemas/Pm2ProcessResponse"
+										},
+										{
+											"$ref": "#/components/schemas/ErrorResponse"
+										}
+									]
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Process not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponse"
+								}
+							}
+						}
+					}
+				},
+				"description": "Returns details for a single PM2 application by name or identifier key.",
+				"tags": [
+					"Monitoring"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"description": "PM2 process key used to find the app.",
+						"in": "path",
+						"name": "key",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/apps/start": {
+			"post": {
+				"operationId": "StartApp",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"anyOf": [
+										{
+											"properties": {
+												"failed": {
+													"items": {
+														"$ref": "#/components/schemas/ActionResponse"
+													},
+													"type": "array"
+												},
+												"started": {
+													"items": {
+														"$ref": "#/components/schemas/ActionResponse"
+													},
+													"type": "array"
+												}
+											},
+											"required": [
+												"failed",
+												"started"
+											],
+											"type": "object"
+										},
+										{
+											"$ref": "#/components/schemas/ErrorResponse"
+										}
+									]
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Unable to start process",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponse"
+								}
+							}
+						}
+					}
+				},
+				"description": "Starts one or more PM2 applications.",
+				"tags": [
+					"Monitoring"
+				],
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"description": "Request body containing the list of application keys to start.",
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"properties": {
+									"keys": {
+										"items": {
+											"anyOf": [
+												{
+													"type": "string"
+												},
+												{
+													"type": "number",
+													"format": "double"
+												}
+											]
+										},
+										"type": "array"
+									}
+								},
+								"required": [
+									"keys"
+								],
+								"type": "object",
+								"description": "Request body containing the list of application keys to start."
+							}
+						}
+					}
+				}
+			}
+		},
+		"/apps/stop": {
+			"post": {
+				"operationId": "StopApp",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"anyOf": [
+										{
+											"properties": {
+												"failed": {
+													"items": {
+														"$ref": "#/components/schemas/ActionResponse"
+													},
+													"type": "array"
+												},
+												"stopped": {
+													"items": {
+														"$ref": "#/components/schemas/ActionResponse"
+													},
+													"type": "array"
+												}
+											},
+											"required": [
+												"failed",
+												"stopped"
+											],
+											"type": "object"
+										},
+										{
+											"$ref": "#/components/schemas/ErrorResponse"
+										}
+									]
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Unable to stop process",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponse"
+								}
+							}
+						}
+					}
+				},
+				"description": "Stops one or more PM2 applications.",
+				"tags": [
+					"Monitoring"
+				],
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"description": "Request body containing the list of application keys to stop.",
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"properties": {
+									"keys": {
+										"items": {
+											"anyOf": [
+												{
+													"type": "string"
+												},
+												{
+													"type": "number",
+													"format": "double"
+												}
+											]
+										},
+										"type": "array"
+									}
+								},
+								"required": [
+									"keys"
+								],
+								"type": "object",
+								"description": "Request body containing the list of application keys to stop."
+							}
+						}
+					}
+				}
+			}
+		},
+		"/apps/restart": {
+			"post": {
+				"operationId": "RestartApp",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"anyOf": [
+										{
+											"properties": {
+												"failed": {
+													"items": {
+														"$ref": "#/components/schemas/ActionResponse"
+													},
+													"type": "array"
+												},
+												"restarted": {
+													"items": {
+														"$ref": "#/components/schemas/ActionResponse"
+													},
+													"type": "array"
+												}
+											},
+											"required": [
+												"failed",
+												"restarted"
+											],
+											"type": "object"
+										},
+										{
+											"$ref": "#/components/schemas/ErrorResponse"
+										}
+									]
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Unable to restart process",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponse"
+								}
+							}
+						}
+					}
+				},
+				"description": "Restarts one or more PM2 applications.",
+				"tags": [
+					"Monitoring"
+				],
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"description": "Request body containing the list of application keys to restart.",
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"properties": {
+									"keys": {
+										"items": {
+											"anyOf": [
+												{
+													"type": "string"
+												},
+												{
+													"type": "number",
+													"format": "double"
+												}
+											]
+										},
+										"type": "array"
+									}
+								},
+								"required": [
+									"keys"
+								],
+								"type": "object",
+								"description": "Request body containing the list of application keys to restart."
+							}
+						}
+					}
+				}
+			}
+		},
+		"/zabbix/discovery": {
+			"get": {
+				"operationId": "GetZabbixDiscovery",
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"application/json": {
+								"schema": {
+									"anyOf": [
+										{
+											"$ref": "#/components/schemas/Pm2Discovery"
+										},
+										{
+											"$ref": "#/components/schemas/ErrorResponse"
+										}
+									]
+								}
+							}
+						}
+					}
+				},
+				"description": "Returns a Zabbix LLD-compatible discovery payload for PM2 processes.",
+				"tags": [
+					"Monitoring"
+				],
+				"security": [],
+				"parameters": []
+			}
+		}
+	},
+	"servers": [
+		{
+			"url": "/"
+		}
+	]
+}
