@@ -3,7 +3,7 @@ import { Pm2Service } from "./services/Pm2Service";
 import SpinalhubService from "./services/SpinalhubService";
 import SystemOverviewService from "./services/SystemOverviewService";
 import { runExpressServer, runWebSocketServer } from "./server";
-import { config } from "./utils/config";
+import config from "./utils/config";
 
 const systemOverview = SystemOverviewService.getInstance();
 const configFileService = ConfigFileService.getInstance();
@@ -21,7 +21,7 @@ const pm2Service = Pm2Service.getInstance();
 		const systemInfo = systemOverview.getSystemMetricsFormatted();
 
 		console.log("initializing config file...");
-		await configFileService.initializeConfigFile(connect, systemInfo);
+		await configFileService.initializeConfigFile(connect, systemInfo, config.monitoringApiConfig.organName);
 		console.log("Config file initialized successfully.");
 
 		console.log("Starting Express server...");

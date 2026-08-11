@@ -1,4 +1,3 @@
-import config from "../utils/config";
 import os from "os";
 import { FileSystem, spinalCore, SpinalCallBackError, Directory, Lst } from "spinal-core-connectorjs";
 import path from "path";
@@ -9,7 +8,6 @@ import { Pm2Process } from "../models/Pm2Process";
 
 export default class ConfigFileService {
 	private static _instance: ConfigFileService;
-	public readonly agentInfo: typeof config.monitoringApiConfig = config.monitoringApiConfig;
 	private configFileModel: ConfigFileModel | null = null;
 	private pm2_processes: Lst<Pm2Process> | undefined;
 
@@ -22,8 +20,8 @@ export default class ConfigFileService {
 		return this._instance;
 	}
 
-	public async initializeConfigFile(spinalConnection: FileSystem, systemInfo: ISystemMetrics): Promise<ConfigFileModel> {
-		const organName = this.agentInfo.organName || os.hostname();
+	public async initializeConfigFile(spinalConnection: FileSystem, systemInfo: ISystemMetrics, organName?: string): Promise<ConfigFileModel> {
+		organName = organName || os.hostname();
 		// const configFileName = `VM_MONITORING_${organName}`;
 		const configFileName = `${organName}`;
 

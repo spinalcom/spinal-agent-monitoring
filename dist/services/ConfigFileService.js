@@ -4,7 +4,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ConfigFileService = void 0;
-const config_1 = __importDefault(require("../utils/config"));
 const os_1 = __importDefault(require("os"));
 const spinal_core_connectorjs_1 = require("spinal-core-connectorjs");
 const path_1 = __importDefault(require("path"));
@@ -12,7 +11,6 @@ const ConfigFileModel_1 = __importDefault(require("../models/ConfigFileModel"));
 const Pm2Service_1 = require("./Pm2Service");
 class ConfigFileService {
     constructor() {
-        this.agentInfo = config_1.default.monitoringApiConfig;
         this.configFileModel = null;
     }
     static getInstance() {
@@ -21,8 +19,8 @@ class ConfigFileService {
         }
         return this._instance;
     }
-    async initializeConfigFile(spinalConnection, systemInfo) {
-        const organName = this.agentInfo.organName || os_1.default.hostname();
+    async initializeConfigFile(spinalConnection, systemInfo, organName) {
+        organName = organName || os_1.default.hostname();
         // const configFileName = `VM_MONITORING_${organName}`;
         const configFileName = `${organName}`;
         const configFilePath = `/etc/Organs/Monitoring/${configFileName}`;
