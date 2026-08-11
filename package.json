@@ -3,7 +3,7 @@
 	"version": "1.0.1",
 	"description": "",
 	"main": "dist/lib/index.js",
-	"types": "dist/lib/index.d.ts",
+	"types": "declarations",
 	"scripts": {
 		"dev": "npm run build && nodemon",
 		"build": "rm -fr dist && npm run tsoa && tsc",
