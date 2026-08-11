@@ -1,7 +1,6 @@
 import { LOG_STREAM_EVENT_TYPE, MONITORING_MESSAGE_TYPE, PM2_PROCESS_EVENT_TYPE, SYSTEM_METRICS_EVENT_TYPE, ZABBIX_PUSH_EVENT_TYPE } from "../../utils/constants";
 import SystemOverviewService from "../../services/SystemOverviewService";
 import { Pm2Service } from "../../services/Pm2Service";
-import { config } from "../../utils/config";
 import fs from "fs";
 import { Server, Socket } from "socket.io";
 import { isValidMessage } from "../../utils/websocketUtils";
@@ -13,6 +12,7 @@ export class WebsocketMiddleware {
 	private _isSystemMetricsStarted = false;
 	private _isPm2EventsStarted = false;
 	private _isPm2MetricsStarted = false;
+	private systemInfoIntervalMs: number = 5000; // Default interval for system info updates
 
 	private clientsClassifiedByType: { [key: string]: Socket[] } = {};
 
@@ -25,8 +25,9 @@ export class WebsocketMiddleware {
 		return this._instance;
 	}
 
-	public init(io: Server) {
+	public init(io: Server, systemInfoIntervalMs?: number): void {
 		this._io = io;
+		this.systemInfoIntervalMs = systemInfoIntervalMs || 5000;
 
 		this._io.on("connection", (client: Socket) => {
 			console.log("New WebSocket connection established from:", client.handshake.address);
@@ -153,23 +154,19 @@ export class WebsocketMiddleware {
 	}
 
 	public startSendingSystemMetrics() {
-		const intervalMs = config.monitoringApiConfig.systemInfoIntervalMs || 5000; // Default to 5000ms if not set
-
 		const metricsInterval = setInterval(() => {
 			const systemOverview = SystemOverviewService.getInstance();
 			const systemMetrics = systemOverview.getSystemMetricsFormatted();
 			this._sendDataToAllClients({ type: SYSTEM_METRICS_EVENT_TYPE, data: systemMetrics });
-		}, parseInt(intervalMs.toString()));
+		}, this.systemInfoIntervalMs);
 	}
 
 	public startSendingPm2Metrics() {
-		const intervalMs = config.monitoringApiConfig.systemInfoIntervalMs || 5000; // Default to 5000ms if not set
-
 		const metricsInterval = setInterval(async () => {
 			const pm2Service = Pm2Service.getInstance();
 			const pm2Metrics = await pm2Service.getPm2MetricsFormatted();
 			this._sendDataToAllClients({ type: PM2_METRICS_EVENT_TYPE, data: pm2Metrics });
-		}, parseInt(intervalMs.toString()));
+		}, this.systemInfoIntervalMs);
 	}
 
 	public async startSendingPm2Events() {

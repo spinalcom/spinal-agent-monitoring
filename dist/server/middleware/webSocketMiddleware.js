@@ -7,7 +7,6 @@ exports.WebsocketMiddleware = void 0;
 const constants_1 = require("../../utils/constants");
 const SystemOverviewService_1 = __importDefault(require("../../services/SystemOverviewService"));
 const Pm2Service_1 = require("../../services/Pm2Service");
-const config_1 = require("../../utils/config");
 const fs_1 = __importDefault(require("fs"));
 const websocketUtils_1 = require("../../utils/websocketUtils");
 const utils_1 = require("../../utils");
@@ -17,6 +16,7 @@ class WebsocketMiddleware {
         this._isSystemMetricsStarted = false;
         this._isPm2EventsStarted = false;
         this._isPm2MetricsStarted = false;
+        this.systemInfoIntervalMs = 5000; // Default interval for system info updates
         this.clientsClassifiedByType = {};
     }
     static getInstance() {
@@ -25,8 +25,9 @@ class WebsocketMiddleware {
         }
         return this._instance;
     }
-    init(io) {
+    init(io, systemInfoIntervalMs) {
         this._io = io;
+        this.systemInfoIntervalMs = systemInfoIntervalMs || 5000;
         this._io.on("connection", (client) => {
             console.log("New WebSocket connection established from:", client.handshake.address);
             client.on(constants_1.MONITORING_MESSAGE_TYPE, (message) => {
@@ -129,20 +130,18 @@ class WebsocketMiddleware {
         this.clientsClassifiedByType[type].push(client);
     }
     startSendingSystemMetrics() {
-        const intervalMs = config_1.config.monitoringApiConfig.systemInfoIntervalMs || 5000; // Default to 5000ms if not set
         const metricsInterval = setInterval(() => {
             const systemOverview = SystemOverviewService_1.default.getInstance();
             const systemMetrics = systemOverview.getSystemMetricsFormatted();
             this._sendDataToAllClients({ type: constants_1.SYSTEM_METRICS_EVENT_TYPE, data: systemMetrics });
-        }, parseInt(intervalMs.toString()));
+        }, this.systemInfoIntervalMs);
     }
     startSendingPm2Metrics() {
-        const intervalMs = config_1.config.monitoringApiConfig.systemInfoIntervalMs || 5000; // Default to 5000ms if not set
         const metricsInterval = setInterval(async () => {
             const pm2Service = Pm2Service_1.Pm2Service.getInstance();
             const pm2Metrics = await pm2Service.getPm2MetricsFormatted();
             this._sendDataToAllClients({ type: utils_1.PM2_METRICS_EVENT_TYPE, data: pm2Metrics });
-        }, parseInt(intervalMs.toString()));
+        }, this.systemInfoIntervalMs);
     }
     async startSendingPm2Events() {
         const pm2Service = Pm2Service_1.Pm2Service.getInstance();

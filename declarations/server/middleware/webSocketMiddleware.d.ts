@@ -5,10 +5,11 @@ export declare class WebsocketMiddleware {
     private _isSystemMetricsStarted;
     private _isPm2EventsStarted;
     private _isPm2MetricsStarted;
+    private systemInfoIntervalMs;
     private clientsClassifiedByType;
     private constructor();
     static getInstance(): WebsocketMiddleware;
-    init(io: Server): void;
+    init(io: Server, systemInfoIntervalMs?: number): void;
     getAllConnectedClients(type?: string): Socket[];
     treatClientMessage(client: Socket, message: any): Promise<void>;
     sendError(client: Socket, errorMessage: string): void;
