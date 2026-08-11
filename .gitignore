@@ -16,9 +16,7 @@ config.js
 .vscode/
 .idea/
 
-# Fichiers de build ou de compilation
-/dist
-/build
+
 
 # Dépendances spécifiques à certaines plateformes
 .DS_Store
