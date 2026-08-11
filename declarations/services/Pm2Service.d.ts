@@ -12,6 +12,14 @@ declare class Pm2Service {
     stopPm2Process(processKeys: string | number | (string | number)[]): Promise<ActionResponse[]>;
     restartPm2Process(processKeys: string | number | (string | number)[]): Promise<ActionResponse[]>;
     listenPm2Events(callback: (data: any) => void): Promise<void>;
+    getPm2MetricsFormatted(): Promise<{
+        name: string | undefined;
+        pm_id: number | undefined;
+        status: string | undefined;
+        cpu: number | undefined;
+        memory: number | undefined;
+        uptime: number | undefined;
+    }[]>;
     private _connectToPm2;
     private _listPm2Processes;
     private _disconnectFromPm2;

@@ -19,11 +19,11 @@ const swaggerOption = {
 };
 
 export function InitSwagger(app: express.Application) {
-	app.get("/swagger.json", (_req: Request, res: Response) => {
+	app.get("/monitoring/swagger.json", (_req: Request, res: Response) => {
 		res.sendFile(path.resolve(__dirname, "./swagger.json"));
 	});
 
-	app.use("/api-docs", swaggerUi.serve, async (_req: Request, res: Response, next: NextFunction) => {
+	app.use("/monitoring/api-docs", swaggerUi.serve, async (_req: Request, res: Response, next: NextFunction) => {
 		return swaggerUi.setup(await import("./swagger.json"), swaggerOption)(_req, res, next);
 	});
 }

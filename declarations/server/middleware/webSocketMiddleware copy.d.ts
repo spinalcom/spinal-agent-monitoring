@@ -1,20 +1,18 @@
-import { Server, Socket } from "socket.io";
+import { WebSocketServer, WebSocket } from "ws";
 export declare class WebsocketMiddleware {
     private static _instance;
-    private _io;
+    private _wss;
     private _isSystemMetricsStarted;
     private _isPm2EventsStarted;
-    private _isPm2MetricsStarted;
     private clientsClassifiedByType;
     private constructor();
+    set wss(wss: WebSocketServer);
     static getInstance(): WebsocketMiddleware;
-    init(io: Server): void;
-    getAllConnectedClients(type?: string): Socket[];
-    treatClientMessage(client: Socket, message: any): Promise<void>;
-    sendError(client: Socket, errorMessage: string): void;
+    getAllConnectedClients(): WebSocket[];
+    treatClientMessage(ws: WebSocket, message: any): void;
+    private _sendError;
     private _addClientToType;
     startSendingSystemMetrics(): void;
-    startSendingPm2Metrics(): void;
     startSendingPm2Events(): Promise<void>;
     private _sendDataToAllClients;
     sendZabbixPushEvent(data: {

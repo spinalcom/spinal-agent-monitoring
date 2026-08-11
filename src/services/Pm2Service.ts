@@ -1,5 +1,5 @@
 import pm2 from "pm2";
-import { executeCommand, getHeapInfo } from "../utils/pm2Utils";
+import { executeCommand, formatProcess, getHeapInfo } from "../utils/pm2Utils";
 import { ActionResponse } from "../interfaces/IResponses";
 import * as lodash from "lodash";
 
@@ -37,7 +37,7 @@ class Pm2Service {
 		try {
 			await this._connectToPm2();
 			const processes = await this._listPm2Processes();
-			const process = processes.find((p) => p.name === key || p.pm_id?.toString() === key);
+			const process = processes.find((p) => p.name == key || p.pm_id?.toString() == key);
 			return process || null;
 		} catch (error) {
 			return null;
@@ -129,6 +129,23 @@ class Pm2Service {
 				callBackWithDebounce(data);
 			});
 		});
+	}
+
+	public async getPm2MetricsFormatted() {
+		const processes = await this.getAllPm2Processes();
+		const formattedProcesses = processes.map((process) => {
+			const formatted = formatProcess(process);
+			return {
+				name: formatted.name,
+				pm_id: formatted.pm_id,
+				status: formatted.status,
+				cpu: formatted.cpu,
+				memory: formatted.memory,
+				uptime: formatted.uptime,
+			};
+		});
+
+		return formattedProcesses;
 	}
 
 	////////////////////////////////////////////////////////////

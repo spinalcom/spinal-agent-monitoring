@@ -89,3 +89,8 @@ export function getProcessStatusCode(process: ProcessDescription): number {
 
 	return -1;
 }
+
+export function getProcessLogPath(process: ProcessDescription, logType: "out" | "err"): string | undefined {
+	const formattedProcess = formatProcess(process); // Ensure the process is formatted before accessing log paths
+	return logType === "err" ? formattedProcess.errLogPath : formattedProcess.outLogPath;
+}

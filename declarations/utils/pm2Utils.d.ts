@@ -10,3 +10,4 @@ export declare function formatProcess(process: ProcessDescription): Pm2ProcessRe
 export declare function executeCommand(command: "restart" | "stop" | "start", key: string | number): Promise<boolean>;
 export declare function getProcessId(process: ProcessDescription): string;
 export declare function getProcessStatusCode(process: ProcessDescription): number;
+export declare function getProcessLogPath(process: ProcessDescription, logType: "out" | "err"): string | undefined;

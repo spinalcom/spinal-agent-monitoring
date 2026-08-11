@@ -196,7 +196,7 @@
 		}
 	},
 	"paths": {
-		"/health": {
+		"/monitoring/health": {
 			"get": {
 				"operationId": "GetHealth",
 				"responses": {
@@ -226,7 +226,7 @@
 				"parameters": []
 			}
 		},
-		"/system": {
+		"/monitoring/system": {
 			"get": {
 				"operationId": "GetSystemMetrics",
 				"responses": {
@@ -256,7 +256,7 @@
 				"parameters": []
 			}
 		},
-		"/apps": {
+		"/monitoring/apps": {
 			"get": {
 				"operationId": "GetApps",
 				"responses": {
@@ -289,7 +289,7 @@
 				"parameters": []
 			}
 		},
-		"/apps/{key}": {
+		"/monitoring/apps/{key}": {
 			"get": {
 				"operationId": "GetAppByKey",
 				"responses": {
@@ -339,7 +339,7 @@
 				]
 			}
 		},
-		"/apps/start": {
+		"/monitoring/apps/start": {
 			"post": {
 				"operationId": "StartApp",
 				"responses": {
@@ -428,7 +428,7 @@
 				}
 			}
 		},
-		"/apps/stop": {
+		"/monitoring/apps/stop": {
 			"post": {
 				"operationId": "StopApp",
 				"responses": {
@@ -517,7 +517,7 @@
 				}
 			}
 		},
-		"/apps/restart": {
+		"/monitoring/apps/restart": {
 			"post": {
 				"operationId": "RestartApp",
 				"responses": {
@@ -606,7 +606,7 @@
 				}
 			}
 		},
-		"/zabbix/discovery": {
+		"/monitoring/zabbix/discovery": {
 			"get": {
 				"operationId": "GetZabbixDiscovery",
 				"responses": {

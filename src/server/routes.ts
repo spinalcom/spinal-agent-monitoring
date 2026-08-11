@@ -100,7 +100,7 @@ export function RegisterRoutes(app: Router) {
     
         const argsMonitoringController_getHealth: Record<string, TsoaRoute.ParameterSchema> = {
         };
-        app.get('/health',
+        app.get('/monitoring/health',
             ...(fetchMiddlewares<RequestHandler>(MonitoringController)),
             ...(fetchMiddlewares<RequestHandler>(MonitoringController.prototype.getHealth)),
 
@@ -129,7 +129,7 @@ export function RegisterRoutes(app: Router) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         const argsMonitoringController_getSystemMetrics: Record<string, TsoaRoute.ParameterSchema> = {
         };
-        app.get('/system',
+        app.get('/monitoring/system',
             ...(fetchMiddlewares<RequestHandler>(MonitoringController)),
             ...(fetchMiddlewares<RequestHandler>(MonitoringController.prototype.getSystemMetrics)),
 
@@ -158,7 +158,7 @@ export function RegisterRoutes(app: Router) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         const argsMonitoringController_getApps: Record<string, TsoaRoute.ParameterSchema> = {
         };
-        app.get('/apps',
+        app.get('/monitoring/apps',
             ...(fetchMiddlewares<RequestHandler>(MonitoringController)),
             ...(fetchMiddlewares<RequestHandler>(MonitoringController.prototype.getApps)),
 
@@ -188,7 +188,7 @@ export function RegisterRoutes(app: Router) {
         const argsMonitoringController_getAppByKey: Record<string, TsoaRoute.ParameterSchema> = {
                 key: {"in":"path","name":"key","required":true,"dataType":"string"},
         };
-        app.get('/apps/:key',
+        app.get('/monitoring/apps/:key',
             ...(fetchMiddlewares<RequestHandler>(MonitoringController)),
             ...(fetchMiddlewares<RequestHandler>(MonitoringController.prototype.getAppByKey)),
 
@@ -218,7 +218,7 @@ export function RegisterRoutes(app: Router) {
         const argsMonitoringController_startApp: Record<string, TsoaRoute.ParameterSchema> = {
                 data: {"in":"body","name":"data","required":true,"dataType":"nestedObjectLiteral","nestedProperties":{"keys":{"dataType":"array","array":{"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"double"}]},"required":true}}},
         };
-        app.post('/apps/start',
+        app.post('/monitoring/apps/start',
             ...(fetchMiddlewares<RequestHandler>(MonitoringController)),
             ...(fetchMiddlewares<RequestHandler>(MonitoringController.prototype.startApp)),
 
@@ -248,7 +248,7 @@ export function RegisterRoutes(app: Router) {
         const argsMonitoringController_stopApp: Record<string, TsoaRoute.ParameterSchema> = {
                 data: {"in":"body","name":"data","required":true,"dataType":"nestedObjectLiteral","nestedProperties":{"keys":{"dataType":"array","array":{"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"double"}]},"required":true}}},
         };
-        app.post('/apps/stop',
+        app.post('/monitoring/apps/stop',
             ...(fetchMiddlewares<RequestHandler>(MonitoringController)),
             ...(fetchMiddlewares<RequestHandler>(MonitoringController.prototype.stopApp)),
 
@@ -278,7 +278,7 @@ export function RegisterRoutes(app: Router) {
         const argsMonitoringController_restartApp: Record<string, TsoaRoute.ParameterSchema> = {
                 data: {"in":"body","name":"data","required":true,"dataType":"nestedObjectLiteral","nestedProperties":{"keys":{"dataType":"array","array":{"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"double"}]},"required":true}}},
         };
-        app.post('/apps/restart',
+        app.post('/monitoring/apps/restart',
             ...(fetchMiddlewares<RequestHandler>(MonitoringController)),
             ...(fetchMiddlewares<RequestHandler>(MonitoringController.prototype.restartApp)),
 
@@ -307,7 +307,7 @@ export function RegisterRoutes(app: Router) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         const argsMonitoringController_getZabbixDiscovery: Record<string, TsoaRoute.ParameterSchema> = {
         };
-        app.get('/zabbix/discovery',
+        app.get('/monitoring/zabbix/discovery',
             ...(fetchMiddlewares<RequestHandler>(MonitoringController)),
             ...(fetchMiddlewares<RequestHandler>(MonitoringController.prototype.getZabbixDiscovery)),
 

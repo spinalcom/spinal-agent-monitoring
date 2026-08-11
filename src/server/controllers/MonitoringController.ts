@@ -7,7 +7,7 @@ import { ActionResponse, ErrorResponse, HealthResponse, Pm2ProcessResponse } fro
 import { formatProcess } from "../../utils/pm2Utils";
 import { HTTP_RESPONSES } from "../../utils/HTTP_RESPONSE";
 
-@Route("")
+@Route("monitoring")
 @Tags("Monitoring")
 export class MonitoringController extends Controller {
 	private readonly pm2Service = Pm2Service.getInstance();

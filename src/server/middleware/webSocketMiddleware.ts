@@ -1,23 +1,22 @@
-import { WebSocketServer, WebSocket } from "ws";
-import { LOG_STREAM_EVENT_TYPE, PM2_EVENT_TYPE, SYSTEM_METRICS_EVENT_TYPE, ZABBIX_PUSH_EVENT_TYPE } from "../../utils/constants";
+import { LOG_STREAM_EVENT_TYPE, MONITORING_MESSAGE_TYPE, PM2_PROCESS_EVENT_TYPE, SYSTEM_METRICS_EVENT_TYPE, ZABBIX_PUSH_EVENT_TYPE } from "../../utils/constants";
 import SystemOverviewService from "../../services/SystemOverviewService";
 import { Pm2Service } from "../../services/Pm2Service";
 import { config } from "../../utils/config";
 import fs from "fs";
+import { Server, Socket } from "socket.io";
+import { isValidMessage } from "../../utils/websocketUtils";
+import { formatProcess, getProcessLogPath, PM2_METRICS_EVENT_TYPE } from "../../utils";
 
 export class WebsocketMiddleware {
 	private static _instance: WebsocketMiddleware;
-	private _wss: WebSocketServer;
+	private _io: Server | null = null;
 	private _isSystemMetricsStarted = false;
 	private _isPm2EventsStarted = false;
+	private _isPm2MetricsStarted = false;
 
-	private clientsClassifiedByType: { [key: string]: WebSocket[] } = {};
+	private clientsClassifiedByType: { [key: string]: Socket[] } = {};
 
 	private constructor() {}
-
-	set wss(wss: WebSocketServer) {
-		this._wss = wss;
-	}
 
 	public static getInstance(): WebsocketMiddleware {
 		if (!this._instance) {
@@ -26,21 +25,48 @@ export class WebsocketMiddleware {
 		return this._instance;
 	}
 
-	getAllConnectedClients(): WebSocket[] {
-		if (this._wss) {
-			return Array.from(this._wss.clients) as WebSocket[];
+	public init(io: Server) {
+		this._io = io;
+
+		this._io.on("connection", (client: Socket) => {
+			console.log("New WebSocket connection established from:", client.handshake.address);
+
+			client.on(MONITORING_MESSAGE_TYPE, (message) => {
+				try {
+					const receivedMessage = typeof message === "string" ? JSON.parse(message) : message;
+
+					if (!isValidMessage(receivedMessage)) throw new Error("Invalid message format");
+
+					this.treatClientMessage(client, receivedMessage);
+				} catch (error: Error | any) {
+					const message = error.message || "Invalid message format";
+					this.sendError(client, message);
+					return;
+				}
+			});
+		});
+	}
+
+	getAllConnectedClients(type?: string): Socket[] {
+		if (this._io) {
+			if (type) {
+				return this.clientsClassifiedByType[type] || [];
+			}
+
+			return Array.from(this._io.sockets.sockets.values());
 		}
+
 		return [];
 	}
 
-	public treatClientMessage(ws: WebSocket, message: any) {
+	public async treatClientMessage(client: Socket, message: any) {
 		let parsedMessage = message;
 
 		if (typeof message === "string") {
 			try {
 				parsedMessage = JSON.parse(message);
 			} catch {
-				this._sendError(ws, "Invalid message format");
+				this.sendError(client, "Invalid message format");
 				return;
 			}
 		}
@@ -49,16 +75,25 @@ export class WebsocketMiddleware {
 
 		switch (requestType) {
 			case SYSTEM_METRICS_EVENT_TYPE:
-				this._addClientToType(SYSTEM_METRICS_EVENT_TYPE, ws);
+				this._addClientToType(SYSTEM_METRICS_EVENT_TYPE, client);
 
 				if (!this._isSystemMetricsStarted) {
 					this._isSystemMetricsStarted = true;
 					this.startSendingSystemMetrics();
 				}
 				break;
+			case PM2_METRICS_EVENT_TYPE:
+				this._addClientToType(PM2_METRICS_EVENT_TYPE, client);
 
-			case PM2_EVENT_TYPE:
-				this._addClientToType(PM2_EVENT_TYPE, ws);
+				if (!this._isPm2MetricsStarted) {
+					this._isPm2MetricsStarted = true;
+					this.startSendingPm2Metrics();
+				}
+				break;
+
+			// Handle PM2 event requests
+			case PM2_PROCESS_EVENT_TYPE:
+				this._addClientToType(PM2_PROCESS_EVENT_TYPE, client);
 
 				if (!this._isPm2EventsStarted) {
 					this._isPm2EventsStarted = true;
@@ -66,49 +101,55 @@ export class WebsocketMiddleware {
 				}
 				break;
 
+			// Handle log stream requests
 			case LOG_STREAM_EVENT_TYPE: {
-				const logPath = parsedMessage?.data?.logPath || parsedMessage?.logPath;
+				const id = parsedMessage?.data?.id || parsedMessage?.id;
+
+				const process = await Pm2Service.getInstance().getPm2ProcessByKey(id);
+				if (!process) {
+					this.sendError(client, `PM2 process not found for id: ${id}`);
+					return;
+				}
+
+				const logPath = getProcessLogPath(process, "out"); // Implement this function to retrieve the log path based on the provided id
+
 				if (!logPath) {
-					this._sendError(ws, "Missing logPath for PM2 log stream");
+					this.sendError(client, "Missing logPath for PM2 log stream");
 					return;
 				}
 
 				if (!fs.existsSync(logPath)) {
-					this._sendError(ws, `Log file does not exist: ${logPath}`);
+					this.sendError(client, `Log file does not exist: ${logPath}`);
 					return;
 				}
 
-				this._addClientToType(`${LOG_STREAM_EVENT_TYPE}:${logPath}`, ws);
+				this._addClientToType(`${LOG_STREAM_EVENT_TYPE}:${logPath}`, client);
 				this.sendStreamLogsToAllClients(logPath);
 				break;
 			}
 
-				case ZABBIX_PUSH_EVENT_TYPE:
-					this._addClientToType(ZABBIX_PUSH_EVENT_TYPE, ws);
-					break;
+			case ZABBIX_PUSH_EVENT_TYPE:
+				this._addClientToType(ZABBIX_PUSH_EVENT_TYPE, client);
+				break;
 
 			default:
-				ws.send(
-					JSON.stringify({
-						type: "error",
-						data: "Unknown request type",
-					}),
-				);
+				this.sendError(client, "Unknown request type");
 		}
 	}
 
-	private _sendError(ws: WebSocket, errorMessage: string) {
-		ws.send(JSON.stringify({ type: "error", data: errorMessage }));
+	public sendError(client: Socket, errorMessage: string) {
+		client.emit("error", { type: "error", data: errorMessage });
 	}
 
-	private _addClientToType(type: string, ws: WebSocket) {
+	private _addClientToType(type: string, client: Socket) {
 		if (!this.clientsClassifiedByType[type]) {
 			this.clientsClassifiedByType[type] = [];
 		}
 
-		if (!this.clientsClassifiedByType[type].includes(ws)) {
-			this.clientsClassifiedByType[type].push(ws);
-		}
+		const foundClient = this.clientsClassifiedByType[type].find((c) => c.id === client.id);
+		if (foundClient) return;
+
+		this.clientsClassifiedByType[type].push(client);
 	}
 
 	public startSendingSystemMetrics() {
@@ -121,20 +162,38 @@ export class WebsocketMiddleware {
 		}, parseInt(intervalMs.toString()));
 	}
 
+	public startSendingPm2Metrics() {
+		const intervalMs = config.monitoringApiConfig.systemInfoIntervalMs || 5000; // Default to 5000ms if not set
+
+		const metricsInterval = setInterval(async () => {
+			const pm2Service = Pm2Service.getInstance();
+			const pm2Metrics = await pm2Service.getPm2MetricsFormatted();
+			this._sendDataToAllClients({ type: PM2_METRICS_EVENT_TYPE, data: pm2Metrics });
+		}, parseInt(intervalMs.toString()));
+	}
+
 	public async startSendingPm2Events() {
 		const pm2Service = Pm2Service.getInstance();
 		await pm2Service.initializePm2Service((event) => {
-			this._sendDataToAllClients({ type: PM2_EVENT_TYPE, data: event });
+			this._sendDataToAllClients({
+				type: PM2_PROCESS_EVENT_TYPE,
+				data: {
+					...event,
+					process: formatProcess(event.process),
+				},
+			});
 		});
 	}
 
 	private _sendDataToAllClients(message: { [key: string]: any }) {
-		const clients = this.getAllConnectedClients();
+		const clients = this.getAllConnectedClients(message.type);
+
 		if (clients.length > 0) {
 			for (const client of clients) {
-				if (client.readyState === WebSocket.OPEN) {
-					client.send(JSON.stringify(message));
-				}
+				// if (client === WebSocket.OPEN) {
+				// 	client.send(JSON.stringify(message));
+				// }
+				client.emit(MONITORING_MESSAGE_TYPE, message);
 			}
 		}
 	}

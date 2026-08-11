@@ -1,4 +1,2 @@
-export * from "../interfaces";
-export * from "../utils";
-export * from "../models";
-export * from "../services";
+import express from "express";
+export declare function registerMonitoring(app: express.Application, io: any): void;
