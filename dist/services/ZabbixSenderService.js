@@ -6,13 +6,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ZabbixSenderService = void 0;
 const SystemOverviewService_1 = __importDefault(require("./SystemOverviewService"));
 const Pm2Service_1 = require("./Pm2Service");
-const config_1 = require("../utils/config");
 const zabbixFunctions_1 = require("../utils/zabbixFunctions");
 const systemUtils_1 = require("../utils/systemUtils");
 const pm2Utils_1 = require("../utils/pm2Utils");
 class ZabbixSenderService {
     constructor() {
-        this._updateIntervalMs = Number(config_1.config.monitoringApiConfig.systemInfoIntervalMs || 15000);
+        this._updateIntervalMs = 15000;
         this.isFlushing = false;
         this._agentHostName = (0, systemUtils_1.getAgentHostName)();
         this.systemOverviewService = SystemOverviewService_1.default.getInstance();

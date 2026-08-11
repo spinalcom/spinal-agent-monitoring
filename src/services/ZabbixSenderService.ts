@@ -3,8 +3,6 @@ import net from "net";
 import { ProcessDescription } from "pm2";
 import SystemOverviewService from "./SystemOverviewService";
 import { Pm2Service } from "./Pm2Service";
-import { config } from "../utils/config";
-import { IPM2Process } from "../interfaces/interfaces";
 import { _generateZabbixMetrics } from "../utils/zabbixFunctions";
 import { getAgentHostName } from "../utils/systemUtils";
 import { getProcessId } from "../utils/pm2Utils";
@@ -33,7 +31,7 @@ type Pm2Discovery = {
 };
 
 class ZabbixSenderService {
-	private _updateIntervalMs = Number(config.monitoringApiConfig.systemInfoIntervalMs || 15000);
+	private _updateIntervalMs = 15000;
 	private isFlushing = false;
 	private _agentHostName: string = getAgentHostName();
 

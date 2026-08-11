@@ -3,13 +3,12 @@ import { ICpuInfo } from "../interfaces/ICpu";
 import { IMemoryInfo } from "../interfaces/IMemoryInfo";
 import { getDiskInfoSync } from "node-disk-info";
 import { ISystemMetrics } from "../interfaces/interfaces";
-import { config } from "../utils/config";
 import { ConfigFileService } from "./ConfigFileService";
 
 export default class SystemOverviewService {
 	private static _instance: SystemOverviewService;
 	private intervalHandle: NodeJS.Timeout | null = null;
-	private _updateIntervalMs = Number(config.monitoringApiConfig.systemInfoIntervalMs || 15000);
+	private _updateIntervalMs = 15000;
 	private configFileService = ConfigFileService.getInstance();
 
 	private constructor() {}

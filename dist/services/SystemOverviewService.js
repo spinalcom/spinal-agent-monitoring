@@ -6,12 +6,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.SystemOverviewService = void 0;
 const os_1 = __importDefault(require("os"));
 const node_disk_info_1 = require("node-disk-info");
-const config_1 = require("../utils/config");
 const ConfigFileService_1 = require("./ConfigFileService");
 class SystemOverviewService {
     constructor() {
         this.intervalHandle = null;
-        this._updateIntervalMs = Number(config_1.config.monitoringApiConfig.systemInfoIntervalMs || 15000);
+        this._updateIntervalMs = 15000;
         this.configFileService = ConfigFileService_1.ConfigFileService.getInstance();
     }
     static getInstance() {
