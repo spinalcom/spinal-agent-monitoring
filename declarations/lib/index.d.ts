@@ -1,2 +1,4 @@
 import express from "express";
-export declare function registerMonitoring(app: express.Application, io: any): void;
+import { Server } from "socket.io";
+export declare function registerMonitoringAgent(app: express.Application, io: Server): void;
+export default registerMonitoringAgent;
