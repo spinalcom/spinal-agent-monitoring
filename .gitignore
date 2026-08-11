@@ -10,7 +10,6 @@ logs/
 
 # Fichiers de configuration sensibles
 .env
-config.js
 
 # Fichiers générés par des IDE ou des éditeurs de code
 .vscode/
