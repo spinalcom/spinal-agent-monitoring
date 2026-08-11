@@ -2,7 +2,6 @@ import ConfigFileService from "./services/ConfigFileService";
 import { Pm2Service } from "./services/Pm2Service";
 import SpinalhubService from "./services/SpinalhubService";
 import SystemOverviewService from "./services/SystemOverviewService";
-import ZabbixSenderService from "./services/ZabbixSenderService";
 import { runExpressServer, runWebSocketServer } from "./server";
 import { config } from "./utils/config";
 
