@@ -31,7 +31,6 @@ type Pm2Discovery = {
 };
 
 class ZabbixSenderService {
-	private _updateIntervalMs = 15000;
 	private isFlushing = false;
 	private _agentHostName: string = getAgentHostName();
 
@@ -56,8 +55,15 @@ class ZabbixSenderService {
 		return this._instance;
 	}
 
-	public async startPeriodicPush(onPushUpdate?: (update: ZabbixPushUpdate) => void): Promise<void> {
-		if (onPushUpdate) this.pushUpdateCallback = onPushUpdate;
+	public async startPeriodicPush(onPushUpdate?: (update: ZabbixPushUpdate) => void): Promise<void>;
+	public async startPeriodicPush(updateIntervalMs: number): Promise<void>;
+	public async startPeriodicPush(onPushUpdate: (update: ZabbixPushUpdate) => void, updateIntervalMs?: number): Promise<void>;
+	public async startPeriodicPush(onPushUpdateOrInterval?: ((update: ZabbixPushUpdate) => void) | number, updateIntervalMs: number = 15000): Promise<void> {
+		if (typeof onPushUpdateOrInterval === "function") {
+			this.pushUpdateCallback = onPushUpdateOrInterval;
+		} else if (typeof onPushUpdateOrInterval === "number") {
+			updateIntervalMs = onPushUpdateOrInterval;
+		}
 
 		if (this.intervalHandle) return;
 
@@ -67,9 +73,9 @@ class ZabbixSenderService {
 		// Start the periodic push interval
 		this.intervalHandle = setInterval(() => {
 			this.enqueueAndFlushCurrentSnapshot();
-		}, this._updateIntervalMs);
+		}, updateIntervalMs);
 
-		console.log(`Periodic push started (every ${this._updateIntervalMs} ms)`);
+		console.log(`Periodic push started (every ${updateIntervalMs} ms)`);
 	}
 
 	public stopPeriodicPush(): void {

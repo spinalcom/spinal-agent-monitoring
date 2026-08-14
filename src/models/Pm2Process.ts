@@ -1,6 +1,6 @@
 import { ProcessDescription } from "pm2";
-import { Model, spinalCore } from "spinal-core-connectorjs";
-import { getHeapInfo } from "../utils/pm2Utils";
+import { Model, Path as SpinalPath, spinalCore } from "spinal-core-connectorjs";
+import { getHeapInfo, uploadFileNewData } from "../utils/pm2Utils";
 import Pm2Service from "../services/Pm2Service";
 
 class Pm2Process extends Model {
@@ -28,6 +28,7 @@ class Pm2Process extends Model {
 				out: pm2Env?.pm_out_log_path,
 				err: pm2Env?.pm_err_log_path,
 			},
+			// logPathInHub: this._initLogPathInHub(_process.name as string),
 		});
 	}
 
@@ -47,6 +48,35 @@ class Pm2Process extends Model {
 		});
 	}
 
+	updateProcessInfo(_processNewInfo: ProcessDescription) {
+		const pm2Env = _processNewInfo.pm2_env as { [key: string]: unknown } | undefined;
+
+		if (this.status) this.status.set(pm2Env?.status);
+		if (this.restarts) this.restarts.set(pm2Env?.restart_time);
+		if (this.uptime) this.uptime.set(pm2Env?.pm_uptime);
+		if (this.heapMemory) this.heapMemory.set(getHeapInfo(_processNewInfo));
+
+		if (this.monit) {
+			this.monit.set({
+				memory: _processNewInfo.monit?.memory,
+				cpu: _processNewInfo.monit?.cpu,
+			});
+		}
+
+		if (this.cwd) this.cwd.set(pm2Env?.cwd);
+		if (this.created_at) this.created_at.set(pm2Env?.created_at);
+
+		if (this.log) {
+			this.log.set({
+				out: pm2Env?.pm_out_log_path,
+				err: pm2Env?.pm_err_log_path,
+			});
+		}
+
+		// Ensure logPathInHub is initialized if it was not set previously
+		if (!this.logPathInHub) this.mod_attr("logPathInHub", this._initLogPathInHub(_processNewInfo.name as string));
+	}
+
 	restart() {
 		Pm2Service.getInstance().restartPm2Process(this.pm_id);
 	}
@@ -57,6 +87,16 @@ class Pm2Process extends Model {
 
 	start() {
 		Pm2Service.getInstance().startPm2Process(this.pm_id);
+	}
+
+	syncLogFile(newData: Buffer): Promise<boolean> {
+		return uploadFileNewData(this.logPathInHub, newData);
+	}
+
+	private _initLogPathInHub(processName: string): SpinalPath {
+		const buffer = Buffer.from("");
+		const file = new File([buffer], `${processName}.log`);
+		return new SpinalPath(file);
 	}
 }
 

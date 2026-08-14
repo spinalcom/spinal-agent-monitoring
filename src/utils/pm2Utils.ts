@@ -1,6 +1,8 @@
 import { ProcessDescription } from "pm2";
 import { Pm2ProcessResponse } from "../interfaces/IResponses";
 import pm2 from "pm2";
+import { Path as SpinalPath, FileSystem, getUrlPath } from "spinal-core-connectorjs";
+import { Pm2Process } from "../models";
 
 export function getHeapInfo(process: ProcessDescription) {
 	const pm2Env = process.pm2_env as { [key: string]: unknown } | undefined;
@@ -43,6 +45,7 @@ export function formatProcess(process: ProcessDescription): Pm2ProcessResponse {
 		status: (pm2Env?.status as string | undefined) ?? undefined,
 		cpu: monit?.cpu,
 		memory: monit?.memory,
+		restarts: (pm2Env?.restart_time as number | undefined) ?? 0,
 		uptime: (pm2Env?.pm_uptime as number | undefined) ?? undefined,
 		cwd: (pm2Env?.cwd as string | undefined) ?? undefined,
 		createdAt: (pm2Env?.created_at as number | undefined) ?? undefined,
@@ -93,4 +96,45 @@ export function getProcessStatusCode(process: ProcessDescription): number {
 export function getProcessLogPath(process: ProcessDescription, logType: "out" | "err"): string | undefined {
 	const formattedProcess = formatProcess(process); // Ensure the process is formatted before accessing log paths
 	return logType === "err" ? formattedProcess.errLogPath : formattedProcess.outLogPath;
+}
+
+export async function uploadFileNewData(pathModel: SpinalPath, newContent: Buffer): Promise<boolean> {
+	try {
+		// any type is used to avoid TypeScript errors
+		const fs: any = FileSystem.get_inst();
+
+		let path = getUrlPath(fs._protocol, fs._url, fs._port, `?s=${fs._session_num}&p=${pathModel._server_id}`);
+		const contentType = pathModel.mimeType ? pathModel.mimeType : "application/octet-stream";
+		pathModel.remaining.set(newContent.byteLength);
+		await fs._axiosInst.put(path, newContent, {
+			headers: {
+				"X-Content-Type": contentType,
+			},
+		});
+		pathModel.remaining.set(0);
+		return true;
+	} catch (error) {
+		return false;
+	}
+}
+
+export function convertProcessToObject(processes: Pm2Process[]): { [key: string]: Pm2Process } {
+	const processObj: { [key: string]: Pm2Process } = {};
+
+	for (const process of processes) {
+		const processId = process.pm_id.get()?.toString() || process.name.get() || "unknown";
+		processObj[processId] = process;
+	}
+
+	return processObj;
+}
+
+export function executeIntervalProcessAction(callback: () => void, intervalMs: number): NodeJS.Timeout {
+	return setInterval(callback, intervalMs);
+}
+
+export function _initLogPathInHub(processName: string): SpinalPath {
+	const buffer = Buffer.from("");
+	const file = new File([buffer], `${processName}.log`);
+	return new SpinalPath(file);
 }

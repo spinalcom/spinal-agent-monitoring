@@ -1,13 +1,15 @@
 import { ICpuInfo } from "../interfaces/ICpu";
 import { IMemoryInfo } from "../interfaces/IMemoryInfo";
 import { ISystemMetrics } from "../interfaces/interfaces";
+import { SpinalGraph } from "spinal-model-graph";
 export default class SystemOverviewService {
     private static _instance;
     private intervalHandle;
-    private _updateIntervalMs;
     private configFileService;
+    private systemMetricsNode;
     private constructor();
     static getInstance(): SystemOverviewService;
+    initialize(graph: SpinalGraph): Promise<void>;
     getIpAddress(): string;
     getMacAddress(): string | undefined;
     getCpuInfo(): ICpuInfo;
@@ -19,6 +21,8 @@ export default class SystemOverviewService {
         disk: IMemoryInfo;
     };
     getSystemMetricsFormatted(): ISystemMetrics;
-    startPeriodicSystemMetricsPush(): void;
+    startPeriodicSystemMetricsPush(intervalMs?: number | string): void;
+    private _initSystemMetricsNode;
+    updateSystemMetrics(): Promise<void>;
 }
 export { SystemOverviewService };

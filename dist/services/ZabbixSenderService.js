@@ -11,7 +11,6 @@ const systemUtils_1 = require("../utils/systemUtils");
 const pm2Utils_1 = require("../utils/pm2Utils");
 class ZabbixSenderService {
     constructor() {
-        this._updateIntervalMs = 15000;
         this.isFlushing = false;
         this._agentHostName = (0, systemUtils_1.getAgentHostName)();
         this.systemOverviewService = SystemOverviewService_1.default.getInstance();
@@ -28,9 +27,13 @@ class ZabbixSenderService {
         }
         return this._instance;
     }
-    async startPeriodicPush(onPushUpdate) {
-        if (onPushUpdate)
-            this.pushUpdateCallback = onPushUpdate;
+    async startPeriodicPush(onPushUpdateOrInterval, updateIntervalMs = 15000) {
+        if (typeof onPushUpdateOrInterval === "function") {
+            this.pushUpdateCallback = onPushUpdateOrInterval;
+        }
+        else if (typeof onPushUpdateOrInterval === "number") {
+            updateIntervalMs = onPushUpdateOrInterval;
+        }
         if (this.intervalHandle)
             return;
         // Immediately enqueue and flush the current snapshot before starting the interval
@@ -38,8 +41,8 @@ class ZabbixSenderService {
         // Start the periodic push interval
         this.intervalHandle = setInterval(() => {
             this.enqueueAndFlushCurrentSnapshot();
-        }, this._updateIntervalMs);
-        console.log(`Periodic push started (every ${this._updateIntervalMs} ms)`);
+        }, updateIntervalMs);
+        console.log(`Periodic push started (every ${updateIntervalMs} ms)`);
     }
     stopPeriodicPush() {
         if (this.intervalHandle) {

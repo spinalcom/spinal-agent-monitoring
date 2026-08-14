@@ -10,7 +10,12 @@ exports.executeCommand = executeCommand;
 exports.getProcessId = getProcessId;
 exports.getProcessStatusCode = getProcessStatusCode;
 exports.getProcessLogPath = getProcessLogPath;
+exports.uploadFileNewData = uploadFileNewData;
+exports.convertProcessToObject = convertProcessToObject;
+exports.executeIntervalProcessAction = executeIntervalProcessAction;
+exports._initLogPathInHub = _initLogPathInHub;
 const pm2_1 = __importDefault(require("pm2"));
+const spinal_core_connectorjs_1 = require("spinal-core-connectorjs");
 function getHeapInfo(process) {
     const pm2Env = process.pm2_env;
     const axmMonitor = pm2Env?.axm_monitor;
@@ -45,6 +50,7 @@ function formatProcess(process) {
         status: pm2Env?.status ?? undefined,
         cpu: monit?.cpu,
         memory: monit?.memory,
+        restarts: pm2Env?.restart_time ?? 0,
         uptime: pm2Env?.pm_uptime ?? undefined,
         cwd: pm2Env?.cwd ?? undefined,
         createdAt: pm2Env?.created_at ?? undefined,
@@ -87,5 +93,40 @@ function getProcessStatusCode(process) {
 function getProcessLogPath(process, logType) {
     const formattedProcess = formatProcess(process); // Ensure the process is formatted before accessing log paths
     return logType === "err" ? formattedProcess.errLogPath : formattedProcess.outLogPath;
+}
+async function uploadFileNewData(pathModel, newContent) {
+    try {
+        // any type is used to avoid TypeScript errors
+        const fs = spinal_core_connectorjs_1.FileSystem.get_inst();
+        let path = (0, spinal_core_connectorjs_1.getUrlPath)(fs._protocol, fs._url, fs._port, `?s=${fs._session_num}&p=${pathModel._server_id}`);
+        const contentType = pathModel.mimeType ? pathModel.mimeType : "application/octet-stream";
+        pathModel.remaining.set(newContent.byteLength);
+        await fs._axiosInst.put(path, newContent, {
+            headers: {
+                "X-Content-Type": contentType,
+            },
+        });
+        pathModel.remaining.set(0);
+        return true;
+    }
+    catch (error) {
+        return false;
+    }
+}
+function convertProcessToObject(processes) {
+    const processObj = {};
+    for (const process of processes) {
+        const processId = process.pm_id.get()?.toString() || process.name.get() || "unknown";
+        processObj[processId] = process;
+    }
+    return processObj;
+}
+function executeIntervalProcessAction(callback, intervalMs) {
+    return setInterval(callback, intervalMs);
+}
+function _initLogPathInHub(processName) {
+    const buffer = Buffer.from("");
+    const file = new File([buffer], `${processName}.log`);
+    return new spinal_core_connectorjs_1.Path(file);
 }
 //# sourceMappingURL=pm2Utils.js.map

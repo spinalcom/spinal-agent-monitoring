@@ -35,7 +35,7 @@ function runExpressServer(port) {
         res.status(HTTP_RESPONSE_1.HTTP_RESPONSES.NOT_FOUND.code).json({ error: "Route not found." });
     });
     const PORT = port || 3000;
-    const server = app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
+    const server = app.listen(PORT, () => console.log(`Express server started on port ${PORT}`));
     return { app, server };
 }
 exports.default = runExpressServer;

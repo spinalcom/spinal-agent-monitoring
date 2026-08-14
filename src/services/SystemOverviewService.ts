@@ -4,12 +4,14 @@ import { IMemoryInfo } from "../interfaces/IMemoryInfo";
 import { getDiskInfoSync } from "node-disk-info";
 import { ISystemMetrics } from "../interfaces/interfaces";
 import { ConfigFileService } from "./ConfigFileService";
+import { SpinalContext, SpinalGraph, SpinalNode } from "spinal-model-graph";
+import { SYSTEM_METRICS_NODE_NAME, SYSTEM_METRICS_NODE_TYPE } from "../utils";
 
 export default class SystemOverviewService {
 	private static _instance: SystemOverviewService;
 	private intervalHandle: NodeJS.Timeout | null = null;
-	private _updateIntervalMs = 15000;
 	private configFileService = ConfigFileService.getInstance();
+	private systemMetricsNode: SpinalContext | null = null;
 
 	private constructor() {}
 
@@ -18,6 +20,10 @@ export default class SystemOverviewService {
 			this._instance = new SystemOverviewService();
 		}
 		return this._instance;
+	}
+
+	public async initialize(graph: SpinalGraph): Promise<void> {
+		this.systemMetricsNode = await this._initSystemMetricsNode(graph);
 	}
 
 	public getIpAddress(): string {
@@ -137,15 +143,39 @@ export default class SystemOverviewService {
 		};
 	}
 
-	public startPeriodicSystemMetricsPush() {
+	public startPeriodicSystemMetricsPush(intervalMs: number | string = 15000): void {
 		if (this.intervalHandle) return;
-		this.intervalHandle = setInterval(() => {
-			console.log("Pushing system metrics to config file...");
-			const systemInfo = this.getSystemMetricsFormatted();
 
-			this.configFileService.refreshSystemMetrics(systemInfo);
-			this.configFileService.refreshPm2Metrics();
-		}, this._updateIntervalMs);
+		this.intervalHandle = setInterval(async () => {
+			await this.updateSystemMetrics();
+			console.log(`[${new Date().toISOString()}] - system metrics updated and pushed to SpinalGraph.`);
+		}, parseInt(intervalMs.toString()));
+	}
+
+	private async _initSystemMetricsNode(graph: SpinalGraph): Promise<SpinalContext> {
+		if (this.systemMetricsNode) return this.systemMetricsNode;
+
+		let existingNode = await graph.getContext(SYSTEM_METRICS_NODE_NAME);
+
+		if (existingNode && existingNode.getType().get() === SYSTEM_METRICS_NODE_TYPE) return existingNode as SpinalContext;
+		// If the node doesn't exist, create it
+		existingNode = new SpinalContext(SYSTEM_METRICS_NODE_NAME, SYSTEM_METRICS_NODE_TYPE);
+		await graph.addContext(existingNode);
+
+		return existingNode;
+	}
+
+	public async updateSystemMetrics(): Promise<void> {
+		if (!this.systemMetricsNode) {
+			throw new Error("System metrics node is not initialized. Call initialize() first.");
+		}
+
+		const systemMetrics = this.getSystemMetricsFormatted();
+
+		for (const [key, value] of Object.entries(systemMetrics)) {
+			if (this.systemMetricsNode.info[key]) this.systemMetricsNode.info[key].set(value);
+			else this.systemMetricsNode.info.add_attr(key, value);
+		}
 	}
 }
 

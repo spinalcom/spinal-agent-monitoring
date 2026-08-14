@@ -40,7 +40,7 @@ export function runExpressServer(port?: number | string): { app: express.Applica
 
 	const PORT = port || 3000;
 
-	const server = app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
+	const server = app.listen(PORT, () => console.log(`Express server started on port ${PORT}`));
 
 	return { app, server };
 }

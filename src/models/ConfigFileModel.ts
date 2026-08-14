@@ -4,13 +4,15 @@ import * as os from "os";
 import { IControlAction, ILog, IPM2Process, ISystemMetrics } from "../interfaces/interfaces";
 import { ProcessDescription } from "pm2";
 import Pm2Process from "./Pm2Process";
-import { waitUntil } from "../utils/pm2Utils";
+import { convertProcessToObject, waitUntil } from "../utils/pm2Utils";
 import { SpinalCommand } from "./SpinalCommand";
 import { SPINAL_COMMAND_STATUS } from "../utils/constants";
+import { SpinalGraph } from "spinal-model-graph";
 
 export default class ConfigFileModel extends Model {
 	public static FILE_TYPE = "AgentMonitoring";
 	public pm2List: Pm2Process[] = [];
+	private _graph: SpinalGraph;
 
 	constructor(name?: string, type?: string, serverName?: string, systemInfo?: ISystemMetrics) {
 		super();
@@ -22,6 +24,10 @@ export default class ConfigFileModel extends Model {
 			pm2Processes: new Ptr(new Lst([])),
 			commandList: new Lst<SpinalCommand>([]),
 		});
+	}
+
+	setGraph(graph: SpinalGraph) {
+		this._graph = graph;
 	}
 
 	initialize(name?: string, type?: string, serverName?: string, systemInfo?: ISystemMetrics) {
@@ -54,12 +60,22 @@ export default class ConfigFileModel extends Model {
 
 	public async updatePm2Processes(processes: ProcessDescription[]): Promise<Lst<Pm2Process>> {
 		const pm2ProcessesLst = await this.getPm2Processes();
-		await pm2ProcessesLst.clear();
+		const processObj = convertProcessToObject(Array.from(pm2ProcessesLst));
+		// await pm2ProcessesLst.clear();
 
 		for (const process of processes) {
-			const pm2ProcessModel = new Pm2Process(process);
-			pm2ProcessesLst.push(pm2ProcessModel);
+			this._syncPm2Process(process, processObj, pm2ProcessesLst);
 		}
+
+		// Remove processes that are no longer active
+		if (Object.keys(processObj).length > 0) {
+			// Remove processes that are no longer active
+			for (const key in processObj) {
+				const processToRemove = processObj[key];
+				pm2ProcessesLst.remove(processToRemove);
+			}
+		}
+
 		this.lastUpdate.set(Date.now());
 		this.pm2List = Array.from(pm2ProcessesLst);
 		return pm2ProcessesLst;
@@ -125,6 +141,33 @@ export default class ConfigFileModel extends Model {
 			.finally(() => {
 				this.commandList.remove(command);
 			});
+	}
+
+	private _syncPm2Process(process: ProcessDescription, processObj: { [key: string]: Pm2Process }, pm2ProcessesLst: Lst<Pm2Process>): void {
+		const key = process.pm_id?.toString() || process.name || "unknown";
+
+		const found = processObj[key];
+
+		// If the process is not found, create a new Pm2Process and add it to the list
+		if (!found) {
+			const pm2ProcessModel = new Pm2Process(process);
+			pm2ProcessesLst.push(pm2ProcessModel);
+			return;
+		}
+
+		// If the process is found, update its metrics and remove it from the processObj to mark it as processed
+		delete processObj[key];
+
+		// If the process name has changed, remove the old process and add the new one
+		if (found.name?.get() !== process.name) {
+			pm2ProcessesLst.remove(found);
+			const pm2ProcessModel = new Pm2Process(process);
+			pm2ProcessesLst.push(pm2ProcessModel);
+			return;
+		}
+
+		// Update the metrics of the found process
+		found.updateProcessInfo(process);
 	}
 
 	private _checkAttributesExistence(attributeName: string, value: any, editIt: boolean = false): void {

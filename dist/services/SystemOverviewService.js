@@ -7,17 +7,22 @@ exports.SystemOverviewService = void 0;
 const os_1 = __importDefault(require("os"));
 const node_disk_info_1 = require("node-disk-info");
 const ConfigFileService_1 = require("./ConfigFileService");
+const spinal_model_graph_1 = require("spinal-model-graph");
+const utils_1 = require("../utils");
 class SystemOverviewService {
     constructor() {
         this.intervalHandle = null;
-        this._updateIntervalMs = 15000;
         this.configFileService = ConfigFileService_1.ConfigFileService.getInstance();
+        this.systemMetricsNode = null;
     }
     static getInstance() {
         if (!this._instance) {
             this._instance = new SystemOverviewService();
         }
         return this._instance;
+    }
+    async initialize(graph) {
+        this.systemMetricsNode = await this._initSystemMetricsNode(graph);
     }
     getIpAddress() {
         const networkInterfaces = os_1.default.networkInterfaces();
@@ -120,15 +125,36 @@ class SystemOverviewService {
             ipAddress: this.getIpAddress(),
         };
     }
-    startPeriodicSystemMetricsPush() {
+    startPeriodicSystemMetricsPush(intervalMs = 15000) {
         if (this.intervalHandle)
             return;
-        this.intervalHandle = setInterval(() => {
-            console.log("Pushing system metrics to config file...");
-            const systemInfo = this.getSystemMetricsFormatted();
-            this.configFileService.refreshSystemMetrics(systemInfo);
-            this.configFileService.refreshPm2Metrics();
-        }, this._updateIntervalMs);
+        this.intervalHandle = setInterval(async () => {
+            await this.updateSystemMetrics();
+            console.log(`[${new Date().toISOString()}] - system metrics updated and pushed to SpinalGraph.`);
+        }, parseInt(intervalMs.toString()));
+    }
+    async _initSystemMetricsNode(graph) {
+        if (this.systemMetricsNode)
+            return this.systemMetricsNode;
+        let existingNode = await graph.getContext(utils_1.SYSTEM_METRICS_NODE_NAME);
+        if (existingNode && existingNode.getType().get() === utils_1.SYSTEM_METRICS_NODE_TYPE)
+            return existingNode;
+        // If the node doesn't exist, create it
+        existingNode = new spinal_model_graph_1.SpinalContext(utils_1.SYSTEM_METRICS_NODE_NAME, utils_1.SYSTEM_METRICS_NODE_TYPE);
+        await graph.addContext(existingNode);
+        return existingNode;
+    }
+    async updateSystemMetrics() {
+        if (!this.systemMetricsNode) {
+            throw new Error("System metrics node is not initialized. Call initialize() first.");
+        }
+        const systemMetrics = this.getSystemMetricsFormatted();
+        for (const [key, value] of Object.entries(systemMetrics)) {
+            if (this.systemMetricsNode.info[key])
+                this.systemMetricsNode.info[key].set(value);
+            else
+                this.systemMetricsNode.info.add_attr(key, value);
+        }
     }
 }
 exports.default = SystemOverviewService;

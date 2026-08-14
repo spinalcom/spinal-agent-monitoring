@@ -1,17 +1,13 @@
-import { FileSystem, Lst } from "spinal-core-connectorjs";
-import ConfigFileModel from "../models/ConfigFileModel";
-import { ISystemMetrics } from "../interfaces/interfaces";
-import { Pm2Process } from "../models/Pm2Process";
+import { FileSystem } from "spinal-core-connectorjs";
+import { SpinalGraph } from "spinal-model-graph";
 export default class ConfigFileService {
     private static _instance;
     private configFileModel;
     private pm2_processes;
+    private _graph;
     private constructor();
     static getInstance(): ConfigFileService;
-    initializeConfigFile(spinalConnection: FileSystem, systemInfo: ISystemMetrics, organName?: string): Promise<ConfigFileModel>;
-    updatePm2List(): Promise<Lst<Pm2Process> | undefined>;
-    refreshSystemMetrics(systemInfo: ISystemMetrics): void;
-    refreshPm2Metrics(): Promise<void>;
+    initializeConfigFile(spinalConnection: FileSystem, organName?: string): Promise<SpinalGraph>;
     private _loadOrMakeConfigFile;
     private _errorCallback;
 }

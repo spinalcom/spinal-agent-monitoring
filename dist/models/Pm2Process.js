@@ -30,6 +30,7 @@ class Pm2Process extends spinal_core_connectorjs_1.Model {
                 out: pm2Env?.pm_out_log_path,
                 err: pm2Env?.pm_err_log_path,
             },
+            // logPathInHub: this._initLogPathInHub(_process.name as string),
         });
     }
     async refreshMetrics() {
@@ -46,6 +47,36 @@ class Pm2Process extends spinal_core_connectorjs_1.Model {
             cpu: _process.monit?.cpu,
         });
     }
+    updateProcessInfo(_processNewInfo) {
+        const pm2Env = _processNewInfo.pm2_env;
+        if (this.status)
+            this.status.set(pm2Env?.status);
+        if (this.restarts)
+            this.restarts.set(pm2Env?.restart_time);
+        if (this.uptime)
+            this.uptime.set(pm2Env?.pm_uptime);
+        if (this.heapMemory)
+            this.heapMemory.set((0, pm2Utils_1.getHeapInfo)(_processNewInfo));
+        if (this.monit) {
+            this.monit.set({
+                memory: _processNewInfo.monit?.memory,
+                cpu: _processNewInfo.monit?.cpu,
+            });
+        }
+        if (this.cwd)
+            this.cwd.set(pm2Env?.cwd);
+        if (this.created_at)
+            this.created_at.set(pm2Env?.created_at);
+        if (this.log) {
+            this.log.set({
+                out: pm2Env?.pm_out_log_path,
+                err: pm2Env?.pm_err_log_path,
+            });
+        }
+        // Ensure logPathInHub is initialized if it was not set previously
+        if (!this.logPathInHub)
+            this.mod_attr("logPathInHub", this._initLogPathInHub(_processNewInfo.name));
+    }
     restart() {
         Pm2Service_1.default.getInstance().restartPm2Process(this.pm_id);
     }
@@ -54,6 +85,14 @@ class Pm2Process extends spinal_core_connectorjs_1.Model {
     }
     start() {
         Pm2Service_1.default.getInstance().startPm2Process(this.pm_id);
+    }
+    syncLogFile(newData) {
+        return (0, pm2Utils_1.uploadFileNewData)(this.logPathInHub, newData);
+    }
+    _initLogPathInHub(processName) {
+        const buffer = Buffer.from("");
+        const file = new File([buffer], `${processName}.log`);
+        return new spinal_core_connectorjs_1.Path(file);
     }
 }
 exports.Pm2Process = Pm2Process;

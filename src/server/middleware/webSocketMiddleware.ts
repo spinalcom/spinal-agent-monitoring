@@ -171,7 +171,7 @@ export class WebsocketMiddleware {
 
 	public async startSendingPm2Events() {
 		const pm2Service = Pm2Service.getInstance();
-		await pm2Service.initializePm2Service((event) => {
+		await pm2Service.listentPm2Actions((event) => {
 			this._sendDataToAllClients({
 				type: PM2_PROCESS_EVENT_TYPE,
 				data: {

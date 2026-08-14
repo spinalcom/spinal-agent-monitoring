@@ -103,7 +103,7 @@ class WebsocketMiddleware {
     }
     async startSendingPm2Events() {
         const pm2Service = Pm2Service_1.Pm2Service.getInstance();
-        await pm2Service.initializePm2Service((event) => {
+        await pm2Service.listentPm2Actions((event) => {
             this._sendDataToAllClients({ type: constants_1.PM2_PROCESS_EVENT_TYPE, data: event });
         });
     }

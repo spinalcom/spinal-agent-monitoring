@@ -23,4 +23,5 @@ export interface Pm2ProcessResponse {
     createdAt?: number;
     outLogPath?: string;
     errLogPath?: string;
+    restarts?: number;
 }

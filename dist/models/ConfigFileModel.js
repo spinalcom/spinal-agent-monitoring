@@ -41,6 +41,7 @@ const spinal_core_connectorjs_1 = require("spinal-core-connectorjs");
 const systemUtils_1 = require("../utils/systemUtils");
 const os = __importStar(require("os"));
 const Pm2Process_1 = __importDefault(require("./Pm2Process"));
+const pm2Utils_1 = require("../utils/pm2Utils");
 const constants_1 = require("../utils/constants");
 class ConfigFileModel extends spinal_core_connectorjs_1.Model {
     constructor(name, type, serverName, systemInfo) {
@@ -54,6 +55,9 @@ class ConfigFileModel extends spinal_core_connectorjs_1.Model {
             pm2Processes: new spinal_core_connectorjs_1.Ptr(new spinal_core_connectorjs_1.Lst([])),
             commandList: new spinal_core_connectorjs_1.Lst([]),
         });
+    }
+    setGraph(graph) {
+        this._graph = graph;
     }
     initialize(name, type, serverName, systemInfo) {
         this._checkAttributesExistence("type", ConfigFileModel.FILE_TYPE);
@@ -81,10 +85,18 @@ class ConfigFileModel extends spinal_core_connectorjs_1.Model {
     }
     async updatePm2Processes(processes) {
         const pm2ProcessesLst = await this.getPm2Processes();
-        await pm2ProcessesLst.clear();
+        const processObj = (0, pm2Utils_1.convertProcessToObject)(Array.from(pm2ProcessesLst));
+        // await pm2ProcessesLst.clear();
         for (const process of processes) {
-            const pm2ProcessModel = new Pm2Process_1.default(process);
-            pm2ProcessesLst.push(pm2ProcessModel);
+            this._syncPm2Process(process, processObj, pm2ProcessesLst);
+        }
+        // Remove processes that are no longer active
+        if (Object.keys(processObj).length > 0) {
+            // Remove processes that are no longer active
+            for (const key in processObj) {
+                const processToRemove = processObj[key];
+                pm2ProcessesLst.remove(processToRemove);
+            }
         }
         this.lastUpdate.set(Date.now());
         this.pm2List = Array.from(pm2ProcessesLst);
@@ -144,6 +156,27 @@ class ConfigFileModel extends spinal_core_connectorjs_1.Model {
             .finally(() => {
             this.commandList.remove(command);
         });
+    }
+    _syncPm2Process(process, processObj, pm2ProcessesLst) {
+        const key = process.pm_id?.toString() || process.name || "unknown";
+        const found = processObj[key];
+        // If the process is not found, create a new Pm2Process and add it to the list
+        if (!found) {
+            const pm2ProcessModel = new Pm2Process_1.default(process);
+            pm2ProcessesLst.push(pm2ProcessModel);
+            return;
+        }
+        // If the process is found, update its metrics and remove it from the processObj to mark it as processed
+        delete processObj[key];
+        // If the process name has changed, remove the old process and add the new one
+        if (found.name?.get() !== process.name) {
+            pm2ProcessesLst.remove(found);
+            const pm2ProcessModel = new Pm2Process_1.default(process);
+            pm2ProcessesLst.push(pm2ProcessModel);
+            return;
+        }
+        // Update the metrics of the found process
+        found.updateProcessInfo(process);
     }
     _checkAttributesExistence(attributeName, value, editIt = false) {
         if (typeof this[attributeName] === "undefined")

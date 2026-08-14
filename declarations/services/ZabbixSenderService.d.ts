@@ -19,7 +19,6 @@ type Pm2Discovery = {
     }>;
 };
 declare class ZabbixSenderService {
-    private _updateIntervalMs;
     private isFlushing;
     private _agentHostName;
     private static _instance;
@@ -33,6 +32,8 @@ declare class ZabbixSenderService {
     private constructor();
     static getInstance(): ZabbixSenderService;
     startPeriodicPush(onPushUpdate?: (update: ZabbixPushUpdate) => void): Promise<void>;
+    startPeriodicPush(updateIntervalMs: number): Promise<void>;
+    startPeriodicPush(onPushUpdate: (update: ZabbixPushUpdate) => void, updateIntervalMs?: number): Promise<void>;
     stopPeriodicPush(): void;
     getPm2Discovery(processes?: ProcessDescription[]): Promise<Pm2Discovery>;
     private enqueueAndFlushCurrentSnapshot;
