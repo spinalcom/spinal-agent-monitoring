@@ -7,12 +7,16 @@ import { Pm2Service } from "./Pm2Service";
 import { Pm2Process } from "../models/Pm2Process";
 import { SpinalGraph } from "spinal-model-graph";
 import SystemOverviewService from "./SystemOverviewService";
+import { SpinalCommand } from "../models";
+import { SPINAL_COMMAND_STATUS } from "../utils";
+import { privateDecrypt } from "crypto";
 
 export default class ConfigFileService {
 	private static _instance: ConfigFileService;
 	private configFileModel: ConfigFileModel | null = null;
 	private pm2_processes: Lst<Pm2Process> | undefined;
 	private _graph: SpinalGraph | null = null;
+	private commandExecuted = new Set<string>();
 
 	private constructor() {}
 
@@ -30,35 +34,53 @@ export default class ConfigFileService {
 
 		const configFilePath = `/etc/Organs/Monitoring/${configFileName}`;
 		this._graph = await this._loadOrMakeConfigFile(spinalConnection, configFilePath);
+		await this.initAndBindCommandList();
 
 		return this._graph;
-
-		// await configFile.initialize(organName, "Monitoring", os.hostname(), systemInfo);
-		// this.configFileModel = configFile;
-
-		// // Refresh PM2 processes after initializing the config file
-		// await this.updatePm2List();
-
-		// // Bind the command list to listen for new commands
-		// configFile.bindCommandList();
-
-		// return this.configFileModel;
 	}
 
-	// public async updatePm2List() {
-	// 	const processes = await Pm2Service.getInstance().getAllPm2Processes();
+	private async initAndBindCommandList() {
+		const commandList = this._initCommandList(this._graph);
 
-	// 	this.pm2_processes = await this.configFileModel?.updatePm2Processes(processes);
-	// 	return this.pm2_processes;
-	// }
+		commandList.bind(async () => {
+			for (let i = 0; i < commandList.length; i++) {
+				const command = commandList[i];
+				await this._executeCommand(command).finally(() => {
+					this.commandExecuted.add(command.id.get());
+					commandList.remove(command);
+				});
+			}
+		});
+	}
 
-	// public refreshSystemMetrics(systemInfo: ISystemMetrics) {
-	// 	if (this.configFileModel) this.configFileModel.updateMetrics(systemInfo);
-	// }
+	private _initCommandList(graph: SpinalGraph | null): Lst<SpinalCommand> {
+		if (!graph) throw new Error("Graph is not initialized. Please call initializeConfigFile first.");
 
-	// public async refreshPm2Metrics() {
-	// 	if (this.configFileModel) await this.configFileModel.updatePm2Metrics();
-	// }
+		if (typeof graph.info?.commandList === "undefined") {
+			graph.info.add_attr({ commandList: new Lst<SpinalCommand>([]) });
+		}
+
+		return graph.info.commandList;
+	}
+
+	private _executeCommand(command: SpinalCommand): Promise<boolean> {
+		// Check if the command is available before executing
+		if (!command.isAvailable()) return Promise.resolve(false);
+
+		// Check if the command has already been executed to avoid duplicate execution
+		if (this.commandExecuted.has(command.id.get())) return Promise.resolve(false);
+
+		return command
+			.execute()
+			.then(() => {
+				command.status.set(SPINAL_COMMAND_STATUS.completed);
+				return true;
+			})
+			.catch((error) => {
+				command.status.set(SPINAL_COMMAND_STATUS.failed);
+				return false;
+			});
+	}
 
 	private _loadOrMakeConfigFile(spinalConnection: FileSystem, filePath: string): Promise<SpinalGraph> {
 		return new Promise((resolve, reject) => {

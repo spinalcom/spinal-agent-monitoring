@@ -7,10 +7,12 @@ exports.ConfigFileService = void 0;
 const os_1 = __importDefault(require("os"));
 const spinal_core_connectorjs_1 = require("spinal-core-connectorjs");
 const spinal_model_graph_1 = require("spinal-model-graph");
+const utils_1 = require("../utils");
 class ConfigFileService {
     constructor() {
         this.configFileModel = null;
         this._graph = null;
+        this.commandExecuted = new Set();
     }
     static getInstance() {
         if (!this._instance) {
@@ -24,26 +26,47 @@ class ConfigFileService {
         const configFileName = `${organName}`;
         const configFilePath = `/etc/Organs/Monitoring/${configFileName}`;
         this._graph = await this._loadOrMakeConfigFile(spinalConnection, configFilePath);
+        await this.initAndBindCommandList();
         return this._graph;
-        // await configFile.initialize(organName, "Monitoring", os.hostname(), systemInfo);
-        // this.configFileModel = configFile;
-        // // Refresh PM2 processes after initializing the config file
-        // await this.updatePm2List();
-        // // Bind the command list to listen for new commands
-        // configFile.bindCommandList();
-        // return this.configFileModel;
     }
-    // public async updatePm2List() {
-    // 	const processes = await Pm2Service.getInstance().getAllPm2Processes();
-    // 	this.pm2_processes = await this.configFileModel?.updatePm2Processes(processes);
-    // 	return this.pm2_processes;
-    // }
-    // public refreshSystemMetrics(systemInfo: ISystemMetrics) {
-    // 	if (this.configFileModel) this.configFileModel.updateMetrics(systemInfo);
-    // }
-    // public async refreshPm2Metrics() {
-    // 	if (this.configFileModel) await this.configFileModel.updatePm2Metrics();
-    // }
+    async initAndBindCommandList() {
+        const commandList = this._initCommandList(this._graph);
+        commandList.bind(async () => {
+            for (let i = 0; i < commandList.length; i++) {
+                const command = commandList[i];
+                await this._executeCommand(command).finally(() => {
+                    this.commandExecuted.add(command.id.get());
+                    commandList.remove(command);
+                });
+            }
+        });
+    }
+    _initCommandList(graph) {
+        if (!graph)
+            throw new Error("Graph is not initialized. Please call initializeConfigFile first.");
+        if (typeof graph.info?.commandList === "undefined") {
+            graph.info.add_attr({ commandList: new spinal_core_connectorjs_1.Lst([]) });
+        }
+        return graph.info.commandList;
+    }
+    _executeCommand(command) {
+        // Check if the command is available before executing
+        if (!command.isAvailable())
+            return Promise.resolve(false);
+        // Check if the command has already been executed to avoid duplicate execution
+        if (this.commandExecuted.has(command.id.get()))
+            return Promise.resolve(false);
+        return command
+            .execute()
+            .then(() => {
+            command.status.set(utils_1.SPINAL_COMMAND_STATUS.completed);
+            return true;
+        })
+            .catch((error) => {
+            command.status.set(utils_1.SPINAL_COMMAND_STATUS.failed);
+            return false;
+        });
+    }
     _loadOrMakeConfigFile(spinalConnection, filePath) {
         return new Promise((resolve, reject) => {
             spinal_core_connectorjs_1.spinalCore.load(spinalConnection, filePath, (graph) => resolve(graph), // Success callback

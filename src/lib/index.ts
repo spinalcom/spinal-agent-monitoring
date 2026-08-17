@@ -10,4 +10,6 @@ export function registerMonitoringAgent(app: express.Application, io: Server): v
 	WebsocketMiddleware.getInstance().init(io);
 }
 
-export default registerMonitoringAgent;
+export * from "../utils";
+export * from "../services";
+export * from "../models";

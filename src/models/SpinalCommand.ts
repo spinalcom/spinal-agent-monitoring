@@ -47,6 +47,19 @@ class SpinalCommand extends Model {
 			return { success: false, message: `Command execution failed: ${error.message}` };
 		}
 	}
+
+	isAvailable(): boolean {
+		const status = this.status.get();
+		return status === SPINAL_COMMAND_STATUS.pending && this.isNotExpired();
+	}
+
+	isNotExpired(): boolean {
+		const createdAt = this.createdAt.get();
+		const now = Date.now();
+		const expirationTime = 30 * 1000; // 30 seconds
+
+		return now - createdAt < expirationTime;
+	}
 }
 
 spinalCore.register_models(SpinalCommand, "SpinalCommand");

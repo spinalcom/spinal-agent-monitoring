@@ -45,6 +45,16 @@ class SpinalCommand extends spinal_core_connectorjs_1.Model {
             return { success: false, message: `Command execution failed: ${error.message}` };
         }
     }
+    isAvailable() {
+        const status = this.status.get();
+        return status === constants_1.SPINAL_COMMAND_STATUS.pending && this.isNotExpired();
+    }
+    isNotExpired() {
+        const createdAt = this.createdAt.get();
+        const now = Date.now();
+        const expirationTime = 30 * 1000; // 30 seconds
+        return now - createdAt < expirationTime;
+    }
 }
 exports.SpinalCommand = SpinalCommand;
 spinal_core_connectorjs_1.spinalCore.register_models(SpinalCommand, "SpinalCommand");
