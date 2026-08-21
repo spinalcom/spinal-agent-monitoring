@@ -5,12 +5,15 @@ import { getDiskInfoSync } from "node-disk-info";
 import { ISystemMetrics } from "../interfaces/interfaces";
 import { ConfigFileService } from "./ConfigFileService";
 import { SpinalContext, SpinalGraph, SpinalNode } from "spinal-model-graph";
-import { SYSTEM_METRICS_NODE_NAME, SYSTEM_METRICS_NODE_TYPE } from "../utils";
+import { SpinalGraphService } from "./SpinalGraphService";
+import { SYSTEM_METRICS_NODE_NAME, SYSTEM_METRICS_NODE_TYPE, VM_CONTEXT_NODE_TYPE } from "../utils";
 
 export default class SystemOverviewService {
 	private static _instance: SystemOverviewService;
 	private intervalHandle: NodeJS.Timeout | null = null;
 	private configFileService = ConfigFileService.getInstance();
+	private vmContext: SpinalContext | null = null;
+
 	private systemMetricsNode: SpinalContext | null = null;
 
 	private constructor() {}
@@ -22,9 +25,14 @@ export default class SystemOverviewService {
 		return this._instance;
 	}
 
-	public async initialize(graph: SpinalGraph): Promise<void> {
-		this.systemMetricsNode = await this._initSystemMetricsNode(graph);
-	}
+	// public async initialize(graph: SpinalGraph): Promise<void> {
+	// 	const agentName = process.env.AGENT_NAME;
+	// 	if (!agentName) throw new Error("AGENT_NAME environment variable is not set. Please set it before running the application.");
+
+	// 	// this.systemMetricsNode = await this._initSystemMetricsNode(graph);
+	// 	this.vmContext = await SpinalGraphService.getInstance().getOrCreateVmContext();
+	// 	this.updateSystemMetrics();
+	// }
 
 	public getIpAddress(): string {
 		const networkInterfaces = os.networkInterfaces();
@@ -140,43 +148,46 @@ export default class SystemOverviewService {
 			// network
 			macAddress: this.getMacAddress(),
 			ipAddress: this.getIpAddress(),
+
+			//port
+			port: process.env.SERVER_PORT || 3000,
 		};
 	}
 
-	public startPeriodicSystemMetricsPush(intervalMs: number | string = 15000): void {
-		if (this.intervalHandle) return;
+	// public startPeriodicSystemMetricsPush(intervalMs: number | string = 15000): void {
+	// 	if (this.intervalHandle) return;
 
-		this.intervalHandle = setInterval(async () => {
-			await this.updateSystemMetrics();
-			console.log(`[${new Date().toISOString()}] - system metrics updated and pushed to SpinalGraph.`);
-		}, parseInt(intervalMs.toString()));
-	}
+	// 	this.intervalHandle = setInterval(async () => {
+	// 		await this.updateSystemMetrics();
+	// 		console.log(`[${new Date().toISOString()}] - system metrics updated and pushed to SpinalGraph.`);
+	// 	}, parseInt(intervalMs.toString()));
+	// }
 
-	private async _initSystemMetricsNode(graph: SpinalGraph): Promise<SpinalContext> {
-		if (this.systemMetricsNode) return this.systemMetricsNode;
+	// private async _initSystemMetricsNode(graph: SpinalGraph): Promise<SpinalContext> {
+	// 	if (this.systemMetricsNode) return this.systemMetricsNode;
 
-		let existingNode = await graph.getContext(SYSTEM_METRICS_NODE_NAME);
+	// 	let existingNode = await graph.getContext(SYSTEM_METRICS_NODE_NAME);
 
-		if (existingNode && existingNode.getType().get() === SYSTEM_METRICS_NODE_TYPE) return existingNode as SpinalContext;
-		// If the node doesn't exist, create it
-		existingNode = new SpinalContext(SYSTEM_METRICS_NODE_NAME, SYSTEM_METRICS_NODE_TYPE);
-		await graph.addContext(existingNode);
+	// 	if (existingNode && existingNode.getType().get() === SYSTEM_METRICS_NODE_TYPE) return existingNode as SpinalContext;
+	// 	// If the node doesn't exist, create it
+	// 	existingNode = new SpinalContext(SYSTEM_METRICS_NODE_NAME, SYSTEM_METRICS_NODE_TYPE);
+	// 	await graph.addContext(existingNode);
 
-		return existingNode;
-	}
+	// 	return existingNode;
+	// }
 
-	public async updateSystemMetrics(): Promise<void> {
-		if (!this.systemMetricsNode) {
-			throw new Error("System metrics node is not initialized. Call initialize() first.");
-		}
+	// public async updateSystemMetrics(): Promise<void> {
+	// 	if (!this.systemMetricsNode) {
+	// 		throw new Error("System metrics node is not initialized. Call initialize() first.");
+	// 	}
 
-		const systemMetrics = this.getSystemMetricsFormatted();
+	// 	const systemMetrics = this.getSystemMetricsFormatted();
 
-		for (const [key, value] of Object.entries(systemMetrics)) {
-			if (this.systemMetricsNode.info[key]) this.systemMetricsNode.info[key].set(value);
-			else this.systemMetricsNode.info.add_attr(key, value);
-		}
-	}
+	// 	for (const [key, value] of Object.entries(systemMetrics)) {
+	// 		if (this.systemMetricsNode.info[key]) this.systemMetricsNode.info[key].set(value);
+	// 		else this.systemMetricsNode.info.add_attr(key, value);
+	// 	}
+	// }
 }
 
 export { SystemOverviewService };

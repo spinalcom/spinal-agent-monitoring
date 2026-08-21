@@ -1,3 +1,4 @@
+import { ProcessDescription } from "pm2";
 import { Lst, Model, Str } from "spinal-core-connectorjs";
 
 export interface ILog {
@@ -37,6 +38,7 @@ export interface ISystemMetrics {
 	diskUsagePercent?: string;
 	macAddress?: string;
 	ipAddress?: string;
+	port?: string | number;
 }
 
 export interface IProcessInfo {
@@ -80,4 +82,11 @@ export interface IRefreshCommand {
 export interface ICommands {
 	restartProcess: IRestartCommand;
 	refreshProcesses: IRefreshCommand;
+}
+
+export interface IPm2EventData {
+	at: number;
+	event: string;
+	process: ProcessDescription;
+	manually: boolean;
 }

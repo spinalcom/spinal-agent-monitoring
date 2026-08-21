@@ -1,20 +1,10 @@
 import os from "os";
-import { FileSystem, spinalCore, SpinalCallBackError, Directory, Lst } from "spinal-core-connectorjs";
-import path from "path";
-import ConfigFileModel from "../models/ConfigFileModel";
-import { ISystemMetrics } from "../interfaces/interfaces";
-import { Pm2Service } from "./Pm2Service";
-import { Pm2Process } from "../models/Pm2Process";
+import { FileSystem, spinalCore, Lst } from "spinal-core-connectorjs";
 import { SpinalGraph } from "spinal-model-graph";
-import SystemOverviewService from "./SystemOverviewService";
 import { SpinalCommand } from "../models";
-import { SPINAL_COMMAND_STATUS } from "../utils";
-import { privateDecrypt } from "crypto";
-
+import { SPINAL_COMMAND_STATUS, waitUntil } from "../utils";
 export default class ConfigFileService {
 	private static _instance: ConfigFileService;
-	private configFileModel: ConfigFileModel | null = null;
-	private pm2_processes: Lst<Pm2Process> | undefined;
 	private _graph: SpinalGraph | null = null;
 	private commandExecuted = new Set<string>();
 
@@ -27,19 +17,53 @@ export default class ConfigFileService {
 		return this._instance;
 	}
 
-	public async initializeConfigFile(spinalConnection: FileSystem, organName?: string): Promise<SpinalGraph> {
-		organName = organName || os.hostname();
-		// const configFileName = `VM_MONITORING_${organName}`;
-		const configFileName = `${organName}`;
+	// public async initializeConfigFile(spinalConnection: FileSystem, organName?: string): Promise<SpinalGraph> {
+	public async initializeConfigFile(spinalConnection: FileSystem): Promise<SpinalGraph> {
+		// organName = organName || os.hostname();
+		// const configFileName = `${organName}`;
+		const configFileName = `Monitoring config file`;
 
 		const configFilePath = `/etc/Organs/Monitoring/${configFileName}`;
-		this._graph = await this._loadOrMakeConfigFile(spinalConnection, configFilePath);
-		await this.initAndBindCommandList();
+		const graph = await this._loadOrMakeConfigFile(spinalConnection, configFilePath);
+		// await this.initAndBindCommandList();
 
-		return this._graph;
+		return graph;
 	}
 
-	private async initAndBindCommandList() {
+	private _loadOrMakeConfigFile(spinalConnection: FileSystem, filePath: string): Promise<SpinalGraph> {
+		return new Promise((resolve, reject) => {
+			spinalCore.load(
+				spinalConnection,
+				filePath,
+				async (graph: SpinalGraph) => {
+					resolve(graph);
+				}, // Success callback
+				() => this._errorCallback(spinalConnection, filePath, resolve, reject), // error callback
+			);
+		});
+	}
+
+	private _errorCallback(connection: FileSystem, filePath: string, resolve: (value: SpinalGraph) => void, reject: (reason?: any) => void) {
+		try {
+			const graph = new SpinalGraph();
+
+			spinalCore.store(
+				connection,
+				graph,
+				filePath,
+				async () => {
+					await waitUntil(() => typeof graph._server_id !== "undefined", 500);
+					resolve(graph);
+				},
+				() => reject(new Error(`Failed to create or load the config file at ${filePath}`)),
+			);
+		} catch (error) {
+			reject(error);
+		}
+	}
+
+	/*
+		private async initAndBindCommandList() {
 		const commandList = this._initCommandList(this._graph);
 
 		commandList.bind(async () => {
@@ -81,39 +105,8 @@ export default class ConfigFileService {
 				return false;
 			});
 	}
-
-	private _loadOrMakeConfigFile(spinalConnection: FileSystem, filePath: string): Promise<SpinalGraph> {
-		return new Promise((resolve, reject) => {
-			spinalCore.load(
-				spinalConnection,
-				filePath,
-				(graph: SpinalGraph) => resolve(graph), // Success callback
-				() => this._errorCallback(spinalConnection, filePath, resolve, reject), // error callback
-			);
-		});
-	}
-
-	private _errorCallback(connection: FileSystem, filePath: string, resolve: (value: SpinalGraph) => void, reject: (reason?: any) => void) {
-		try {
-			const graph = new SpinalGraph();
-			spinalCore.store(
-				connection,
-				graph,
-				filePath,
-				() => resolve(graph),
-				() => reject(new Error(`Failed to create or load the config file at ${filePath}`)),
-			);
-			// const directory = path.dirname(filePath);
-			// const fileName = path.basename(filePath);
-			// connection.load_or_make_dir(directory, (dir: Directory) => {
-			// 	const file = new ConfigFileModel(organName, organType, os.hostname(), systemInfo);
-			// 	dir.force_add_file(fileName, file, { model_type: "ConfigFile" });
-			// 	resolve(file);
-			// });
-		} catch (error) {
-			reject(error);
-		}
-	}
+	
+	*/
 }
 
 export { ConfigFileService };

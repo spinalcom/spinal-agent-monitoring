@@ -1,0 +1,30 @@
+import { SpinalGraph, SpinalNode } from "spinal-model-graph";
+import { IPm2EventData, ISystemMetrics } from "../interfaces";
+import { ProcessDescription } from "pm2";
+export declare class SpinalGraphService {
+    private static _instance;
+    private _graph;
+    private vmContext;
+    private _logSyncked;
+    pm2Maps: Map<string | number, SpinalNode>;
+    private constructor();
+    static getInstance(): SpinalGraphService;
+    setGraph(graph: SpinalGraph): void;
+    getGraph(): SpinalGraph | null;
+    setupSystemMetricsAndPm2(agentName: string, systemMetrics: ISystemMetrics, pm2Instances: ProcessDescription[]): Promise<(void | (void | SpinalNode<any>)[])[]>;
+    updateSystemMetrics(systemMetrics: ISystemMetrics): Promise<(void | SpinalNode<any>)[]>;
+    treatPm2Event(pm2Process: IPm2EventData): Promise<(void | SpinalNode<any>)[]>;
+    syncPm2Processes(pm2Processes: ProcessDescription[]): Promise<void[]>;
+    updatePm2ProcessesMetrics(pm2Processes: ProcessDescription | ProcessDescription[]): Promise<void[]>;
+    private _updateInfo;
+    private _initVmContext;
+    private _initPm2Processes;
+    private _addPm2ProcessToGraph;
+    private _initializeExistingPm2Processes;
+    private _addLogRelationToPm2Process;
+    private _buildPm2ProcessNodeInfo;
+    private _watchAndSyncLogs;
+    private _syncLogForProcess;
+    private removePm2ProcessFromGraph;
+}
+export default SpinalGraphService;

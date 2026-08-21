@@ -69,6 +69,17 @@
                     },
                     "ipAddress": {
                         "type": "string"
+                    },
+                    "port": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "number",
+                                "format": "double"
+                            }
+                        ]
                     }
                 },
                 "required": [
@@ -123,6 +134,10 @@
                     },
                     "errLogPath": {
                         "type": "string"
+                    },
+                    "restarts": {
+                        "type": "number",
+                        "format": "double"
                     }
                 },
                 "type": "object",

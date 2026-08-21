@@ -125,7 +125,7 @@ function executeIntervalProcessAction(callback, intervalMs) {
     return setInterval(callback, intervalMs);
 }
 function _initLogPathInHub(processName) {
-    const buffer = Buffer.from("");
+    const buffer = Buffer.from("empty log file");
     const file = new File([buffer], `${processName}.log`);
     return new spinal_core_connectorjs_1.Path(file);
 }

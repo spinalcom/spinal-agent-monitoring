@@ -1,3 +1,4 @@
+import { ProcessDescription } from "pm2";
 export interface ILog {
     timeStamp: number;
     message: string;
@@ -32,6 +33,7 @@ export interface ISystemMetrics {
     diskUsagePercent?: string;
     macAddress?: string;
     ipAddress?: string;
+    port?: string | number;
 }
 export interface IProcessInfo {
     id?: string;
@@ -68,4 +70,10 @@ export interface IRefreshCommand {
 export interface ICommands {
     restartProcess: IRestartCommand;
     refreshProcesses: IRefreshCommand;
+}
+export interface IPm2EventData {
+    at: number;
+    event: string;
+    process: ProcessDescription;
+    manually: boolean;
 }

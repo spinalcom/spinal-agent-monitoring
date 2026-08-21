@@ -171,8 +171,8 @@ class ZabbixSenderService {
 		const packet = this.buildZabbixPacket(payload);
 
 		// TODO: implement sending to multiple targets
-		// const targetHost = config.zabbixConfig.serverHost;
-		// const targetPort = Number(config.zabbixConfig.serverPort || 10051);
+		// const targetHost = process.env.ZABBIX_SERVER_HOST;
+		// const targetPort = Number(process.env.ZABBIX_SERVER_PORT || 10051);
 
 		// return new Promise<void>((resolve, reject) => {
 		// 	const client = net.createConnection({ host: targetHost, port: targetPort });

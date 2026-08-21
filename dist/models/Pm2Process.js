@@ -89,10 +89,12 @@ class Pm2Process extends spinal_core_connectorjs_1.Model {
     syncLogFile(newData) {
         return (0, pm2Utils_1.uploadFileNewData)(this.logPathInHub, newData);
     }
-    _initLogPathInHub(processName) {
+    async _initLogPathInHub(processName) {
         const buffer = Buffer.from("");
         const file = new File([buffer], `${processName}.log`);
-        return new spinal_core_connectorjs_1.Path(file);
+        const path = new spinal_core_connectorjs_1.Path(file);
+        await (0, pm2Utils_1.waitUntil)(() => typeof path._server_id !== "undefined", 1000);
+        return path;
     }
 }
 exports.Pm2Process = Pm2Process;

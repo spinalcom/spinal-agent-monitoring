@@ -134,7 +134,7 @@ export function executeIntervalProcessAction(callback: () => void, intervalMs: n
 }
 
 export function _initLogPathInHub(processName: string): SpinalPath {
-	const buffer = Buffer.from("");
+	const buffer = Buffer.from("empty log file");
 	const file = new File([buffer], `${processName}.log`);
 	return new SpinalPath(file);
 }

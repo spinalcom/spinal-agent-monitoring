@@ -1,6 +1,7 @@
 import pm2 from "pm2";
 import { ActionResponse } from "../interfaces/IResponses";
-import { SpinalGraph, SpinalNode } from "spinal-model-graph";
+import { SpinalNode } from "spinal-model-graph";
+import { IPm2EventData } from "../interfaces";
 declare class Pm2Service {
     private static _instance;
     private _isConnected;
@@ -10,19 +11,8 @@ declare class Pm2Service {
     private _logSyncked;
     private constructor();
     static getInstance(): Pm2Service;
-    initialize(graph: SpinalGraph): Promise<void>;
-    listentPm2Actions(callback: (data: any) => void): Promise<void>;
-    updatePm2Processes(): Promise<void>;
+    listentPm2Actions(callback: (data: IPm2EventData) => void): Promise<void>;
     startPeriodicPm2MetricsPush(interval?: number | string): Promise<void>;
-    removePm2ProcessFromGraph(processNode: SpinalNode): Promise<void>;
-    updatePm2ProcessesMetrics(processNode: SpinalNode, pm2Process: pm2.ProcessDescription): void;
-    addPm2ProcessToGraph(pm2Process: pm2.ProcessDescription): Promise<SpinalNode | null>;
-    private _buildPm2ProcessNodeInfo;
-    private _addLogRelationToPm2Process;
-    private _createOrGetPm2Context;
-    private _initializePm2Processes;
-    private _watchAndSyncLogs;
-    private _syncLogForProcess;
     getAllPm2Processes(): Promise<pm2.ProcessDescription[]>;
     getPm2ProcessByKey(key: string): Promise<pm2.ProcessDescription | null>;
     startPm2Process(processKeys: string | number | (string | number)[]): Promise<ActionResponse[]>;
@@ -40,6 +30,7 @@ declare class Pm2Service {
     private _connectToPm2;
     private _listPm2Processes;
     private _disconnectFromPm2;
+    private _savePm2Event;
 }
 export { Pm2Service };
 export default Pm2Service;

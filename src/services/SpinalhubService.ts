@@ -1,9 +1,14 @@
-import config from "../utils/config";
 import { FileSystem, spinalCore } from "spinal-core-connectorjs";
 
 export default class SpinalhubService {
 	private static _instance: SpinalhubService;
-	public readonly spinalConnectorInfo: typeof config.spinalConnector = config.spinalConnector;
+	public readonly spinalConnectorInfo = {
+		protocol: process.env.SPINALHUB_PROTOCOL, // user id
+		user: process.env.SPINAL_USER_ID, // user id
+		password: process.env.SPINAL_PASSWORD, // user password
+		host: process.env.SPINALHUB_IP, // can be an ip address
+		port: process.env.SPINALHUB_PORT,
+	};
 
 	private conn: FileSystem | null = null;
 

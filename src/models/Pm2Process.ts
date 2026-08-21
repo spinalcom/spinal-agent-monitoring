@@ -1,6 +1,6 @@
 import { ProcessDescription } from "pm2";
 import { Model, Path as SpinalPath, spinalCore } from "spinal-core-connectorjs";
-import { getHeapInfo, uploadFileNewData } from "../utils/pm2Utils";
+import { getHeapInfo, uploadFileNewData, waitUntil } from "../utils/pm2Utils";
 import Pm2Service from "../services/Pm2Service";
 
 class Pm2Process extends Model {
@@ -93,10 +93,12 @@ class Pm2Process extends Model {
 		return uploadFileNewData(this.logPathInHub, newData);
 	}
 
-	private _initLogPathInHub(processName: string): SpinalPath {
+	private async _initLogPathInHub(processName: string): Promise<SpinalPath> {
 		const buffer = Buffer.from("");
 		const file = new File([buffer], `${processName}.log`);
-		return new SpinalPath(file);
+		const path = new SpinalPath(file);
+		await waitUntil(() => typeof path._server_id !== "undefined", 1000);
+		return path;
 	}
 }
 

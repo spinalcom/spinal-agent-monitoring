@@ -1,5 +1,4 @@
 import { ISystemMetrics } from "../interfaces/interfaces";
-import { config } from "./config";
 import * as os from "os";
 
 export function getDefaultSystemMetrics(): ISystemMetrics {
@@ -17,5 +16,5 @@ export function getDefaultSystemMetrics(): ISystemMetrics {
 }
 
 export function getAgentHostName(): string {
-	return config.monitoringApiConfig.organName || os.hostname();
+	return process.env.AGENT_NAME || os.hostname();
 }

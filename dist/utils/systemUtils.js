@@ -35,7 +35,6 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getDefaultSystemMetrics = getDefaultSystemMetrics;
 exports.getAgentHostName = getAgentHostName;
-const config_1 = require("./config");
 const os = __importStar(require("os"));
 function getDefaultSystemMetrics() {
     return {
@@ -51,6 +50,6 @@ function getDefaultSystemMetrics() {
     };
 }
 function getAgentHostName() {
-    return config_1.config.monitoringApiConfig.organName || os.hostname();
+    return process.env.AGENT_NAME || os.hostname();
 }
 //# sourceMappingURL=systemUtils.js.map

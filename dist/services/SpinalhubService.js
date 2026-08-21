@@ -1,14 +1,16 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SpinalhubService = void 0;
-const config_1 = __importDefault(require("../utils/config"));
 const spinal_core_connectorjs_1 = require("spinal-core-connectorjs");
 class SpinalhubService {
     constructor() {
-        this.spinalConnectorInfo = config_1.default.spinalConnector;
+        this.spinalConnectorInfo = {
+            protocol: process.env.SPINALHUB_PROTOCOL, // user id
+            user: process.env.SPINAL_USER_ID, // user id
+            password: process.env.SPINAL_PASSWORD, // user password
+            host: process.env.SPINALHUB_IP, // can be an ip address
+            port: process.env.SPINALHUB_PORT,
+        };
         this.conn = null;
         spinal_core_connectorjs_1.FileSystem.onConnectionError = (code_error) => {
             console.error("Spinalhub connection error:", code_error);
