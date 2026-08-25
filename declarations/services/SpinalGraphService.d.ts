@@ -1,4 +1,4 @@
-import { SpinalGraph, SpinalNode } from "spinal-model-graph";
+import { SpinalContext, SpinalGraph, SpinalNode } from "spinal-model-graph";
 import { IPm2EventData, ISystemMetrics } from "../interfaces";
 import { ProcessDescription } from "pm2";
 export declare class SpinalGraphService {
@@ -11,6 +11,8 @@ export declare class SpinalGraphService {
     static getInstance(): SpinalGraphService;
     setGraph(graph: SpinalGraph): void;
     getGraph(): SpinalGraph | null;
+    getVmContext(): SpinalContext | null;
+    getPm2NodeByKey(key: string | number): SpinalNode | undefined;
     setupSystemMetricsAndPm2(agentName: string, systemMetrics: ISystemMetrics, pm2Instances: ProcessDescription[]): Promise<(void | (void | SpinalNode<any>)[])[]>;
     updateSystemMetrics(systemMetrics: ISystemMetrics): Promise<(void | SpinalNode<any>)[]>;
     treatPm2Event(pm2Process: IPm2EventData): Promise<(void | SpinalNode<any>)[]>;

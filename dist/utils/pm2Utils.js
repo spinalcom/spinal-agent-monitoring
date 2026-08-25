@@ -14,6 +14,8 @@ exports.uploadFileNewData = uploadFileNewData;
 exports.convertProcessToObject = convertProcessToObject;
 exports.executeIntervalProcessAction = executeIntervalProcessAction;
 exports._initLogPathInHub = _initLogPathInHub;
+exports.splitActionResults = splitActionResults;
+exports.partitionResults = partitionResults;
 const pm2_1 = __importDefault(require("pm2"));
 const spinal_core_connectorjs_1 = require("spinal-core-connectorjs");
 function getHeapInfo(process) {
@@ -128,5 +130,21 @@ function _initLogPathInHub(processName) {
     const buffer = Buffer.from("empty log file");
     const file = new File([buffer], `${processName}.log`);
     return new spinal_core_connectorjs_1.Path(file);
+}
+function splitActionResults(result) {
+    return result.reduce((acc, res) => {
+        if (res.success)
+            acc.success.push(res);
+        else
+            acc.failed.push(res);
+        return acc;
+    }, { success: [], failed: [] });
+}
+function partitionResults(result, successKey) {
+    const { success, failed } = splitActionResults(result);
+    return {
+        [successKey]: success,
+        failed,
+    };
 }
 //# sourceMappingURL=pm2Utils.js.map

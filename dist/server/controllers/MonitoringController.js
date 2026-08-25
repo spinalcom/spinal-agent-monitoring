@@ -67,6 +67,30 @@ let MonitoringController = class MonitoringController extends tsoa_1.Controller 
         }
     }
     /**
+     * Lists PM2 metrics (cpu, memory, uptime, status) for all applications.
+     */
+    async getAppsMetrics() {
+        try {
+            return await this.pm2Service.getPm2MetricsFormatted();
+        }
+        catch (error) {
+            this.setStatus(HTTP_RESPONSE_1.HTTP_RESPONSES.INTERNAL_SERVER_ERROR.code);
+            return { error: error.message || "Unable to retrieve PM2 metrics" };
+        }
+    }
+    /**
+     * Returns PM2 process counts grouped by status.
+     */
+    async getAppsStatusSummary() {
+        try {
+            return await this.pm2Service.getPm2StatusSummary();
+        }
+        catch (error) {
+            this.setStatus(HTTP_RESPONSE_1.HTTP_RESPONSES.INTERNAL_SERVER_ERROR.code);
+            return { error: error.message || "Unable to retrieve PM2 status summary" };
+        }
+    }
+    /**
      * Returns details for a single PM2 application by name or identifier key.
      * @param key PM2 process key used to find the app.
      */
@@ -85,19 +109,51 @@ let MonitoringController = class MonitoringController extends tsoa_1.Controller 
         }
     }
     /**
+     * Returns PM2 runtime metrics for one application.
+     * @param key PM2 process key used to find the app.
+     */
+    async getAppMetricsByKey(key) {
+        try {
+            const metrics = await this.pm2Service.getPm2ProcessMetricsByKey(key);
+            if (!metrics) {
+                this.setStatus(HTTP_RESPONSE_1.HTTP_RESPONSES.NOT_FOUND.code);
+                return { error: `Process '${key}' not found.` };
+            }
+            return metrics;
+        }
+        catch (error) {
+            this.setStatus(HTTP_RESPONSE_1.HTTP_RESPONSES.INTERNAL_SERVER_ERROR.code);
+            return { error: error.message || "Unable to retrieve PM2 process metrics" };
+        }
+    }
+    /**
+     * Returns tailed stdout/stderr logs for one PM2 application.
+     * @param key PM2 process key used to find the app.
+     * @param tail Number of lines to return per stream (1..1000).
+     * @param logType Which stream to return: out, err, or all.
+     */
+    async getAppLogsByKey(key, tail = 100, logType = "all") {
+        try {
+            const logs = await this.pm2Service.getPm2ProcessLogsByKey(key, tail, logType);
+            if (!logs) {
+                this.setStatus(HTTP_RESPONSE_1.HTTP_RESPONSES.NOT_FOUND.code);
+                return { error: `Process '${key}' not found.` };
+            }
+            return logs;
+        }
+        catch (error) {
+            this.setStatus(HTTP_RESPONSE_1.HTTP_RESPONSES.INTERNAL_SERVER_ERROR.code);
+            return { error: error.message || "Unable to retrieve PM2 process logs" };
+        }
+    }
+    /**
      * Starts one or more PM2 applications.
      * @param data Request body containing the list of application keys to start.
      */
     async startApp(data) {
         try {
             const result = await this.pm2Service.startPm2Process(data.keys);
-            return result.reduce((acc, res) => {
-                if (res.success)
-                    acc.started.push(res);
-                else
-                    acc.failed.push(res);
-                return acc;
-            }, { started: [], failed: [] });
+            return (0, pm2Utils_1.partitionResults)(result, "started");
         }
         catch (error) {
             this.setStatus(HTTP_RESPONSE_1.HTTP_RESPONSES.INTERNAL_SERVER_ERROR.code);
@@ -111,13 +167,7 @@ let MonitoringController = class MonitoringController extends tsoa_1.Controller 
     async stopApp(data) {
         try {
             const result = await this.pm2Service.stopPm2Process(data.keys);
-            return result.reduce((acc, res) => {
-                if (res.success)
-                    acc.stopped.push(res);
-                else
-                    acc.failed.push(res);
-                return acc;
-            }, { stopped: [], failed: [] });
+            return (0, pm2Utils_1.partitionResults)(result, "stopped");
         }
         catch (error) {
             this.setStatus(HTTP_RESPONSE_1.HTTP_RESPONSES.INTERNAL_SERVER_ERROR.code);
@@ -131,17 +181,62 @@ let MonitoringController = class MonitoringController extends tsoa_1.Controller 
     async restartApp(data) {
         try {
             const result = await this.pm2Service.restartPm2Process(data.keys);
-            return result.reduce((acc, res) => {
-                if (res.success)
-                    acc.restarted.push(res);
-                else
-                    acc.failed.push(res);
-                return acc;
-            }, { restarted: [], failed: [] });
+            return (0, pm2Utils_1.partitionResults)(result, "restarted");
         }
         catch (error) {
             this.setStatus(HTTP_RESPONSE_1.HTTP_RESPONSES.INTERNAL_SERVER_ERROR.code);
             return { error: error.message || "Unable to restart PM2 process" };
+        }
+    }
+    /**
+     * Reloads one or more PM2 applications.
+     * @param data Request body containing the list of application keys to reload.
+     */
+    async reloadApp(data) {
+        try {
+            const result = await this.pm2Service.reloadPm2Process(data.keys);
+            return (0, pm2Utils_1.partitionResults)(result, "reloaded");
+        }
+        catch (error) {
+            this.setStatus(HTTP_RESPONSE_1.HTTP_RESPONSES.INTERNAL_SERVER_ERROR.code);
+            return { error: error.message || "Unable to reload PM2 process" };
+        }
+    }
+    /**
+     * Deletes one or more PM2 applications from the process list.
+     * @param data Request body containing the list of application keys to delete.
+     */
+    async deleteApp(data) {
+        try {
+            const result = await this.pm2Service.deletePm2Process(data.keys);
+            return (0, pm2Utils_1.partitionResults)(result, "deleted");
+        }
+        catch (error) {
+            this.setStatus(HTTP_RESPONSE_1.HTTP_RESPONSES.INTERNAL_SERVER_ERROR.code);
+            return { error: error.message || "Unable to delete PM2 process" };
+        }
+    }
+    /**
+     * Executes a PM2 action across one or more applications.
+     * @param data Request body containing action and target keys.
+     */
+    async runPm2Action(data) {
+        try {
+            if (!Array.isArray(data.keys) || data.keys.length === 0) {
+                this.setStatus(HTTP_RESPONSE_1.HTTP_RESPONSES.BAD_REQUEST.code);
+                return { error: "keys must be a non-empty array" };
+            }
+            const result = await this.pm2Service.runPm2Action(data.action, data.keys);
+            const { success, failed } = (0, pm2Utils_1.splitActionResults)(result);
+            return {
+                action: data.action,
+                done: success,
+                failed,
+            };
+        }
+        catch (error) {
+            this.setStatus(HTTP_RESPONSE_1.HTTP_RESPONSES.INTERNAL_SERVER_ERROR.code);
+            return { error: error.message || "Unable to execute PM2 action" };
         }
     }
     /**
@@ -180,6 +275,20 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], MonitoringController.prototype, "getApps", null);
 __decorate([
+    (0, tsoa_1.Get)("apps/metrics"),
+    (0, tsoa_1.SuccessResponse)("200", "OK"),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], MonitoringController.prototype, "getAppsMetrics", null);
+__decorate([
+    (0, tsoa_1.Get)("apps/status/summary"),
+    (0, tsoa_1.SuccessResponse)("200", "OK"),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], MonitoringController.prototype, "getAppsStatusSummary", null);
+__decorate([
     (0, tsoa_1.Get)("apps/{key}"),
     (0, tsoa_1.Response)(404, "Process not found"),
     __param(0, (0, tsoa_1.Path)()),
@@ -187,6 +296,24 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], MonitoringController.prototype, "getAppByKey", null);
+__decorate([
+    (0, tsoa_1.Get)("apps/{key}/metrics"),
+    (0, tsoa_1.Response)(404, "Process not found"),
+    __param(0, (0, tsoa_1.Path)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], MonitoringController.prototype, "getAppMetricsByKey", null);
+__decorate([
+    (0, tsoa_1.Get)("apps/{key}/logs"),
+    (0, tsoa_1.Response)(404, "Process not found"),
+    __param(0, (0, tsoa_1.Path)()),
+    __param(1, (0, tsoa_1.Query)()),
+    __param(2, (0, tsoa_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Number, String]),
+    __metadata("design:returntype", Promise)
+], MonitoringController.prototype, "getAppLogsByKey", null);
 __decorate([
     (0, tsoa_1.Post)("apps/start"),
     (0, tsoa_1.Response)(400, "Unable to start process"),
@@ -211,6 +338,30 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], MonitoringController.prototype, "restartApp", null);
+__decorate([
+    (0, tsoa_1.Post)("apps/reload"),
+    (0, tsoa_1.Response)(400, "Unable to reload process"),
+    __param(0, (0, tsoa_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], MonitoringController.prototype, "reloadApp", null);
+__decorate([
+    (0, tsoa_1.Post)("apps/delete"),
+    (0, tsoa_1.Response)(400, "Unable to delete process"),
+    __param(0, (0, tsoa_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], MonitoringController.prototype, "deleteApp", null);
+__decorate([
+    (0, tsoa_1.Post)("apps/action"),
+    (0, tsoa_1.Response)(400, "Invalid PM2 action payload"),
+    __param(0, (0, tsoa_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], MonitoringController.prototype, "runPm2Action", null);
 __decorate([
     (0, tsoa_1.Get)("zabbix/discovery"),
     (0, tsoa_1.SuccessResponse)("200", "OK"),

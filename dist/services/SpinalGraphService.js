@@ -59,6 +59,18 @@ class SpinalGraphService {
     getGraph() {
         return this._graph;
     }
+    getVmContext() {
+        return this.vmContext;
+    }
+    getPm2NodeByKey(key) {
+        for (const [mapKey, node] of this.pm2Maps.entries()) {
+            const pm_id = node.info?.pm_id?.get();
+            const name = node.getName().get();
+            if (mapKey == key || pm_id == key || name == key) {
+                return node;
+            }
+        }
+    }
     async setupSystemMetricsAndPm2(agentName, systemMetrics, pm2Instances) {
         if (!this._graph)
             throw new Error("Graph is not initialized. Please set the graph before initializing services.");
@@ -78,7 +90,7 @@ class SpinalGraphService {
         return endpointUtils.updateOrCreateMetricsEndpoints(this.vmContext, systemMetrics);
     }
     async treatPm2Event(pm2Process) {
-        const processKey = pm2Process.process.pm_id || pm2Process.process.name;
+        const processKey = pm2Process.process.pm_id ?? pm2Process.process.name;
         let processFound = this.pm2Maps.get(processKey);
         if (!processFound)
             processFound = (await this._addPm2ProcessToGraph(pm2Process.process));
@@ -102,7 +114,7 @@ class SpinalGraphService {
                     await this.removePm2ProcessFromGraph(processAlreadyExist);
                 // Add the new process to the graph and update the map
                 processAlreadyExist = await this._addPm2ProcessToGraph(pm2Process);
-                const key = pm2Process.pm_id || pm2Process.name;
+                const key = pm2Process.pm_id ?? pm2Process.name;
                 if (processAlreadyExist && key)
                     this.pm2Maps.set(key, processAlreadyExist);
             }

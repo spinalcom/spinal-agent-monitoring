@@ -1,4 +1,37 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -6,6 +39,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Pm2Service = void 0;
 const pm2_1 = __importDefault(require("pm2"));
 const pm2Utils_1 = require("../utils/pm2Utils");
+const fs = __importStar(require("fs"));
 class Pm2Service {
     constructor() {
         this._isConnected = false;
@@ -44,18 +78,17 @@ class Pm2Service {
     // 		this.updatePm2ProcessesMetrics(processNode, pm2Process);
     // 	}
     // }
-    async startPeriodicPm2MetricsPush(interval = 15000) {
-        if (this.intervalHandle)
-            return;
-        this.intervalHandle = setInterval(async () => {
-            const processes = await this.getAllPm2Processes();
-            for (const pm2Process of processes) {
-                const processNode = this.pm2Maps.get(pm2Process.name) || this.pm2Maps.get(pm2Process.pm_id);
-                // if (processNode) this.updatePm2ProcessesMetrics(processNode, pm2Process);
-            }
-            console.log(`[${new Date().toISOString()}] - PM2 processes metrics updated and pushed to SpinalGraph.`);
-        }, parseInt(interval.toString()));
-    }
+    // public async startPeriodicPm2MetricsPush(interval: number | string = 15000) {
+    // 	if (this.intervalHandle) return;
+    // 	this.intervalHandle = setInterval(async () => {
+    // 		const processes = await this.getAllPm2Processes();
+    // 		for (const pm2Process of processes) {
+    // 			const processNode = this.pm2Maps.get(pm2Process.name as string) || this.pm2Maps.get(pm2Process.pm_id as number);
+    // 			// if (processNode) this.updatePm2ProcessesMetrics(processNode, pm2Process);
+    // 		}
+    // 		console.log(`[${new Date().toISOString()}] - PM2 processes metrics updated and pushed to SpinalGraph.`);
+    // 	}, parseInt(interval.toString()));
+    // }
     // public removePm2ProcessFromGraph(processNode: SpinalNode) {
     // 	return processNode.removeFromGraph().then(async () => {
     // 		const name = processNode.getName().get();
@@ -198,72 +231,120 @@ class Pm2Service {
         }
     }
     async startPm2Process(processKeys) {
-        const keys = Array.isArray(processKeys) ? processKeys : [processKeys];
-        try {
-            await this._connectToPm2();
-            const promises = keys.map((key) => (0, pm2Utils_1.executeCommand)("start", key));
-            const result = await Promise.all(promises);
-            return result.map((res, index) => ({
-                key: keys[index],
-                success: res,
-                message: res ? "Process started successfully" : "Failed to start process",
-            }));
-        }
-        catch (error) {
-            return keys.map((key) => ({
-                key,
-                success: false,
-                message: "Failed to start process",
-            }));
-        }
-        finally {
-            // this._disconnectFromPm2();
-        }
+        return this._executePm2BulkAction("start", processKeys);
     }
     async stopPm2Process(processKeys) {
+        return this._executePm2BulkAction("stop", processKeys);
+    }
+    async restartPm2Process(processKeys) {
+        return this._executePm2BulkAction("restart", processKeys);
+    }
+    async reloadPm2Process(processKeys) {
+        return this._executePm2BulkAction("reload", processKeys);
+    }
+    async deletePm2Process(processKeys) {
+        return this._executePm2BulkAction("delete", processKeys);
+    }
+    async runPm2Action(action, processKeys) {
+        return this._executePm2BulkAction(action, processKeys);
+    }
+    async getPm2StatusSummary() {
+        const processes = await this.getAllPm2Processes();
+        const summary = {
+            total: processes.length,
+            online: 0,
+            stopped: 0,
+            errored: 0,
+            other: 0,
+        };
+        for (const process of processes) {
+            const status = (process.pm2_env?.status || "").toLowerCase();
+            if (status === "online") {
+                summary.online += 1;
+            }
+            else if (status === "stopped" || status === "stopping") {
+                summary.stopped += 1;
+            }
+            else if (status === "errored") {
+                summary.errored += 1;
+            }
+            else {
+                summary.other += 1;
+            }
+        }
+        return summary;
+    }
+    async getPm2ProcessMetricsByKey(key) {
+        const process = await this.getPm2ProcessByKey(key);
+        if (!process)
+            return null;
+        const formatted = (0, pm2Utils_1.formatProcess)(process);
+        return {
+            name: formatted.name,
+            pm_id: formatted.pm_id,
+            status: formatted.status,
+            cpu: formatted.cpu,
+            memory: formatted.memory,
+            uptime: formatted.uptime,
+            restarts: formatted.restarts,
+        };
+    }
+    async getPm2ProcessLogsByKey(key, tail = 100, logType = "all") {
+        const process = await this.getPm2ProcessByKey(key);
+        if (!process)
+            return null;
+        const formatted = (0, pm2Utils_1.formatProcess)(process);
+        const safeTail = Number.isFinite(tail) ? Math.max(1, Math.min(1000, Math.floor(tail))) : 100;
+        const stdout = logType === "all" || logType === "out" ? await this._readLogTail(formatted.outLogPath, safeTail) : [];
+        const stderr = logType === "all" || logType === "err" ? await this._readLogTail(formatted.errLogPath, safeTail) : [];
+        return {
+            name: formatted.name,
+            pm_id: formatted.pm_id,
+            tail: safeTail,
+            stdout,
+            stderr,
+        };
+    }
+    async _executePm2BulkAction(action, processKeys) {
         const keys = Array.isArray(processKeys) ? processKeys : [processKeys];
+        const messages = {
+            start: { success: "Process started successfully", failure: "Failed to start process" },
+            stop: { success: "Process stopped successfully", failure: "Failed to stop process" },
+            restart: { success: "Process restarted successfully", failure: "Failed to restart process" },
+            reload: { success: "Process reloaded successfully", failure: "Failed to reload process" },
+            delete: { success: "Process deleted successfully", failure: "Failed to delete process" },
+        };
         try {
             await this._connectToPm2();
-            const promises = keys.map((key) => (0, pm2Utils_1.executeCommand)("stop", key));
+            const promises = keys.map((key) => (0, pm2Utils_1.executeCommand)(action, key));
             const result = await Promise.all(promises);
             return result.map((res, index) => ({
                 key: keys[index],
                 success: res,
-                message: res ? "Process stopped successfully" : "Failed to stop process",
+                message: res ? messages[action].success : messages[action].failure,
             }));
         }
         catch (error) {
             return keys.map((key) => ({
                 key,
                 success: false,
-                message: "Failed to stop process",
+                message: messages[action].failure,
             }));
         }
         finally {
             // this._disconnectFromPm2();
         }
     }
-    async restartPm2Process(processKeys) {
-        const keys = Array.isArray(processKeys) ? processKeys : [processKeys];
+    async _readLogTail(logPath, tail) {
+        if (!logPath)
+            return [];
         try {
-            await this._connectToPm2();
-            const promises = keys.map((key) => (0, pm2Utils_1.executeCommand)("restart", key));
-            const result = await Promise.all(promises);
-            return result.map((res, index) => ({
-                key: keys[index],
-                success: res,
-                message: res ? "Process restarted successfully" : "Failed to restart process",
-            }));
+            const content = await fs.promises.readFile(logPath, "utf8");
+            const lines = content.split(/\r?\n/).filter((line) => line.length > 0);
+            return lines.slice(-tail);
         }
         catch (error) {
-            return keys.map((key) => ({
-                key,
-                success: false,
-                message: "Failed to restart process",
-            }));
-        }
-        finally {
-            // this._disconnectFromPm2();
+            return [];
         }
     }
     async listenPm2Events(callback) {
@@ -328,7 +409,7 @@ class Pm2Service {
         pm2_1.default.disconnect();
     }
     _savePm2Event(eventData) {
-        const key = eventData.process?.name || eventData.process?.pm_id;
+        const key = eventData.process?.pm_id ?? eventData.process?.name;
         if (!key)
             return;
         const processNode = this.pm2Maps.get(key);

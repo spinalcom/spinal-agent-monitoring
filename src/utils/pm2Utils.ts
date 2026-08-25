@@ -1,5 +1,5 @@
 import { ProcessDescription } from "pm2";
-import { Pm2ProcessResponse } from "../interfaces/IResponses";
+import { ActionResponse, Pm2ProcessResponse } from "../interfaces/IResponses";
 import pm2 from "pm2";
 import { Path as SpinalPath, FileSystem, getUrlPath } from "spinal-core-connectorjs";
 import { Pm2Process } from "../models";
@@ -54,7 +54,7 @@ export function formatProcess(process: ProcessDescription): Pm2ProcessResponse {
 	};
 }
 
-export async function executeCommand(command: "restart" | "stop" | "start", key: string | number): Promise<boolean> {
+export async function executeCommand(command: "restart" | "stop" | "start" | "reload" | "delete", key: string | number): Promise<boolean> {
 	return new Promise<boolean>((resolve, reject) => {
 		pm2[command](key.toString(), (err: any) => {
 			if (err) {
@@ -137,4 +137,24 @@ export function _initLogPathInHub(processName: string): SpinalPath {
 	const buffer = Buffer.from("empty log file");
 	const file = new File([buffer], `${processName}.log`);
 	return new SpinalPath(file);
+}
+
+export function splitActionResults(result: ActionResponse[]): { success: ActionResponse[]; failed: ActionResponse[] } {
+	return result.reduce(
+		(acc, res) => {
+			if (res.success) acc.success.push(res);
+			else acc.failed.push(res);
+
+			return acc;
+		},
+		{ success: [] as ActionResponse[], failed: [] as ActionResponse[] },
+	);
+}
+
+export function partitionResults<T extends string>(result: ActionResponse[], successKey: T): { [K in T]: ActionResponse[] } & { failed: ActionResponse[] } {
+	const { success, failed } = splitActionResults(result);
+	return {
+		[successKey]: success,
+		failed,
+	} as { [K in T]: ActionResponse[] } & { failed: ActionResponse[] };
 }

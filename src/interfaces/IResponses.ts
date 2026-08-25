@@ -28,3 +28,31 @@ export interface Pm2ProcessResponse {
 	errLogPath?: string;
 	restarts?: number;
 }
+
+export interface Pm2StatusSummaryResponse {
+	total: number;
+	online: number;
+	stopped: number;
+	errored: number;
+	other: number;
+}
+
+export interface Pm2ProcessMetricsResponse {
+	name?: string;
+	pm_id?: number;
+	status?: string;
+	cpu?: number;
+	memory?: number;
+	uptime?: number;
+	restarts?: number;
+}
+
+export type Pm2LogType = "out" | "err" | "all";
+
+export interface Pm2ProcessLogsResponse {
+	name?: string;
+	pm_id?: number;
+	tail: number;
+	stdout: string[];
+	stderr: string[];
+}
