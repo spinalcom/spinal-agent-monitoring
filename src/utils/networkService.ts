@@ -40,10 +40,40 @@ export function createAttribute(endpointNode: SpinalNode, element: SpinalBmsEndp
 		.catch((error) => {});
 }
 
-export async function updateEndpoint(endpointNode: SpinalNode, newValue: string | number | boolean): Promise<void> {
+export async function updateEndpoint(endpointNode: SpinalNode, newValue: string | number | boolean): Promise<SpinalNode> {
 	const element = await endpointNode.getElement(true);
 	element.currentValue.set(newValue);
 	SpinalGraphService._addNode(endpointNode);
 
 	if (typeof newValue === "number" || typeof newValue === "boolean") await spinalServiceTimeseries.pushFromEndpoint(endpointNode.getId().get(), newValue);
+	return endpointNode;
+}
+
+export async function updateEndpointMaxDay(endpointNode: SpinalNode, maxDay: string | number = 2) {
+	try {
+		SpinalGraphService._addNode(endpointNode);
+		await serviceDocumentation.createOrUpdateAttrsAndCategories(endpointNode, "default", { "timeSeries maxDay": maxDay.toString() });
+	} catch (error) {
+		return false;
+	}
+}
+
+export async function updateOrCreateEndpoint(parentNode: SpinalNode, endpointData: InputDataEndpoint, value: { value: number; min?: number; max?: number }, existingEndpoints?: SpinalNode[]) {
+	existingEndpoints = existingEndpoints || (await parentNode.getChildren([SpinalBmsEndpoint.relationName]));
+	let endpoint = existingEndpoints.find((ep) => ep.getName().get() === endpointData.name);
+	if (endpoint) {
+		return updateEndpoint(endpoint, value.value);
+	} else {
+		const endpointDataFormatted = _formatEndpointData(endpointData, value);
+		return createNewBmsEndpoint(parentNode, endpointDataFormatted);
+	}
+}
+
+function _formatEndpointData(endpoint: InputDataEndpoint, data: { value: number | string | boolean; min?: number; max?: number }): InputDataEndpoint {
+	return {
+		...endpoint,
+		currentValue: data.value,
+		minValue: data.min,
+		maxValue: data.max,
+	} as InputDataEndpoint;
 }

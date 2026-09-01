@@ -5,6 +5,7 @@ import fs from "fs";
 import { Server, Socket } from "socket.io";
 import { isValidMessage } from "../../utils/websocketUtils";
 import { formatProcess, getProcessLogPath, PM2_METRICS_EVENT_TYPE } from "../../utils";
+import { IPm2EventData } from "../../interfaces";
 
 export class WebsocketMiddleware {
 	private static _instance: WebsocketMiddleware;
@@ -171,7 +172,9 @@ export class WebsocketMiddleware {
 
 	public async startSendingPm2Events() {
 		const pm2Service = Pm2Service.getInstance();
-		await pm2Service.listentPm2Actions((event) => {
+		await pm2Service.listentPm2Actions((event: IPm2EventData) => {
+			if (event.type !== "process:event") return;
+
 			this._sendDataToAllClients({
 				type: PM2_PROCESS_EVENT_TYPE,
 				data: {

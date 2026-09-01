@@ -18,7 +18,7 @@ export declare function convertProcessToObject(processes: Pm2Process[]): {
     [key: string]: Pm2Process;
 };
 export declare function executeIntervalProcessAction(callback: () => void, intervalMs: number): NodeJS.Timeout;
-export declare function _initLogPathInHub(processName: string): SpinalPath;
+export declare function _initLogPathInHub(pm2LogPath: string): Promise<SpinalPath>;
 export declare function splitActionResults(result: ActionResponse[]): {
     success: ActionResponse[];
     failed: ActionResponse[];

@@ -4,6 +4,8 @@ exports.spinalServiceTimeseries = void 0;
 exports.createNewBmsEndpoint = createNewBmsEndpoint;
 exports.createAttribute = createAttribute;
 exports.updateEndpoint = updateEndpoint;
+exports.updateEndpointMaxDay = updateEndpointMaxDay;
+exports.updateOrCreateEndpoint = updateOrCreateEndpoint;
 const spinal_model_bmsnetwork_1 = require("spinal-model-bmsnetwork");
 const spinal_model_graph_1 = require("spinal-model-graph");
 const spinal_env_viewer_plugin_documentation_service_1 = require("spinal-env-viewer-plugin-documentation-service");
@@ -43,5 +45,34 @@ async function updateEndpoint(endpointNode, newValue) {
     spinal_env_viewer_graph_service_1.SpinalGraphService._addNode(endpointNode);
     if (typeof newValue === "number" || typeof newValue === "boolean")
         await exports.spinalServiceTimeseries.pushFromEndpoint(endpointNode.getId().get(), newValue);
+    return endpointNode;
+}
+async function updateEndpointMaxDay(endpointNode, maxDay = 2) {
+    try {
+        spinal_env_viewer_graph_service_1.SpinalGraphService._addNode(endpointNode);
+        await spinal_env_viewer_plugin_documentation_service_1.serviceDocumentation.createOrUpdateAttrsAndCategories(endpointNode, "default", { "timeSeries maxDay": maxDay.toString() });
+    }
+    catch (error) {
+        return false;
+    }
+}
+async function updateOrCreateEndpoint(parentNode, endpointData, value, existingEndpoints) {
+    existingEndpoints = existingEndpoints || (await parentNode.getChildren([spinal_model_bmsnetwork_1.SpinalBmsEndpoint.relationName]));
+    let endpoint = existingEndpoints.find((ep) => ep.getName().get() === endpointData.name);
+    if (endpoint) {
+        return updateEndpoint(endpoint, value.value);
+    }
+    else {
+        const endpointDataFormatted = _formatEndpointData(endpointData, value);
+        return createNewBmsEndpoint(parentNode, endpointDataFormatted);
+    }
+}
+function _formatEndpointData(endpoint, data) {
+    return {
+        ...endpoint,
+        currentValue: data.value,
+        minValue: data.min,
+        maxValue: data.max,
+    };
 }
 //# sourceMappingURL=networkService.js.map

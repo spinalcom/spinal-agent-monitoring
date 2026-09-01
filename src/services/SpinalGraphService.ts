@@ -2,7 +2,7 @@ import { SPINAL_RELATION_PTR_LST_TYPE, SpinalContext, SpinalGraph, SpinalNode } 
 import { _initLogPathInHub, getHeapInfo, HAS_LOG, HAS_PM2_PROCESS_RELATION_NAME, METRICS_ENDPOINTS, PM2_ENDPOINTS, PM2_LOG_NODE_TYPE, PM2_PROCESS_NODE_TYPE, uploadFileNewData, VM_CONTEXT_NODE_TYPE, waitUntil } from "../utils";
 import { IPm2EventData, ISystemMetrics } from "../interfaces";
 import { ProcessDescription } from "pm2";
-import * as fs from "fs";
+import fs from "fs";
 import * as lodash from "lodash";
 import { EndpointUtils } from "./EndpointUtils";
 
@@ -52,12 +52,15 @@ export class SpinalGraphService {
 		if (!this._graph) throw new Error("Graph is not initialized. Please set the graph before initializing services.");
 		this.vmContext = await this._initVmContext(this._graph, agentName);
 
-		const promises = [this.updateSystemMetrics(systemMetrics), this._initPm2Processes(this.vmContext, pm2Instances)];
+		// const promises = [this.updateSystemMetrics(systemMetrics), this._initPm2Processes(this.vmContext, pm2Instances)];
 
-		return Promise.all(promises);
+		// return Promise.all(promises);
+
+		await this.updateSystemMetrics(systemMetrics, true);
+		await this._initPm2Processes(this.vmContext, pm2Instances);
 	}
 
-	public updateSystemMetrics(systemMetrics: ISystemMetrics) {
+	public updateSystemMetrics(systemMetrics: ISystemMetrics, isInit: boolean = false) {
 		if (!this.vmContext) throw new Error("VM Context is not initialized. Please initialize the VM context before updating system metrics.");
 
 		for (const [key, value] of Object.entries(systemMetrics)) {
@@ -65,22 +68,26 @@ export class SpinalGraphService {
 			else this.vmContext.info.add_attr(key, value);
 		}
 
-		return endpointUtils.updateOrCreateMetricsEndpoints(this.vmContext, systemMetrics);
+		return endpointUtils.updateOrCreateMetricsEndpoints(this.vmContext, systemMetrics, isInit);
 	}
 
-	public async treatPm2Event(pm2Process: IPm2EventData) {
-		const processKey = pm2Process.process.pm_id ?? pm2Process.process.name;
+	public async treatPm2Event(event: IPm2EventData) {
+		const processKey = event.process.pm_id ?? event.process.name;
 
 		let processFound = this.pm2Maps.get(processKey as number);
 
-		if (!processFound) processFound = (await this._addPm2ProcessToGraph(pm2Process.process)) as SpinalNode;
+		if (!processFound) processFound = (await this._addPm2ProcessToGraph(event.process)) as SpinalNode;
 
-		const eventType = pm2Process.event;
+		if (event.type === "process:config_data_change") {
+			return this._updateOrganConfigData(processFound, event.data);
+		}
+
+		// it's a process event, update the reboot and errored endpoints
+		const eventType = event.event || "";
 
 		const promises = [];
 
 		const isErrorEvent = ["errored", "error"].includes(eventType);
-
 		if (isErrorEvent) promises.push(endpointUtils._updateErroredEndpoint(processFound, 1));
 
 		const value = ["stop", "exit", "errored", "error"].includes(eventType) ? 0 : 1;
@@ -92,6 +99,7 @@ export class SpinalGraphService {
 	public async syncPm2Processes(pm2Processes: ProcessDescription[]) {
 		if (!this.vmContext) throw new Error("VM Context is not initialized. Please initialize the VM context before updating PM2 processes.");
 		const nodes = [];
+
 		for (const pm2Process of pm2Processes) {
 			let processAlreadyExist: SpinalNode | null = this.pm2Maps.get(pm2Process.pm_id as number) || this.pm2Maps.get(pm2Process.name as string) || null;
 
@@ -111,7 +119,7 @@ export class SpinalGraphService {
 		return Promise.all(promises);
 	}
 
-	public updatePm2ProcessesMetrics(pm2Processes: ProcessDescription | ProcessDescription[]) {
+	public updatePm2ProcessesMetrics(pm2Processes: ProcessDescription | ProcessDescription[], isInit: boolean = false) {
 		if (!Array.isArray(pm2Processes)) pm2Processes = [pm2Processes];
 		const promises = [];
 
@@ -121,7 +129,7 @@ export class SpinalGraphService {
 
 			// const { heapData, memory, cpu } = this._updateInfo(processNode, pm2Process);
 
-			promises.push(endpointUtils.updateOrCreatePm2ProcessEndpoints(processNode));
+			promises.push(endpointUtils.updateOrCreatePm2ProcessEndpoints(processNode, isInit));
 		}
 
 		return Promise.all(promises);
@@ -172,9 +180,9 @@ export class SpinalGraphService {
 	private async _initPm2Processes(context: SpinalContext, pm2Instances: ProcessDescription[]): Promise<void> {
 		await this._initializeExistingPm2Processes(context);
 		await this.syncPm2Processes(pm2Instances);
-		await this.updatePm2ProcessesMetrics(pm2Instances);
+		await this.updatePm2ProcessesMetrics(pm2Instances, true);
+		await this._watchAndSyncLogs();
 		console.log("PM2 processes initialized and updated successfully.");
-		// await this._watchAndSyncLogs();
 	}
 
 	private async _addPm2ProcessToGraph(pm2Process: ProcessDescription): Promise<SpinalNode | null> {
@@ -207,9 +215,10 @@ export class SpinalGraphService {
 	}
 
 	private async _addLogRelationToPm2Process(node: SpinalNode): Promise<SpinalNode> {
-		const logPath = _initLogPathInHub(node.getName().get());
+		const pm2LogPath = node.info?.log?.out?.get();
+		const logPathModel = await _initLogPathInHub(pm2LogPath);
 
-		const logNode = new SpinalNode(`${node.getName().get()}.log`, PM2_LOG_NODE_TYPE, logPath);
+		const logNode = new SpinalNode(`${node.getName().get()}.log`, PM2_LOG_NODE_TYPE, logPathModel);
 
 		return node.addChild(logNode, HAS_LOG, SPINAL_RELATION_PTR_LST_TYPE);
 	}
@@ -240,11 +249,15 @@ export class SpinalGraphService {
 	private async _watchAndSyncLogs() {
 		const promises = Array.from(this.pm2Maps.entries()).map(async ([key, processNode]) => {
 			try {
-				if (processNode.getName().get() == "spinal-core-hub-8010") return; // Skip if the node has a name, indicating it's already processed
 				const dynamicId: number = processNode._server_id as number;
-				if (this._logSyncked.has(dynamicId)) return;
-				const logPath = await this._syncLogForProcess(processNode);
-				if (logPath) this._logSyncked.set(dynamicId, logPath);
+				let logPath: string | null = this._logSyncked.get(dynamicId) || null;
+
+				if (!logPath) {
+					logPath = await this._syncLogForProcess(processNode);
+					if (logPath) this._logSyncked.set(dynamicId, logPath);
+				}
+
+				return logPath;
 			} catch (error) {
 				console.error(`Error processing PM2 process node for key ${key}:`, error);
 			}
@@ -268,22 +281,39 @@ export class SpinalGraphService {
 
 				const processName = processNode.getName().get();
 
-				const debouncedUpdate = lodash.debounce(async (newData) => {
-					const isUploaded = await uploadFileNewData(pathModel, newData);
-					const message = isUploaded ? `${processName} Log data uploaded successfully` : `Failed to upload ${processName} log data`;
-					console.log(message);
-				}, 5000);
+				// fs.watchFile(logPath, (curr, prev) => {
+				// 	// no change
+				// 	if (curr.size === prev.size) return;
 
-				fs.watchFile(logPath, (curr, prev) => {
-					const stream = fs.createReadStream(logPath, { encoding: "utf8" });
-					stream.on("data", (data) => debouncedUpdate(data));
-				});
+				// 	const stream = fs.createReadStream(logPath, { encoding: "utf8" });
+				// 	console.log(`Watching log file: ${logPath}`);
+				// 	stream.on("data", (data) => debouncedUpdate(data));
+				// });
 
-				resolve(logPath);
+				this._watchFile(processName, logPath, pathModel, resolve);
 			} catch (error) {
+				console.error(`Error syncing log for process node ${processNode.getName().get()}:`, error);
 				reject(error);
 			}
 		});
+	}
+
+	private _watchFile(processName: string, logPath: string, pathModel: any, resolve: any) {
+		const debouncedUpdate = lodash.debounce(async (newData) => {
+			const isUploaded = await uploadFileNewData(pathModel, newData);
+			const message = isUploaded ? `${processName} Log data uploaded successfully` : `Failed to upload ${processName} log data`;
+			console.log(message);
+		}, 5000);
+
+		fs.watchFile(logPath, (curr, prev) => {
+			// no change
+			if (curr.size === prev.size) return;
+
+			const stream = fs.createReadStream(logPath, { encoding: "utf8" });
+			stream.on("data", (data) => debouncedUpdate(data));
+		});
+
+		resolve(logPath);
 	}
 
 	private removePm2ProcessFromGraph(processNode: SpinalNode) {
@@ -305,6 +335,13 @@ export class SpinalGraphService {
 				return result;
 			});
 		});
+	}
+
+	private _updateOrganConfigData(processNode: SpinalNode, configData: { [key: string]: any }) {
+		if (!processNode.info.configFile) processNode.info.add_attr("configFile", configData);
+		else processNode.info.configFile.set(configData);
+
+		return processNode;
 	}
 
 	///////////////////////////////////////////////////////////////

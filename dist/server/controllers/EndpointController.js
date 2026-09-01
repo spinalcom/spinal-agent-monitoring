@@ -69,6 +69,40 @@ let EndpointController = class EndpointController extends tsoa_1.Controller {
     async getPm2ErroredHistoryTimeseries(key, startTime, endTime) {
         return this.getPm2EndpointTimeSeriesByName(key, constants_1.PM2_ENDPOINTS.ERRORED_HISTORY.name, startTime, endTime);
     }
+    async updatePm2EndpointMaxDay(key, endpoint, body) {
+        try {
+            const parsedMaxDay = Number(body?.maxDay);
+            if (!Number.isFinite(parsedMaxDay) || parsedMaxDay <= 0) {
+                this.setStatus(HTTP_RESPONSE_1.HTTP_RESPONSES.BAD_REQUEST.code);
+                return { error: "maxDay is required and must be a number greater than 0" };
+            }
+            const processNode = this.getPm2NodeFromKey(key);
+            if (!processNode) {
+                this.setStatus(HTTP_RESPONSE_1.HTTP_RESPONSES.NOT_FOUND.code);
+                return { error: `Process '${key}' not found.` };
+            }
+            const endpointName = this.resolvePm2EndpointName(endpoint);
+            if (!endpointName) {
+                this.setStatus(HTTP_RESPONSE_1.HTTP_RESPONSES.BAD_REQUEST.code);
+                return { error: `Unknown PM2 endpoint '${endpoint}'.` };
+            }
+            const endpointNode = await this.endpointUtils.getEndpointByName(processNode, endpointName);
+            if (!endpointNode) {
+                this.setStatus(HTTP_RESPONSE_1.HTTP_RESPONSES.NOT_FOUND.code);
+                return { error: `Endpoint '${endpointName}' not found for process '${key}'.` };
+            }
+            await this.endpointUtils.updateEndpointMaxDay(endpointNode, parsedMaxDay);
+            return {
+                message: `Updated timeSeries maxDay for '${endpointName}' on process '${key}'.`,
+                success: true,
+                key,
+            };
+        }
+        catch (error) {
+            this.setStatus(HTTP_RESPONSE_1.HTTP_RESPONSES.INTERNAL_SERVER_ERROR.code);
+            return { error: error.message || "Unable to update PM2 endpoint maxDay" };
+        }
+    }
     async getVmCpuUsageValue() {
         return this.getVmEndpointValueByName(constants_1.METRICS_ENDPOINTS.CPU_USAGE.name);
     }
@@ -87,6 +121,42 @@ let EndpointController = class EndpointController extends tsoa_1.Controller {
     async getVmDiskUsageTimeseries(startTime, endTime) {
         return this.getVmEndpointTimeSeriesByName(constants_1.METRICS_ENDPOINTS.DISK_USAGE.name, startTime, endTime);
     }
+    async updateVmEndpointMaxDay(endpoint, body) {
+        try {
+            const parsedMaxDay = Number(body?.maxDay);
+            if (!Number.isFinite(parsedMaxDay) || parsedMaxDay <= 0) {
+                this.setStatus(HTTP_RESPONSE_1.HTTP_RESPONSES.BAD_REQUEST.code);
+                return { error: "maxDay is required and must be a number greater than 0" };
+            }
+            const processNode = this.spinalGraphService.getVmContext();
+            if (!processNode) {
+                this.setStatus(HTTP_RESPONSE_1.HTTP_RESPONSES.NOT_FOUND.code);
+                return { error: `VM context not found.` };
+            }
+            const endpointName = this.resolveVmEndpointName(endpoint);
+            if (!endpointName) {
+                this.setStatus(HTTP_RESPONSE_1.HTTP_RESPONSES.BAD_REQUEST.code);
+                return { error: `Unknown endpoint '${endpoint}'.` };
+            }
+            const endpointNode = await this.endpointUtils.getEndpointByName(processNode, endpointName);
+            if (!endpointNode) {
+                this.setStatus(HTTP_RESPONSE_1.HTTP_RESPONSES.NOT_FOUND.code);
+                return { error: `Endpoint '${endpointName}' not found'.` };
+            }
+            await this.endpointUtils.updateEndpointMaxDay(endpointNode, parsedMaxDay);
+            return {
+                message: `Updated timeSeries maxDay for '${endpointName}'.`,
+                success: true,
+            };
+        }
+        catch (error) {
+            this.setStatus(HTTP_RESPONSE_1.HTTP_RESPONSES.INTERNAL_SERVER_ERROR.code);
+            return { error: error.message || "Unable to update PM2 endpoint maxDay" };
+        }
+    }
+    ////////////////////////////////////////////////////////////////////////////////////////
+    // PRIVATE METHODS
+    ////////////////////////////////////////////////////////////////////////////////////////
     async getPm2EndpointValueByName(key, endpointName) {
         try {
             const processNode = this.getPm2NodeFromKey(key);
@@ -114,6 +184,8 @@ let EndpointController = class EndpointController extends tsoa_1.Controller {
     }
     async getPm2EndpointTimeSeriesByName(key, endpointName, startTime, endTime) {
         try {
+            startTime = startTime ?? 0;
+            endTime = endTime ?? Date.now();
             if (typeof startTime !== "number" || typeof endTime !== "number") {
                 this.setStatus(HTTP_RESPONSE_1.HTTP_RESPONSES.BAD_REQUEST.code);
                 return { error: "startTime and endTime query parameters are required" };
@@ -174,6 +246,8 @@ let EndpointController = class EndpointController extends tsoa_1.Controller {
     }
     async getVmEndpointTimeSeriesByName(endpointName, startTime, endTime) {
         try {
+            startTime = startTime ?? 0;
+            endTime = endTime ?? Date.now();
             if (typeof startTime !== "number" || typeof endTime !== "number") {
                 this.setStatus(HTTP_RESPONSE_1.HTTP_RESPONSES.BAD_REQUEST.code);
                 return { error: "startTime and endTime query parameters are required" };
@@ -209,6 +283,36 @@ let EndpointController = class EndpointController extends tsoa_1.Controller {
     }
     getPm2NodeFromKey(key) {
         return this.spinalGraphService.getPm2NodeByKey(key);
+    }
+    resolvePm2EndpointName(endpoint) {
+        const endpointMap = {
+            ram: constants_1.PM2_ENDPOINTS.RAM_HISTORY.name,
+            cpu: constants_1.PM2_ENDPOINTS.CPU_HISTORY.name,
+            heap_size: constants_1.PM2_ENDPOINTS.HEAP_SIZE_HISTORY.name,
+            heap_usage: constants_1.PM2_ENDPOINTS.HEAP_USAGE_HISTORY.name,
+            heap_used_size: constants_1.PM2_ENDPOINTS.HEAP_USED_SIZE_HISTORY.name,
+            reboot: constants_1.PM2_ENDPOINTS.REBOOT_HISTORY.name,
+            errored: constants_1.PM2_ENDPOINTS.ERRORED_HISTORY.name,
+            ram_history: constants_1.PM2_ENDPOINTS.RAM_HISTORY.name,
+            cpu_history: constants_1.PM2_ENDPOINTS.CPU_HISTORY.name,
+            heap_size_history: constants_1.PM2_ENDPOINTS.HEAP_SIZE_HISTORY.name,
+            heap_usage_history: constants_1.PM2_ENDPOINTS.HEAP_USAGE_HISTORY.name,
+            heap_used_size_history: constants_1.PM2_ENDPOINTS.HEAP_USED_SIZE_HISTORY.name,
+            reboot_history: constants_1.PM2_ENDPOINTS.REBOOT_HISTORY.name,
+            errored_history: constants_1.PM2_ENDPOINTS.ERRORED_HISTORY.name,
+        };
+        return endpointMap[endpoint] || null;
+    }
+    resolveVmEndpointName(endpoint) {
+        const endpointMap = {
+            ram: constants_1.METRICS_ENDPOINTS.RAM_USAGE.name,
+            cpu: constants_1.METRICS_ENDPOINTS.CPU_USAGE.name,
+            disk: constants_1.METRICS_ENDPOINTS.DISK_USAGE.name,
+            ram_usage: constants_1.METRICS_ENDPOINTS.RAM_USAGE.name,
+            cpu_usage: constants_1.METRICS_ENDPOINTS.CPU_USAGE.name,
+            disk_usage: constants_1.METRICS_ENDPOINTS.DISK_USAGE.name,
+        };
+        return endpointMap[endpoint] || null;
     }
 };
 exports.EndpointController = EndpointController;
@@ -325,6 +429,15 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], EndpointController.prototype, "getPm2ErroredHistoryTimeseries", null);
 __decorate([
+    (0, tsoa_1.Post)("pm2/{key}/{endpoint}/timeseries/maxDay"),
+    __param(0, (0, tsoa_1.Path)()),
+    __param(1, (0, tsoa_1.Path)()),
+    __param(2, (0, tsoa_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, Object]),
+    __metadata("design:returntype", Promise)
+], EndpointController.prototype, "updatePm2EndpointMaxDay", null);
+__decorate([
     (0, tsoa_1.Get)("vm/cpu_usage/value"),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
@@ -366,6 +479,14 @@ __decorate([
     __metadata("design:paramtypes", [Number, Number]),
     __metadata("design:returntype", Promise)
 ], EndpointController.prototype, "getVmDiskUsageTimeseries", null);
+__decorate([
+    (0, tsoa_1.Post)("vm/{endpoint}/timeseries/maxDay"),
+    __param(0, (0, tsoa_1.Path)()),
+    __param(1, (0, tsoa_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], EndpointController.prototype, "updateVmEndpointMaxDay", null);
 exports.EndpointController = EndpointController = __decorate([
     (0, tsoa_1.Route)("monitoring/endpoints"),
     (0, tsoa_1.Tags)("Monitoring")

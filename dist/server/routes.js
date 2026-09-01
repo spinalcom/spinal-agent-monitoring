@@ -132,6 +132,11 @@ const models = {
         "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "values": { "dataType": "array", "array": { "dataType": "nestedObjectLiteral", "nestedProperties": { "value": { "dataType": "union", "subSchemas": [{ "dataType": "double" }, { "dataType": "boolean" }], "required": true }, "date": { "dataType": "double", "required": true } } }, "required": true }, "name": { "dataType": "string", "required": true }, "id": { "dataType": "string", "required": true } }, "validators": {} },
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "UpdateMaxDayBody": {
+        "dataType": "refAlias",
+        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "maxDay": { "dataType": "union", "subSchemas": [{ "dataType": "double" }, { "dataType": "string" }], "required": true } }, "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 };
 const templateService = new runtime_1.ExpressTemplateService(models, { "noImplicitAdditionalProperties": "silently-remove-extras", "bodyCoercion": true });
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
@@ -811,6 +816,31 @@ function RegisterRoutes(app) {
         }
     });
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsEndpointController_updatePm2EndpointMaxDay = {
+        key: { "in": "path", "name": "key", "required": true, "dataType": "string" },
+        endpoint: { "in": "path", "name": "endpoint", "required": true, "dataType": "string" },
+        body: { "in": "body", "name": "body", "required": true, "ref": "UpdateMaxDayBody" },
+    };
+    app.post('/monitoring/endpoints/pm2/:key/:endpoint/timeseries/maxDay', ...((0, runtime_1.fetchMiddlewares)(EndpointController_1.EndpointController)), ...((0, runtime_1.fetchMiddlewares)(EndpointController_1.EndpointController.prototype.updatePm2EndpointMaxDay)), async function EndpointController_updatePm2EndpointMaxDay(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsEndpointController_updatePm2EndpointMaxDay, request, response });
+            const controller = new EndpointController_1.EndpointController();
+            await templateService.apiHandler({
+                methodName: 'updatePm2EndpointMaxDay',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     const argsEndpointController_getVmCpuUsageValue = {};
     app.get('/monitoring/endpoints/vm/cpu_usage/value', ...((0, runtime_1.fetchMiddlewares)(EndpointController_1.EndpointController)), ...((0, runtime_1.fetchMiddlewares)(EndpointController_1.EndpointController.prototype.getVmCpuUsageValue)), async function EndpointController_getVmCpuUsageValue(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
@@ -934,6 +964,30 @@ function RegisterRoutes(app) {
             const controller = new EndpointController_1.EndpointController();
             await templateService.apiHandler({
                 methodName: 'getVmDiskUsageTimeseries',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsEndpointController_updateVmEndpointMaxDay = {
+        endpoint: { "in": "path", "name": "endpoint", "required": true, "dataType": "string" },
+        body: { "in": "body", "name": "body", "required": true, "ref": "UpdateMaxDayBody" },
+    };
+    app.post('/monitoring/endpoints/vm/:endpoint/timeseries/maxDay', ...((0, runtime_1.fetchMiddlewares)(EndpointController_1.EndpointController)), ...((0, runtime_1.fetchMiddlewares)(EndpointController_1.EndpointController.prototype.updateVmEndpointMaxDay)), async function EndpointController_updateVmEndpointMaxDay(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsEndpointController_updateVmEndpointMaxDay, request, response });
+            const controller = new EndpointController_1.EndpointController();
+            await templateService.apiHandler({
+                methodName: 'updateVmEndpointMaxDay',
                 controller,
                 response,
                 next,

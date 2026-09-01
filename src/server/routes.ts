@@ -138,6 +138,11 @@ const models: TsoaRoute.Models = {
         "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"values":{"dataType":"array","array":{"dataType":"nestedObjectLiteral","nestedProperties":{"value":{"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"boolean"}],"required":true},"date":{"dataType":"double","required":true}}},"required":true},"name":{"dataType":"string","required":true},"id":{"dataType":"string","required":true}},"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "UpdateMaxDayBody": {
+        "dataType": "refAlias",
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"maxDay":{"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"string"}],"required":true}},"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 };
 const templateService = new ExpressTemplateService(models, {"noImplicitAdditionalProperties":"silently-remove-extras","bodyCoercion":true});
 
@@ -1035,6 +1040,38 @@ export function RegisterRoutes(app: Router) {
             }
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsEndpointController_updatePm2EndpointMaxDay: Record<string, TsoaRoute.ParameterSchema> = {
+                key: {"in":"path","name":"key","required":true,"dataType":"string"},
+                endpoint: {"in":"path","name":"endpoint","required":true,"dataType":"string"},
+                body: {"in":"body","name":"body","required":true,"ref":"UpdateMaxDayBody"},
+        };
+        app.post('/monitoring/endpoints/pm2/:key/:endpoint/timeseries/maxDay',
+            ...(fetchMiddlewares<RequestHandler>(EndpointController)),
+            ...(fetchMiddlewares<RequestHandler>(EndpointController.prototype.updatePm2EndpointMaxDay)),
+
+            async function EndpointController_updatePm2EndpointMaxDay(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsEndpointController_updatePm2EndpointMaxDay, request, response });
+
+                const controller = new EndpointController();
+
+              await templateService.apiHandler({
+                methodName: 'updatePm2EndpointMaxDay',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         const argsEndpointController_getVmCpuUsageValue: Record<string, TsoaRoute.ParameterSchema> = {
         };
         app.get('/monitoring/endpoints/vm/cpu_usage/value',
@@ -1204,6 +1241,37 @@ export function RegisterRoutes(app: Router) {
 
               await templateService.apiHandler({
                 methodName: 'getVmDiskUsageTimeseries',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsEndpointController_updateVmEndpointMaxDay: Record<string, TsoaRoute.ParameterSchema> = {
+                endpoint: {"in":"path","name":"endpoint","required":true,"dataType":"string"},
+                body: {"in":"body","name":"body","required":true,"ref":"UpdateMaxDayBody"},
+        };
+        app.post('/monitoring/endpoints/vm/:endpoint/timeseries/maxDay',
+            ...(fetchMiddlewares<RequestHandler>(EndpointController)),
+            ...(fetchMiddlewares<RequestHandler>(EndpointController.prototype.updateVmEndpointMaxDay)),
+
+            async function EndpointController_updateVmEndpointMaxDay(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsEndpointController_updateVmEndpointMaxDay, request, response });
+
+                const controller = new EndpointController();
+
+              await templateService.apiHandler({
+                methodName: 'updateVmEndpointMaxDay',
                 controller,
                 response,
                 next,

@@ -1,5 +1,5 @@
 import { Controller } from "tsoa";
-import { ErrorResponse } from "../../interfaces/IResponses";
+import { ActionResponse, ErrorResponse } from "../../interfaces/IResponses";
 type EndpointValueResponse = {
     id: string;
     name: string;
@@ -13,6 +13,9 @@ type EndpointTimeSeriesResponse = {
         date: number;
         value: number | boolean;
     }>;
+};
+type UpdateMaxDayBody = {
+    maxDay: number | string;
 };
 export declare class EndpointController extends Controller {
     private readonly endpointUtils;
@@ -31,16 +34,20 @@ export declare class EndpointController extends Controller {
     getPm2RebootHistoryTimeseries(key: string, startTime?: number, endTime?: number): Promise<EndpointTimeSeriesResponse | ErrorResponse>;
     getPm2ErroredHistoryValue(key: string): Promise<EndpointValueResponse | ErrorResponse>;
     getPm2ErroredHistoryTimeseries(key: string, startTime?: number, endTime?: number): Promise<EndpointTimeSeriesResponse | ErrorResponse>;
+    updatePm2EndpointMaxDay(key: string, endpoint: string, body: UpdateMaxDayBody): Promise<ActionResponse | ErrorResponse>;
     getVmCpuUsageValue(): Promise<EndpointValueResponse | ErrorResponse>;
     getVmCpuUsageTimeseries(startTime?: number, endTime?: number): Promise<EndpointTimeSeriesResponse | ErrorResponse>;
     getVmRamUsageValue(): Promise<EndpointValueResponse | ErrorResponse>;
     getVmRamUsageTimeseries(startTime?: number, endTime?: number): Promise<EndpointTimeSeriesResponse | ErrorResponse>;
     getVmDiskUsageValue(): Promise<EndpointValueResponse | ErrorResponse>;
     getVmDiskUsageTimeseries(startTime?: number, endTime?: number): Promise<EndpointTimeSeriesResponse | ErrorResponse>;
+    updateVmEndpointMaxDay(endpoint: string, body: UpdateMaxDayBody): Promise<ActionResponse | ErrorResponse>;
     private getPm2EndpointValueByName;
     private getPm2EndpointTimeSeriesByName;
     private getVmEndpointValueByName;
     private getVmEndpointTimeSeriesByName;
     private getPm2NodeFromKey;
+    private resolvePm2EndpointName;
+    private resolveVmEndpointName;
 }
 export {};

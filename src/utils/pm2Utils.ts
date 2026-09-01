@@ -1,8 +1,9 @@
 import { ProcessDescription } from "pm2";
 import { ActionResponse, Pm2ProcessResponse } from "../interfaces/IResponses";
 import pm2 from "pm2";
-import { Path as SpinalPath, FileSystem, getUrlPath } from "spinal-core-connectorjs";
+import { Path as SpinalPath, FileSystem, getUrlPath, File as SpinalFile } from "spinal-core-connectorjs";
 import { Pm2Process } from "../models";
+import * as fs from "fs";
 
 export function getHeapInfo(process: ProcessDescription) {
 	const pm2Env = process.pm2_env as { [key: string]: unknown } | undefined;
@@ -100,6 +101,8 @@ export function getProcessLogPath(process: ProcessDescription, logType: "out" | 
 
 export async function uploadFileNewData(pathModel: SpinalPath, newContent: Buffer): Promise<boolean> {
 	try {
+		// console.log(`Uploading new data to path: ${pathModel._server_id}`);
+
 		// any type is used to avoid TypeScript errors
 		const fs: any = FileSystem.get_inst();
 
@@ -133,10 +136,10 @@ export function executeIntervalProcessAction(callback: () => void, intervalMs: n
 	return setInterval(callback, intervalMs);
 }
 
-export function _initLogPathInHub(processName: string): SpinalPath {
-	const buffer = Buffer.from("empty log file");
-	const file = new File([buffer], `${processName}.log`);
-	return new SpinalPath(file);
+export async function _initLogPathInHub(pm2LogPath: string): Promise<SpinalPath> {
+	const initialData = await fs.promises.readFile(pm2LogPath, "utf8");
+	const buffer = Buffer.from(initialData || "");
+	return new SpinalPath(buffer);
 }
 
 export function splitActionResults(result: ActionResponse[]): { success: ActionResponse[]; failed: ActionResponse[] } {

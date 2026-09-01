@@ -42,7 +42,6 @@ class ZabbixSenderService {
 	private retryHandle: NodeJS.Timeout | null = null;
 	private readonly queue: ZabbixMetric[][] = [];
 
-	private hostTargets: { host: string; port: number }[] = [];
 	private pushUpdateCallback: ((update: ZabbixPushUpdate) => void) | null = null;
 
 	private constructor() {}
@@ -53,6 +52,11 @@ class ZabbixSenderService {
 		}
 
 		return this._instance;
+	}
+
+	public isCorrectlyConfigured(): boolean {
+		const isActivated = process.env.ZABBIX_ENABLED == "true" || process.env.ZABBIX_ENABLED == "1";
+		return isActivated;
 	}
 
 	public async startPeriodicPush(onPushUpdate?: (update: ZabbixPushUpdate) => void): Promise<void>;
@@ -125,10 +129,10 @@ class ZabbixSenderService {
 					metrics: data || [],
 				});
 
-				await this._sendDataToZabbixServers(data || []);
+				await this.sendWithZabbixTcp(data || []);
 			}
 		} catch (error: any) {
-			console.error("Error sending data to Zabbix:", error);
+			// console.error("Error sending data to Zabbix:", error);
 		} finally {
 			this.isFlushing = false;
 		}
@@ -142,10 +146,6 @@ class ZabbixSenderService {
 		return _generateZabbixMetrics(systemMetrics, pm2Processes, discovery);
 	}
 
-	private async _sendDataToZabbixServers(data: ZabbixMetric[]): Promise<void> {
-		return this.sendWithZabbixTcp(data);
-	}
-
 	private notifyPushUpdate(update: ZabbixPushUpdate): void {
 		if (this.pushUpdateCallback) {
 			this.pushUpdateCallback(update);
@@ -153,8 +153,6 @@ class ZabbixSenderService {
 	}
 
 	private async sendWithZabbixTcp(metrics: ZabbixMetric[]): Promise<void> {
-		if (!this._sendDataToZabbixServers || this.hostTargets.length === 0) return;
-
 		const now = Math.floor(Date.now() / 1000);
 
 		const payload = {
@@ -170,43 +168,45 @@ class ZabbixSenderService {
 
 		const packet = this.buildZabbixPacket(payload);
 
-		// TODO: implement sending to multiple targets
-		// const targetHost = process.env.ZABBIX_SERVER_HOST;
-		// const targetPort = Number(process.env.ZABBIX_SERVER_PORT || 10051);
+		const targetHost = process.env.ZABBIX_SERVER_HOST || "127.0.0.1";
+		const targetPort = Number(process.env.ZABBIX_SERVER_PORT || 10051);
 
-		// return new Promise<void>((resolve, reject) => {
-		// 	const client = net.createConnection({ host: targetHost, port: targetPort });
-		// 	const chunks: Buffer[] = [];
+		return this._sendPacketToZabbixClient(targetHost!, targetPort, packet);
+	}
 
-		// 	client.setTimeout(10000);
+	private _sendPacketToZabbixClient(host: string, port: number | string, packet: Buffer): Promise<void> {
+		return new Promise((resolve, reject) => {
+			const client = net.createConnection({ host, port: Number(port) });
+			const chunks: Buffer[] = [];
+			client.setTimeout(10000);
 
-		// 	client.on("connect", () => {
-		// 		client.write(packet);
-		// 	});
+			client.on("connect", () => {
+				client.write(packet);
+			});
 
-		// 	client.on("data", (chunk: Buffer) => {
-		// 		chunks.push(chunk);
-		// 	});
+			client.on("data", (chunk: Buffer) => {
+				chunks.push(chunk);
+			});
 
-		// 	client.on("timeout", () => {
-		// 		client.destroy();
-		// 		reject(new Error("Native Zabbix TCP send timeout"));
-		// 	});
+			client.on("timeout", () => {
+				client.destroy();
+				reject(new Error("Native Zabbix TCP send timeout"));
+			});
 
-		// 	client.on("error", (error) => {
-		// 		reject(error);
-		// 	});
+			client.on("error", (error) => {
+				reject(error);
+			});
 
-		// 	client.on("end", () => {
-		// 		try {
-		// 			const responseBuffer = Buffer.concat(chunks);
-		// 			this.validateZabbixResponse(responseBuffer);
-		// 			resolve();
-		// 		} catch (error) {
-		// 			reject(error);
-		// 		}
-		// 	});
-		// });
+			client.on("end", () => {
+				try {
+					const responseBuffer = Buffer.concat(chunks);
+					this.validateZabbixResponse(responseBuffer);
+					resolve();
+				} catch (error) {
+					reject(error);
+				}
+			});
+		});
 	}
 
 	private buildZabbixPacket(payload: { [key: string]: unknown }): Buffer {

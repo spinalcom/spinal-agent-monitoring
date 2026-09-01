@@ -380,6 +380,25 @@
                     "id"
                 ],
                 "type": "object"
+            },
+            "UpdateMaxDayBody": {
+                "properties": {
+                    "maxDay": {
+                        "anyOf": [
+                            {
+                                "type": "number",
+                                "format": "double"
+                            },
+                            {
+                                "type": "string"
+                            }
+                        ]
+                    }
+                },
+                "required": [
+                    "maxDay"
+                ],
+                "type": "object"
             }
         },
         "securitySchemes": {}
@@ -1960,6 +1979,62 @@
                 ]
             }
         },
+        "/monitoring/endpoints/pm2/{key}/{endpoint}/timeseries/maxDay": {
+            "post": {
+                "operationId": "UpdatePm2EndpointMaxDay",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ActionResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/ErrorResponse"
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "Monitoring"
+                ],
+                "security": [],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "key",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "path",
+                        "name": "endpoint",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateMaxDayBody"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/monitoring/endpoints/vm/cpu_usage/value": {
             "get": {
                 "operationId": "GetVmCpuUsageValue",
@@ -2189,6 +2264,54 @@
                         }
                     }
                 ]
+            }
+        },
+        "/monitoring/endpoints/vm/{endpoint}/timeseries/maxDay": {
+            "post": {
+                "operationId": "UpdateVmEndpointMaxDay",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ActionResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/ErrorResponse"
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "Monitoring"
+                ],
+                "security": [],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "endpoint",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateMaxDayBody"
+                            }
+                        }
+                    }
+                }
             }
         }
     },

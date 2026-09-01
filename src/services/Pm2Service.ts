@@ -379,7 +379,13 @@ class Pm2Service {
 		pm2.launchBus((err, bus) => {
 			if (err) throw err;
 
+			bus.on("process:config_data_change", async (data: any) => {
+				data.type = "process:config_data_change";
+				if (typeof callback === "function") await callback(data);
+			});
+
 			bus.on("process:event", async (data: IPm2EventData) => {
+				data.type = "process:event";
 				if (typeof callback === "function") await callback(data);
 				this._savePm2Event(data);
 				// don't use debounce because "pm2 stop all" will trigger multiple events and we want to send all of them to the clients

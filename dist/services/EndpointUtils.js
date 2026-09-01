@@ -22,140 +22,105 @@ class EndpointUtils {
         const timeInterval = { start: startTime, end: endTime };
         return networkService_1.spinalServiceTimeseries.getData(endpointNode.getId().get(), timeInterval);
     }
-    async createOrUpdateEndpoints(parentNode, endpointsData) {
-        const endpoints = await parentNode.getChildren([spinal_model_bmsnetwork_1.SpinalBmsEndpoint.relationName]);
-        const endpointsToObj = endpoints.reduce((acc, endpoint) => {
-            const endpointName = endpoint.getName().get();
-            acc[endpointName] = endpoint;
-            return acc;
-        }, {});
-        const promises = [];
-        for (const endpoint of endpointsData) {
-            const name = endpoint.name;
-            if (!endpointsToObj[name]) {
-                promises.push((0, networkService_1.createNewBmsEndpoint)(parentNode, endpoint));
-            }
-        }
-        return Promise.all(promises);
+    async updateEndpointMaxDay(endpointNode, maxDay) {
+        return (0, networkService_1.updateEndpointMaxDay)(endpointNode, maxDay);
     }
+    // public async createOrUpdateEndpoints(parentNode: SpinalNode, endpointsData: InputDataEndpoint[]) {
+    // 	const endpoints = await parentNode.getChildren([SpinalBmsEndpoint.relationName]);
+    // 	const endpointsToObj = endpoints.reduce((acc, endpoint) => {
+    // 		const endpointName = endpoint.getName().get();
+    // 		acc[endpointName] = endpoint;
+    // 		return acc;
+    // 	}, {} as { [key: string]: SpinalNode });
+    // 	const promises = [];
+    // 	for (const endpoint of endpointsData) {
+    // 		const name = endpoint.name;
+    // 		if (!endpointsToObj[name]) {
+    // 			promises.push(createNewBmsEndpoint(parentNode, endpoint));
+    // 		}
+    // 	}
+    // 	return Promise.all(promises);
+    // }
     ////////////////////////////////////////////////
     //  METRICS ENDPOINTS
     ////////////////////////////////////////////////
-    async updateOrCreateMetricsEndpoints(parentNode, metricsData) {
+    async updateOrCreateMetricsEndpoints(parentNode, metricsData, isInit = false) {
         const ramUsage = parseFloat(metricsData.ramUsagePercent || "0");
         const cpuUsage = parseFloat(metricsData.cpuUsage);
         const diskUsage = parseFloat(metricsData.diskUsagePercent || "0");
         const endpoints = await parentNode.getChildren([spinal_model_bmsnetwork_1.SpinalBmsEndpoint.relationName]);
-        const ramEndpoint = endpoints.find((endpoint) => endpoint.getName().get() === utils_1.METRICS_ENDPOINTS.RAM_USAGE.name);
-        const cpuEndpoint = endpoints.find((endpoint) => endpoint.getName().get() === utils_1.METRICS_ENDPOINTS.CPU_USAGE.name);
-        const diskEndpoint = endpoints.find((endpoint) => endpoint.getName().get() === utils_1.METRICS_ENDPOINTS.DISK_USAGE.name);
         const promises = [];
-        // Update or create RAM endpoint
-        if (ramEndpoint)
-            promises.push((0, networkService_1.updateEndpoint)(ramEndpoint, ramUsage));
-        else {
-            const endpointData = this._formatEndpointData(utils_1.METRICS_ENDPOINTS.RAM_USAGE, { value: ramUsage, min: 0, max: 100 });
-            promises.push((0, networkService_1.createNewBmsEndpoint)(parentNode, endpointData));
-        }
-        // Update or create CPU endpoint
-        if (cpuEndpoint)
-            promises.push((0, networkService_1.updateEndpoint)(cpuEndpoint, cpuUsage));
-        else {
-            const endpointData = this._formatEndpointData(utils_1.METRICS_ENDPOINTS.CPU_USAGE, { value: cpuUsage, min: 0, max: 100 });
-            promises.push((0, networkService_1.createNewBmsEndpoint)(parentNode, endpointData));
-        }
-        if (diskEndpoint)
-            promises.push((0, networkService_1.updateEndpoint)(diskEndpoint, diskUsage));
-        else {
-            const endpointData = this._formatEndpointData(utils_1.METRICS_ENDPOINTS.DISK_USAGE, { value: diskUsage, min: 0, max: 100 });
-            promises.push((0, networkService_1.createNewBmsEndpoint)(parentNode, endpointData));
-        }
-        return Promise.all(promises);
+        promises.push((0, networkService_1.updateOrCreateEndpoint)(parentNode, utils_1.METRICS_ENDPOINTS.RAM_USAGE, { value: ramUsage, min: 0, max: 100 }, endpoints));
+        promises.push((0, networkService_1.updateOrCreateEndpoint)(parentNode, utils_1.METRICS_ENDPOINTS.CPU_USAGE, { value: cpuUsage, min: 0, max: 100 }, endpoints));
+        promises.push((0, networkService_1.updateOrCreateEndpoint)(parentNode, utils_1.METRICS_ENDPOINTS.DISK_USAGE, { value: diskUsage, min: 0, max: 100 }, endpoints));
+        return Promise.all(promises).then(async (results) => {
+            if (isInit) {
+                const maxDay = process.env.TIMESERIES_MAX_DAY || "2";
+                const p2 = results.map((endpoint) => (0, networkService_1.updateEndpointMaxDay)(endpoint, maxDay));
+                await Promise.all(p2);
+            }
+            return results;
+        });
     }
     //////////////////////////////////////////////////
     //  PM2 ENDPOINTS
     //////////////////////////////////////////////////
-    async updateOrCreatePm2ProcessEndpoints(pm2Node) {
+    async updateOrCreatePm2ProcessEndpoints(pm2Node, isInit = false) {
         const memory = pm2Node.info?.monit?.memory?.get() || 0;
         const cpu = pm2Node.info?.monit?.cpu?.get() || 0;
-        const heapData = pm2Node.info?.heapMemory?.get() || { heapSize: 0, heapUsage: 0, heapUsedSize: 0 };
+        const heapInfo = pm2Node.info?.heapMemory?.get() || {};
+        const heapData = {
+            heapSize: heapInfo?.heapSize?.value || 0,
+            heapUsage: heapInfo?.heapUsage?.value || 0,
+            heapUsedSize: heapInfo?.heapUsedSize?.value || 0,
+        };
         const endpoints = await pm2Node.getChildren([spinal_model_bmsnetwork_1.SpinalBmsEndpoint.relationName]);
-        await this._updateOrCreateRamEndpoint(pm2Node, memory, endpoints);
-        await this._updateOrCreateCPUEndpoint(pm2Node, cpu, endpoints);
-        await this._updateOrCreateHeapMemoryEndpoints(pm2Node, heapData, endpoints);
-        // promises.push(this._updateOrCreateHeapMemoryEndpoints(pm2Node, heapData));
-        // promises.push(this._updateOrCreateCPUEndpoint(pm2Node, cpu));
-        // promises.push(this._updateHeapMemoryEndpoints(pm2Node, heapData));
-        // return Promise.all(promises);
+        const promises = [];
+        promises.push(this._updateOrCreateRamEndpoint(pm2Node, memory, endpoints, isInit));
+        promises.push(this._updateOrCreateCPUEndpoint(pm2Node, cpu, endpoints, isInit));
+        promises.push(this._updateOrCreateHeapMemoryEndpoints(pm2Node, heapData, endpoints, isInit));
+        promises.push(this._updateRebootEndpoint(pm2Node, pm2Node.info?.reboot?.get() || 0, endpoints, isInit));
+        promises.push(this._updateErroredEndpoint(pm2Node, pm2Node.info?.errored?.get() || 0, endpoints, isInit));
+        await Promise.all(promises);
     }
-    async _updateOrCreateRamEndpoint(pm2Node, memoryValue, existingEndpoints) {
-        const endpoints = existingEndpoints || (await pm2Node.getChildren([spinal_model_bmsnetwork_1.SpinalBmsEndpoint.relationName]));
-        const ramEndpoint = endpoints.find((endpoint) => endpoint.getName().get() === utils_1.PM2_ENDPOINTS.RAM_HISTORY.name);
-        if (ramEndpoint)
-            return (0, networkService_1.updateEndpoint)(ramEndpoint, memoryValue);
-        const endpointData = this._formatEndpointData(utils_1.PM2_ENDPOINTS.RAM_HISTORY, { value: memoryValue });
-        return (0, networkService_1.createNewBmsEndpoint)(pm2Node, endpointData);
+    async _updateOrCreateRamEndpoint(pm2Node, memoryValue, existingEndpoints, isInit = false) {
+        const endpoint = await (0, networkService_1.updateOrCreateEndpoint)(pm2Node, utils_1.PM2_ENDPOINTS.RAM_HISTORY, { value: memoryValue }, existingEndpoints);
+        if (isInit)
+            await (0, networkService_1.updateEndpointMaxDay)(endpoint, process.env.TIMESERIES_MAX_DAY || "2");
+        return endpoint;
     }
-    async _updateOrCreateCPUEndpoint(pm2Node, cpuValue, existingEndpoints) {
-        const endpoints = existingEndpoints || (await pm2Node.getChildren([spinal_model_bmsnetwork_1.SpinalBmsEndpoint.relationName]));
-        const cpuEndpoint = endpoints.find((endpoint) => endpoint.getName().get() === utils_1.PM2_ENDPOINTS.CPU_HISTORY.name);
-        if (cpuEndpoint)
-            return (0, networkService_1.updateEndpoint)(cpuEndpoint, cpuValue);
-        const endpointData = this._formatEndpointData(utils_1.PM2_ENDPOINTS.CPU_HISTORY, { value: cpuValue });
-        return (0, networkService_1.createNewBmsEndpoint)(pm2Node, endpointData);
+    async _updateOrCreateCPUEndpoint(pm2Node, cpuValue, existingEndpoints, isInit = false) {
+        const endpoint = await (0, networkService_1.updateOrCreateEndpoint)(pm2Node, utils_1.PM2_ENDPOINTS.CPU_HISTORY, { value: cpuValue }, existingEndpoints);
+        if (isInit)
+            await (0, networkService_1.updateEndpointMaxDay)(endpoint, process.env.TIMESERIES_MAX_DAY || "2");
+        return endpoint;
     }
-    async _updateOrCreateHeapMemoryEndpoints(pm2Node, heapInfo, existingEndpoints) {
+    async _updateOrCreateHeapMemoryEndpoints(pm2Node, heapInfo, existingEndpoints, isInit = false) {
         const endpoints = existingEndpoints || (await pm2Node.getChildren([spinal_model_bmsnetwork_1.SpinalBmsEndpoint.relationName]));
-        const heapSizeEndpoint = endpoints.find((endpoint) => endpoint.getName().get() === utils_1.PM2_ENDPOINTS.HEAP_SIZE_HISTORY.name);
-        const heapUsageEndpoint = endpoints.find((endpoint) => endpoint.getName().get() === utils_1.PM2_ENDPOINTS.HEAP_USAGE_HISTORY.name);
-        const heapUsedSizeEndpoint = endpoints.find((endpoint) => endpoint.getName().get() === utils_1.PM2_ENDPOINTS.HEAP_USED_SIZE_HISTORY.name);
         const promises = [];
         // Update or create heapSize memory endpoints
-        if (heapSizeEndpoint)
-            promises.push((0, networkService_1.updateEndpoint)(heapSizeEndpoint, heapInfo.heapSize));
-        else {
-            const endpointData = this._formatEndpointData(utils_1.PM2_ENDPOINTS.HEAP_SIZE_HISTORY, { value: heapInfo.heapSize });
-            promises.push((0, networkService_1.createNewBmsEndpoint)(pm2Node, endpointData));
-        }
-        // Update or create heapUsage memory endpoints
-        if (heapUsageEndpoint)
-            promises.push((0, networkService_1.updateEndpoint)(heapUsageEndpoint, heapInfo.heapUsage));
-        else {
-            const endpointData = this._formatEndpointData(utils_1.PM2_ENDPOINTS.HEAP_USAGE_HISTORY, { value: heapInfo.heapUsage });
-            promises.push((0, networkService_1.createNewBmsEndpoint)(pm2Node, endpointData));
-        }
-        // Update or create heapUsedSize memory endpoints
-        if (heapUsedSizeEndpoint)
-            promises.push((0, networkService_1.updateEndpoint)(heapUsedSizeEndpoint, heapInfo.heapUsedSize));
-        else {
-            const endpointData = this._formatEndpointData(utils_1.PM2_ENDPOINTS.HEAP_USED_SIZE_HISTORY, { value: heapInfo.heapUsedSize });
-            promises.push((0, networkService_1.createNewBmsEndpoint)(pm2Node, endpointData));
-        }
-        return Promise.all(promises);
+        promises.push((0, networkService_1.updateOrCreateEndpoint)(pm2Node, utils_1.PM2_ENDPOINTS.HEAP_SIZE_HISTORY, { value: heapInfo.heapSize }, endpoints));
+        promises.push((0, networkService_1.updateOrCreateEndpoint)(pm2Node, utils_1.PM2_ENDPOINTS.HEAP_USAGE_HISTORY, { value: heapInfo.heapUsage }, endpoints));
+        promises.push((0, networkService_1.updateOrCreateEndpoint)(pm2Node, utils_1.PM2_ENDPOINTS.HEAP_USED_SIZE_HISTORY, { value: heapInfo.heapUsedSize }, endpoints));
+        return Promise.all(promises).then(async (results) => {
+            if (isInit) {
+                const p = results.map((endpoint) => (0, networkService_1.updateEndpointMaxDay)(endpoint, process.env.TIMESERIES_MAX_DAY || "2"));
+                await Promise.all(p);
+            }
+            return results;
+        });
     }
-    async _updateRebootEndpoint(pm2Node, value) {
-        const endpoints = await pm2Node.getChildren([spinal_model_bmsnetwork_1.SpinalBmsEndpoint.relationName]);
-        const rebootEndpoint = endpoints.find((endpoint) => endpoint.getName().get() === utils_1.PM2_ENDPOINTS.REBOOT_HISTORY.name);
-        if (rebootEndpoint)
-            return (0, networkService_1.updateEndpoint)(rebootEndpoint, value);
-        const endpointData = this._formatEndpointData(utils_1.PM2_ENDPOINTS.REBOOT_HISTORY, { value });
-        return (0, networkService_1.createNewBmsEndpoint)(pm2Node, endpointData);
+    async _updateRebootEndpoint(pm2Node, value, existingEndpoints, isInit = false) {
+        const endpoint = await (0, networkService_1.updateOrCreateEndpoint)(pm2Node, utils_1.PM2_ENDPOINTS.REBOOT_HISTORY, { value }, existingEndpoints);
+        if (isInit)
+            await (0, networkService_1.updateEndpointMaxDay)(endpoint, process.env.TIMESERIES_MAX_DAY || "2");
+        return endpoint;
     }
-    async _updateErroredEndpoint(pm2Node, erroredCount) {
-        const endpoints = await pm2Node.getChildren([spinal_model_bmsnetwork_1.SpinalBmsEndpoint.relationName]);
-        const erroredEndpoint = endpoints.find((endpoint) => endpoint.getName().get() === utils_1.PM2_ENDPOINTS.ERRORED_HISTORY.name);
-        if (erroredEndpoint)
-            return (0, networkService_1.updateEndpoint)(erroredEndpoint, erroredCount);
-        const endpointData = this._formatEndpointData(utils_1.PM2_ENDPOINTS.ERRORED_HISTORY, { value: erroredCount });
-        return (0, networkService_1.createNewBmsEndpoint)(pm2Node, endpointData);
-    }
-    _formatEndpointData(endpoint, data) {
-        return {
-            ...endpoint,
-            currentValue: data.value,
-            minValue: data.min,
-            maxValue: data.max,
-        };
+    async _updateErroredEndpoint(pm2Node, erroredCount, existingEndpoints, isInit = false) {
+        const endpoint = await (0, networkService_1.updateOrCreateEndpoint)(pm2Node, utils_1.PM2_ENDPOINTS.ERRORED_HISTORY, { value: erroredCount }, existingEndpoints);
+        if (isInit)
+            await (0, networkService_1.updateEndpointMaxDay)(endpoint, process.env.TIMESERIES_MAX_DAY || "2");
+        return endpoint;
     }
 }
 exports.EndpointUtils = EndpointUtils;

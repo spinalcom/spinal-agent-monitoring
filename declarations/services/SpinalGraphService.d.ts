@@ -13,11 +13,11 @@ export declare class SpinalGraphService {
     getGraph(): SpinalGraph | null;
     getVmContext(): SpinalContext | null;
     getPm2NodeByKey(key: string | number): SpinalNode | undefined;
-    setupSystemMetricsAndPm2(agentName: string, systemMetrics: ISystemMetrics, pm2Instances: ProcessDescription[]): Promise<(void | (void | SpinalNode<any>)[])[]>;
-    updateSystemMetrics(systemMetrics: ISystemMetrics): Promise<(void | SpinalNode<any>)[]>;
-    treatPm2Event(pm2Process: IPm2EventData): Promise<(void | SpinalNode<any>)[]>;
+    setupSystemMetricsAndPm2(agentName: string, systemMetrics: ISystemMetrics, pm2Instances: ProcessDescription[]): Promise<void>;
+    updateSystemMetrics(systemMetrics: ISystemMetrics, isInit?: boolean): Promise<SpinalNode<any>[]>;
+    treatPm2Event(event: IPm2EventData): Promise<SpinalNode<any> | SpinalNode<any>[]>;
     syncPm2Processes(pm2Processes: ProcessDescription[]): Promise<void[]>;
-    updatePm2ProcessesMetrics(pm2Processes: ProcessDescription | ProcessDescription[]): Promise<void[]>;
+    updatePm2ProcessesMetrics(pm2Processes: ProcessDescription | ProcessDescription[], isInit?: boolean): Promise<void[]>;
     private _updateInfo;
     private _initVmContext;
     private _initPm2Processes;
@@ -27,6 +27,8 @@ export declare class SpinalGraphService {
     private _buildPm2ProcessNodeInfo;
     private _watchAndSyncLogs;
     private _syncLogForProcess;
+    private _watchFile;
     private removePm2ProcessFromGraph;
+    private _updateOrganConfigData;
 }
 export default SpinalGraphService;

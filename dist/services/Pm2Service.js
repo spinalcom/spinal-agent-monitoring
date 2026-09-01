@@ -353,7 +353,13 @@ class Pm2Service {
         pm2_1.default.launchBus((err, bus) => {
             if (err)
                 throw err;
+            bus.on("process:config_data_change", async (data) => {
+                data.type = "process:config_data_change";
+                if (typeof callback === "function")
+                    await callback(data);
+            });
             bus.on("process:event", async (data) => {
+                data.type = "process:event";
                 if (typeof callback === "function")
                     await callback(data);
                 this._savePm2Event(data);

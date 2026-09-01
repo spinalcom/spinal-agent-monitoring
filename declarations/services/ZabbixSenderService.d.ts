@@ -27,10 +27,10 @@ declare class ZabbixSenderService {
     private intervalHandle;
     private retryHandle;
     private readonly queue;
-    private hostTargets;
     private pushUpdateCallback;
     private constructor();
     static getInstance(): ZabbixSenderService;
+    isCorrectlyConfigured(): boolean;
     startPeriodicPush(onPushUpdate?: (update: ZabbixPushUpdate) => void): Promise<void>;
     startPeriodicPush(updateIntervalMs: number): Promise<void>;
     startPeriodicPush(onPushUpdate: (update: ZabbixPushUpdate) => void, updateIntervalMs?: number): Promise<void>;
@@ -39,9 +39,9 @@ declare class ZabbixSenderService {
     private enqueueAndFlushCurrentSnapshot;
     private flushQueue;
     private _buildMetricsPayload;
-    private _sendDataToZabbixServers;
     private notifyPushUpdate;
     private sendWithZabbixTcp;
+    private _sendPacketToZabbixClient;
     private buildZabbixPacket;
     private validateZabbixResponse;
 }

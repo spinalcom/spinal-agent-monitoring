@@ -85,8 +85,10 @@ export interface ICommands {
 }
 
 export interface IPm2EventData {
+	type?: string;
 	at: number;
-	event: string;
+	event?: string;
+	data?: any;
 	process: ProcessDescription;
 	manually: boolean;
 }

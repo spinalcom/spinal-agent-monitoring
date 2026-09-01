@@ -1,4 +1,37 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -18,6 +51,7 @@ exports.splitActionResults = splitActionResults;
 exports.partitionResults = partitionResults;
 const pm2_1 = __importDefault(require("pm2"));
 const spinal_core_connectorjs_1 = require("spinal-core-connectorjs");
+const fs = __importStar(require("fs"));
 function getHeapInfo(process) {
     const pm2Env = process.pm2_env;
     const axmMonitor = pm2Env?.axm_monitor;
@@ -98,6 +132,7 @@ function getProcessLogPath(process, logType) {
 }
 async function uploadFileNewData(pathModel, newContent) {
     try {
+        // console.log(`Uploading new data to path: ${pathModel._server_id}`);
         // any type is used to avoid TypeScript errors
         const fs = spinal_core_connectorjs_1.FileSystem.get_inst();
         let path = (0, spinal_core_connectorjs_1.getUrlPath)(fs._protocol, fs._url, fs._port, `?s=${fs._session_num}&p=${pathModel._server_id}`);
@@ -126,10 +161,10 @@ function convertProcessToObject(processes) {
 function executeIntervalProcessAction(callback, intervalMs) {
     return setInterval(callback, intervalMs);
 }
-function _initLogPathInHub(processName) {
-    const buffer = Buffer.from("empty log file");
-    const file = new File([buffer], `${processName}.log`);
-    return new spinal_core_connectorjs_1.Path(file);
+async function _initLogPathInHub(pm2LogPath) {
+    const initialData = await fs.promises.readFile(pm2LogPath, "utf8");
+    const buffer = Buffer.from(initialData || "");
+    return new spinal_core_connectorjs_1.Path(buffer);
 }
 function splitActionResults(result) {
     return result.reduce((acc, res) => {
