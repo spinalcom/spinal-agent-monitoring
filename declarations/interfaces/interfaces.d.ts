@@ -34,6 +34,9 @@ export interface ISystemMetrics {
     macAddress?: string;
     ipAddress?: string;
     port?: string | number;
+    cpuUsagePercent?: string | number;
+    cpuIdle?: string | number;
+    cpuIdlePercent?: string | number;
 }
 export interface IProcessInfo {
     id?: string;

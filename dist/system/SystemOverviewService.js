@@ -100,6 +100,9 @@ class SystemOverviewService {
         return {
             //cpu
             cpuUsage: systemInfo.cpu.used.toString(),
+            cpuUsagePercent: systemInfo.cpu.usedPercent,
+            cpuIdle: systemInfo.cpu.idle.toString(),
+            cpuIdlePercent: systemInfo.cpu.idlePercent,
             // ram
             ramUsagePercent: systemInfo.memory.usedPercent,
             ramUsage: `${systemInfo.memory.used} ${systemInfo.memory.unit}`,

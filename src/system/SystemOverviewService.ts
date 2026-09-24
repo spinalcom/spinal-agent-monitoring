@@ -114,6 +114,9 @@ export default class SystemOverviewService {
 		return {
 			//cpu
 			cpuUsage: systemInfo.cpu.used.toString(),
+			cpuUsagePercent: systemInfo.cpu.usedPercent as string,
+			cpuIdle: systemInfo.cpu.idle.toString(),
+			cpuIdlePercent: systemInfo.cpu.idlePercent as string,
 
 			// ram
 			ramUsagePercent: systemInfo.memory.usedPercent as string,
