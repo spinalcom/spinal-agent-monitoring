@@ -24,6 +24,10 @@ export interface Pm2ProcessResponse {
     outLogPath?: string;
     errLogPath?: string;
     restarts?: number;
+    staticId?: string;
+    dynamicId?: string;
+    heapMemory?: any;
+    monit?: any;
 }
 export interface Pm2StatusSummaryResponse {
     total: number;

@@ -1,6 +1,6 @@
 import { ProcessDescription } from "pm2";
-import SystemOverviewService from "../services/SystemOverviewService";
-import { Pm2Discovery, ZabbixMetric } from "../services/ZabbixSenderService";
+import SystemOverviewService from "../system/SystemOverviewService";
+import { Pm2Discovery, ZabbixMetric } from "../system/ZabbixSenderService";
 import { getAgentHostName } from "./systemUtils";
 import { getProcessId, getProcessStatusCode } from "./pm2Utils";
 

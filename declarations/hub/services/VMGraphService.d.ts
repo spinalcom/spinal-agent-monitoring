@@ -1,0 +1,34 @@
+import { SpinalContext, SpinalGraph, SpinalNode } from "spinal-model-graph";
+import { IPm2EventData, ISystemMetrics } from "../../interfaces";
+import { ProcessDescription } from "pm2";
+export declare class VMGraphService {
+    private static _instance;
+    private _graph;
+    private vmContext;
+    private _logSyncked;
+    pm2Maps: Map<string | number, SpinalNode>;
+    private constructor();
+    static getInstance(): VMGraphService;
+    setGraph(graph: SpinalGraph): void;
+    getGraph(): SpinalGraph | null;
+    getVmContext(): SpinalContext | null;
+    private _initVmContext;
+    getPm2NodeByKey(key: string | number): SpinalNode | undefined;
+    setupSystemMetricsAndPm2(hostName: string, systemMetrics: ISystemMetrics, pm2Instances: ProcessDescription[]): Promise<void>;
+    updateSystemMetrics(systemMetrics: ISystemMetrics, isInit?: boolean): any;
+    treatPm2Event(event: IPm2EventData): Promise<any>;
+    syncPm2Processes(pm2Processes: ProcessDescription[]): Promise<any>;
+    updatePm2ProcessesMetrics(pm2Processes: ProcessDescription | ProcessDescription[], isInit?: boolean): Promise<any>;
+    private _updateInfo;
+    private _initPm2Processes;
+    private _addPm2ProcessToGraph;
+    private _initializeExistingPm2Processes;
+    private _addLogRelationToPm2Process;
+    private _buildPm2ProcessNodeInfo;
+    private _watchAndSyncLogs;
+    private _syncLogForProcess;
+    private _watchFile;
+    private removePm2ProcessFromGraph;
+    private _updateOrganConfigData;
+}
+export default VMGraphService;

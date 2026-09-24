@@ -18,4 +18,6 @@ __exportStar(require("./ICpu"), exports);
 __exportStar(require("./IMemoryInfo"), exports);
 __exportStar(require("./interfaces"), exports);
 __exportStar(require("./IResponses"), exports);
+__exportStar(require("./IVMResponse"), exports);
+__exportStar(require("./IPm2Response"), exports);
 //# sourceMappingURL=index.js.map

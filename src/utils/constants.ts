@@ -1,3 +1,4 @@
+import { time } from "console";
 import { InputDataEndpoint, InputDataEndpointDataType, InputDataEndpointType } from "spinal-model-bmsnetwork";
 
 export const SPINAL_COMMAND_TYPE = {
@@ -13,6 +14,7 @@ export const SPINAL_COMMAND_STATUS = {
 	in_progress: "in_progress",
 	completed: "completed",
 	failed: "failed",
+	timeout: "timeout",
 } as const;
 
 export const MONITORING_MESSAGE_TYPE = "monitoring_message";

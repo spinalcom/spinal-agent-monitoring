@@ -11,6 +11,7 @@ export declare const SPINAL_COMMAND_STATUS: {
     readonly in_progress: "in_progress";
     readonly completed: "completed";
     readonly failed: "failed";
+    readonly timeout: "timeout";
 };
 export declare const MONITORING_MESSAGE_TYPE = "monitoring_message";
 export declare const SYSTEM_METRICS_EVENT_TYPE = "systemMetrics";

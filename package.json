@@ -7,10 +7,10 @@
 	"scripts": {
 		"dev": "npm run build && nodemon",
 		"build": "rm -fr dist && npm run tsoa && tsc",
-		"start": "tsc && node dist/index.js",
+		"start": "npm run build && node dist/index.js",
 		"start:server": "tsc && node dist/server/index.js",
 		"tsoa": "tsoa spec-and-routes",
-		"test": "echo \"Error: no test specified\" && exit 1"
+		"test": "node --test test/**/*.test.js"
 	},
 	"author": "",
 	"license": "ISC",

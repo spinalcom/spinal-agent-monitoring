@@ -14,6 +14,7 @@ exports.SPINAL_COMMAND_STATUS = {
     in_progress: "in_progress",
     completed: "completed",
     failed: "failed",
+    timeout: "timeout",
 };
 exports.MONITORING_MESSAGE_TYPE = "monitoring_message";
 exports.SYSTEM_METRICS_EVENT_TYPE = "systemMetrics";

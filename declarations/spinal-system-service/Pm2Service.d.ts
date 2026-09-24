@@ -1,0 +1,40 @@
+import pm2 from "pm2";
+import { ActionResponse, Pm2LogType, Pm2ProcessLogsResponse, Pm2ProcessMetricsResponse, Pm2StatusSummaryResponse } from "../interfaces/IResponses";
+import { SpinalNode } from "spinal-model-graph";
+import { IPm2EventData } from "../interfaces";
+declare class Pm2Service {
+    private static _instance;
+    private _isConnected;
+    pm2Maps: Map<string | number, SpinalNode>;
+    private constructor();
+    static getInstance(): Pm2Service;
+    listenToPm2Actions(callback: (data: IPm2EventData) => void): Promise<void>;
+    getAllPm2Processes(): Promise<pm2.ProcessDescription[]>;
+    getPm2ProcessByKey(key: string): Promise<pm2.ProcessDescription | null>;
+    startPm2Process(processKeys: string | number | (string | number)[]): Promise<ActionResponse[]>;
+    stopPm2Process(processKeys: string | number | (string | number)[]): Promise<ActionResponse[]>;
+    restartPm2Process(processKeys: string | number | (string | number)[]): Promise<ActionResponse[]>;
+    reloadPm2Process(processKeys: string | number | (string | number)[]): Promise<ActionResponse[]>;
+    deletePm2Process(processKeys: string | number | (string | number)[]): Promise<ActionResponse[]>;
+    runPm2Action(action: "start" | "stop" | "restart" | "reload" | "delete", processKeys: string | number | (string | number)[]): Promise<ActionResponse[]>;
+    getPm2StatusSummary(): Promise<Pm2StatusSummaryResponse>;
+    getPm2ProcessMetricsByKey(key: string): Promise<Pm2ProcessMetricsResponse | null>;
+    getPm2ProcessLogsByKey(key: string, tail?: number, logType?: Pm2LogType): Promise<Pm2ProcessLogsResponse | null>;
+    private _executePm2BulkAction;
+    private _readLogTail;
+    private subscribeToPm2EventStream;
+    getPm2MetricsFormatted(): Promise<{
+        name: string | undefined;
+        pm_id: number | undefined;
+        status: string | undefined;
+        cpu: number | undefined;
+        memory: number | undefined;
+        uptime: number | undefined;
+    }[]>;
+    private _connectToPm2;
+    private _listPm2Processes;
+    private _disconnectFromPm2;
+    private _savePm2Event;
+}
+export { Pm2Service };
+export default Pm2Service;

@@ -2,8 +2,9 @@ import { ProcessDescription } from "pm2";
 import { ActionResponse, Pm2ProcessResponse } from "../interfaces/IResponses";
 import pm2 from "pm2";
 import { Path as SpinalPath, FileSystem, getUrlPath, File as SpinalFile } from "spinal-core-connectorjs";
-import { Pm2Process } from "../models";
+// import { Pm2Process } from "../spinal-monitoring-service/models";
 import * as fs from "fs";
+import axios from "axios";
 
 export function getHeapInfo(process: ProcessDescription) {
 	const pm2Env = process.pm2_env as { [key: string]: unknown } | undefined;
@@ -121,16 +122,32 @@ export async function uploadFileNewData(pathModel: SpinalPath, newContent: Buffe
 	}
 }
 
-export function convertProcessToObject(processes: Pm2Process[]): { [key: string]: Pm2Process } {
-	const processObj: { [key: string]: Pm2Process } = {};
+export async function readFileContent(pathModel: SpinalPath): Promise<string[] | null> {
+	try {
+		const fs: any = FileSystem.get_inst();
 
-	for (const process of processes) {
-		const processId = process.pm_id.get()?.toString() || process.name.get() || "unknown";
-		processObj[processId] = process;
+		let path = getUrlPath(fs._protocol, fs._url, fs._port, `sceen/_?u=${pathModel._server_id}`);
+		const response = await axios.get(path, {
+			responseType: "text",
+		});
+
+		const content = typeof response.data === "string" ? response.data : String(response.data ?? "");
+		return content.split(/\r?\n/);
+	} catch (error) {
+		return null;
 	}
-
-	return processObj;
 }
+
+// export function convertProcessToObject(processes: Pm2Process[]): { [key: string]: Pm2Process } {
+// 	const processObj: { [key: string]: Pm2Process } = {};
+
+// 	for (const process of processes) {
+// 		const processId = process.pm_id.get()?.toString() || process.name.get() || "unknown";
+// 		processObj[processId] = process;
+// 	}
+
+// 	return processObj;
+// }
 
 export function executeIntervalProcessAction(callback: () => void, intervalMs: number): NodeJS.Timeout {
 	return setInterval(callback, intervalMs);

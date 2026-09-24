@@ -1,15 +1,19 @@
 import express from "express";
-import { RegisterRoutes } from "../server/routes";
-import { InitSwagger } from "../server/swagger";
+import { RegisterRoutes } from "../api/routes";
+import { InitSwagger } from "../api/swagger";
 import { Server } from "socket.io";
-import { WebsocketMiddleware } from "../server/middleware/webSocketMiddleware";
+import { WebsocketMiddleware } from "../api/middleware/webSocketMiddleware";
+import SpinalhubService from "../api/services/SpinalhubService";
 
-export function registerMonitoringAgent(app: express.Application, io: Server): void {
+export async function registerMonitoringAgent(app: express.Application, io: Server, conn: spinal.FileSystem, configFilePath?: string): Promise<void> {
+	SpinalhubService.getInstance().setConnection(conn);
+	await SpinalhubService.getInstance().initializeConfigFile(configFilePath);
+
 	InitSwagger(app);
 	RegisterRoutes(app);
 	WebsocketMiddleware.getInstance().init(io);
 }
 
 export * from "../utils";
-export * from "../services";
-export * from "../models";
+export * from "../system";
+export * from "../api/models";

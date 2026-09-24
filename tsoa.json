@@ -1,7 +1,7 @@
 {
-	"entryFile": "src/server/index.ts",
+	"entryFile": "src/api/index.ts",
 	"noImplicitAdditionalProperties": "silently-remove-extras",
-	"controllerPathGlobs": ["src/server/controllers/*Controller.ts"],
+	"controllerPathGlobs": ["src/api/controllers/*Controller.ts"],
 	"spec": {
 		"name": "spinal-organ-health",
 		"description": "API for Spinal Organ Health Monitoring",
@@ -9,11 +9,11 @@
 			"name": "SpinalCom",
 			"email": "developers@spinalcom.com"
 		},
-		"outputDirectory": "src/server/swagger",
+		"outputDirectory": "src/api/swagger",
 		"specVersion": 3
 	},
 	"routes": {
-		"routesDir": "src/server",
+		"routesDir": "src/api",
 		"middleware": "express"
 	}
 }

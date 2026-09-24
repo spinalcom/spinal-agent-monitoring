@@ -44,14 +44,16 @@ exports.getProcessId = getProcessId;
 exports.getProcessStatusCode = getProcessStatusCode;
 exports.getProcessLogPath = getProcessLogPath;
 exports.uploadFileNewData = uploadFileNewData;
-exports.convertProcessToObject = convertProcessToObject;
+exports.readFileContent = readFileContent;
 exports.executeIntervalProcessAction = executeIntervalProcessAction;
 exports._initLogPathInHub = _initLogPathInHub;
 exports.splitActionResults = splitActionResults;
 exports.partitionResults = partitionResults;
 const pm2_1 = __importDefault(require("pm2"));
 const spinal_core_connectorjs_1 = require("spinal-core-connectorjs");
+// import { Pm2Process } from "../spinal-monitoring-service/models";
 const fs = __importStar(require("fs"));
+const axios_1 = __importDefault(require("axios"));
 function getHeapInfo(process) {
     const pm2Env = process.pm2_env;
     const axmMonitor = pm2Env?.axm_monitor;
@@ -150,14 +152,28 @@ async function uploadFileNewData(pathModel, newContent) {
         return false;
     }
 }
-function convertProcessToObject(processes) {
-    const processObj = {};
-    for (const process of processes) {
-        const processId = process.pm_id.get()?.toString() || process.name.get() || "unknown";
-        processObj[processId] = process;
+async function readFileContent(pathModel) {
+    try {
+        const fs = spinal_core_connectorjs_1.FileSystem.get_inst();
+        let path = (0, spinal_core_connectorjs_1.getUrlPath)(fs._protocol, fs._url, fs._port, `sceen/_?u=${pathModel._server_id}`);
+        const response = await axios_1.default.get(path, {
+            responseType: "text",
+        });
+        const content = typeof response.data === "string" ? response.data : String(response.data ?? "");
+        return content.split(/\r?\n/);
     }
-    return processObj;
+    catch (error) {
+        return null;
+    }
 }
+// export function convertProcessToObject(processes: Pm2Process[]): { [key: string]: Pm2Process } {
+// 	const processObj: { [key: string]: Pm2Process } = {};
+// 	for (const process of processes) {
+// 		const processId = process.pm_id.get()?.toString() || process.name.get() || "unknown";
+// 		processObj[processId] = process;
+// 	}
+// 	return processObj;
+// }
 function executeIntervalProcessAction(callback, intervalMs) {
     return setInterval(callback, intervalMs);
 }
