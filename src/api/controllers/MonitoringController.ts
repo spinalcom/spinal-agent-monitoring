@@ -109,6 +109,7 @@ export class MonitoringController extends Controller {
 			return processes.map((process) => {
 				const info = process.info.get();
 				return {
+					name: info.name,
 					pm_id: info.pm_id,
 					status: info.status,
 					restarts: info.restarts,

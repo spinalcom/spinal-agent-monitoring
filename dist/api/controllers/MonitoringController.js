@@ -110,6 +110,7 @@ let MonitoringController = class MonitoringController extends tsoa_1.Controller 
             return processes.map((process) => {
                 const info = process.info.get();
                 return {
+                    name: info.name,
                     pm_id: info.pm_id,
                     status: info.status,
                     restarts: info.restarts,
