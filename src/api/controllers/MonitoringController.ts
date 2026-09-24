@@ -458,6 +458,9 @@ export class MonitoringController extends Controller {
 			freeDisk: info.freeDisk,
 			diskUsage: info.diskUsage,
 			diskUsagePercent: info.diskUsagePercent,
+			cpuUsagePercent: info.cpuUsagePercent,
+			cpuIdle: info.cpuIdle,
+			cpuIdlePercent: info.cpuIdlePercent,
 		};
 	}
 

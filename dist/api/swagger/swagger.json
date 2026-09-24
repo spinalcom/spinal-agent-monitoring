@@ -92,6 +92,15 @@
                     },
                     "port": {
                         "type": "string"
+                    },
+                    "cpuUsagePercent": {
+                        "type": "string"
+                    },
+                    "cpuIdle": {
+                        "type": "string"
+                    },
+                    "cpuIdlePercent": {
+                        "type": "string"
                     }
                 },
                 "type": "object",

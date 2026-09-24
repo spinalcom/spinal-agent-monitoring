@@ -6,6 +6,9 @@ export interface IVMResponse extends IVMMetrics {
     macAddress?: string;
     ipAddress?: string;
     port?: string;
+    cpuUsagePercent?: string;
+    cpuIdle?: string;
+    cpuIdlePercent?: string;
 }
 export interface IVMMetrics {
     cpuUsage?: string;

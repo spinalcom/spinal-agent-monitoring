@@ -428,6 +428,9 @@ let MonitoringController = class MonitoringController extends tsoa_1.Controller 
             freeDisk: info.freeDisk,
             diskUsage: info.diskUsage,
             diskUsagePercent: info.diskUsagePercent,
+            cpuUsagePercent: info.cpuUsagePercent,
+            cpuIdle: info.cpuIdle,
+            cpuIdlePercent: info.cpuIdlePercent,
         };
     }
     _formatPm2Process(pm2Process) {
