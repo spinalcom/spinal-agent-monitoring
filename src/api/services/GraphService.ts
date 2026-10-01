@@ -150,10 +150,11 @@ export class GraphService {
 
 	public async handlePm2Event(vmNode: SpinalContext, event: IPm2EventData) {
 		const processKey = event.process.pm_id ?? event.process.name;
+		const processData = event.process;
 
 		let processFound = await this.getPm2ProcessNodeByKey(vmNode, processKey as string | number);
 
-		if (!processFound) processFound = (await this._addPm2ProcessToGraph(vmNode, event.process)) as SpinalNode;
+		if (!processFound) processFound = (await this._addPm2ProcessToGraph(vmNode, processData)) as SpinalNode;
 
 		// change organ config_data
 		if (event.type == "process:config_data_change") return this._updateOrganConfigData(processFound, event.data);
@@ -168,7 +169,7 @@ export class GraphService {
 
 		const value = ["stop", "exit", "errored", "error"].includes(eventType) ? 0 : 1;
 		promises.push(endpointService._updateRebootEndpoint(processFound, value));
-		promises.push(this.updateOrCreatePm2Process(vmNode, [event.process]));
+		promises.push(this.updateOrCreatePm2Process(vmNode, [processData]));
 
 		return Promise.all(promises);
 	}
@@ -302,7 +303,9 @@ export class GraphService {
 		for (const pm2Process of pm2Processes) {
 			let processAlreadyExist: SpinalNode | null = existingPm2Processes[pm2Process.pm_id as number] || existingPm2Processes[pm2Process.name as string] || null;
 
-			if (!processAlreadyExist || processAlreadyExist.getName().get() !== pm2Process.name) {
+			if (processAlreadyExist && processAlreadyExist.getName().get() === pm2Process.name) {
+				this._updatePm2ProcessNodeInfo(processAlreadyExist, pm2Process);
+			} else if (!processAlreadyExist || processAlreadyExist.getName().get() !== pm2Process.name) {
 				if (processAlreadyExist) await this.removePm2ProcessFromGraph(context, processAlreadyExist);
 
 				// Add the new process to the graph and update the map
@@ -368,6 +371,17 @@ export class GraphService {
 	private _updateOrganConfigData(processNode: SpinalNode, configData: { [key: string]: any }) {
 		if (!processNode.info.configFile) processNode.info.add_attr("configFile", configData);
 		else processNode.info.configFile.set(configData);
+
+		return processNode;
+	}
+
+	private _updatePm2ProcessNodeInfo(processNode: SpinalNode, pm2Process: ProcessDescription) {
+		const updatedInfo: any = this._buildPm2ProcessNodeInfo(pm2Process);
+		for (const key in updatedInfo) {
+			const value = updatedInfo[key];
+			if (processNode.info[key]) processNode.info[key].set(value);
+			else processNode.info.add_attr(key, value);
+		}
 
 		return processNode;
 	}

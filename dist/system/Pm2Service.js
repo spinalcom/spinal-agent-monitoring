@@ -384,7 +384,10 @@ class Pm2Service {
             });
             // Listen to general PM2 events (start, stop, restart, etc.)
             bus.on("process:event", async (data) => {
+                const id = data.process.pm_id ?? data.process.name;
                 data.type = "process:event";
+                // getRealDescription
+                data.process = (await this.getPm2ProcessByKey(id));
                 if (typeof callback === "function")
                     await callback(data);
                 this._savePm2Event(data);

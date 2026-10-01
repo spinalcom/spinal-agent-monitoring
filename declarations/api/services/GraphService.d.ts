@@ -43,5 +43,6 @@ export declare class GraphService {
     private _addLogRelationToPm2Process;
     private _buildPm2ProcessNodeInfo;
     private _updateOrganConfigData;
+    private _updatePm2ProcessNodeInfo;
 }
 export default GraphService;

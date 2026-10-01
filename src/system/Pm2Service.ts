@@ -1,4 +1,4 @@
-import pm2 from "pm2";
+import pm2, { ProcessDescription } from "pm2";
 import { executeCommand, formatProcess } from "../utils/pm2Utils";
 import { ActionResponse, Pm2LogType, Pm2ProcessLogsResponse, Pm2ProcessMetricsResponse, Pm2StatusSummaryResponse } from "../interfaces/IResponses";
 import { SpinalNode } from "spinal-model-graph";
@@ -388,7 +388,12 @@ class Pm2Service {
 
 			// Listen to general PM2 events (start, stop, restart, etc.)
 			bus.on("process:event", async (data: IPm2EventData) => {
+				const id = data.process.pm_id ?? data.process.name;
+
 				data.type = "process:event";
+
+				// getRealDescription
+				data.process = (await this.getPm2ProcessByKey(id as any)) as ProcessDescription;
 
 				if (typeof callback === "function") await callback(data);
 				this._savePm2Event(data);
