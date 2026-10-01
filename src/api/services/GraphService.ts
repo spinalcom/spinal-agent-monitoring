@@ -59,9 +59,9 @@ export class GraphService {
 
 	public async executeCommand(vmNode: SpinalContext, type: string, processesIds?: string | number | (string | number)[]): Promise<ActionResponse[]> {
 		return new Promise(async (resolve, reject) => {
-			await this._initCommandList(vmNode);
-
 			const command = new SpinalCommand(type as any, processesIds, vmNode);
+
+			await this._initCommandList(vmNode, command);
 
 			const timeoutId = setTimeout(() => {
 				command.status.set(SPINAL_COMMAND_STATUS.timeout);
@@ -81,7 +81,7 @@ export class GraphService {
 		});
 	}
 
-	private async _initCommandList(vmNode: SpinalContext): Promise<Lst | null> {
+	private async _initCommandList(vmNode: SpinalContext, spinalCommand?: SpinalCommand): Promise<Lst | null> {
 		let commandLst = null;
 		if (!vmNode?.info.pm2_commands) {
 			commandLst = new Lst([]);
@@ -89,6 +89,8 @@ export class GraphService {
 		} else if (vmNode?.info.pm2_commands) {
 			commandLst = await vmNode.info.pm2_commands.load();
 		}
+
+		if (spinalCommand) commandLst.push(spinalCommand);
 
 		if (vmNode.info.lastCommand) vmNode.info.lastCommand.set(Date.now());
 		else vmNode.info.add_attr("lastCommand", Date.now());

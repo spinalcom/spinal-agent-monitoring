@@ -53,8 +53,8 @@ class GraphService {
     }
     async executeCommand(vmNode, type, processesIds) {
         return new Promise(async (resolve, reject) => {
-            await this._initCommandList(vmNode);
             const command = new models_1.SpinalCommand(type, processesIds, vmNode);
+            await this._initCommandList(vmNode, command);
             const timeoutId = setTimeout(() => {
                 command.status.set(utils_1.SPINAL_COMMAND_STATUS.timeout);
             }, 10000);
@@ -72,7 +72,7 @@ class GraphService {
             });
         });
     }
-    async _initCommandList(vmNode) {
+    async _initCommandList(vmNode, spinalCommand) {
         let commandLst = null;
         if (!vmNode?.info.pm2_commands) {
             commandLst = new spinal_core_connectorjs_1.Lst([]);
@@ -81,6 +81,8 @@ class GraphService {
         else if (vmNode?.info.pm2_commands) {
             commandLst = await vmNode.info.pm2_commands.load();
         }
+        if (spinalCommand)
+            commandLst.push(spinalCommand);
         if (vmNode.info.lastCommand)
             vmNode.info.lastCommand.set(Date.now());
         else

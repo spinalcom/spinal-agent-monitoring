@@ -3,6 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const api_1 = require("./api");
 const services_1 = require("./api/services");
 const SpinalhubService_1 = require("./api/services/SpinalhubService");
 const system_1 = require("./system");
@@ -46,11 +47,13 @@ async function bindCommandList(vmNode, services) {
         }
         const commands = Array.from(commandList);
         for (const commandModel of commands) {
-            if (commandExecuted[commandModel._server_id] || commandModel.isExecuted()) {
+            const commandIsExecuted = commandExecuted[commandModel.id.get()];
+            const commandIsNotAvailable = !commandModel.isAvailable();
+            if (commandIsExecuted || commandIsNotAvailable) {
                 await commandModel.removeFromGraph();
                 continue;
             }
-            commandExecuted[commandModel._server_id] = true;
+            commandExecuted[commandModel.id.get()] = true;
             await commandModel.execute(services.pm2Service);
         }
     });
@@ -117,6 +120,8 @@ function startZabbixPushIfConfigured(zabbixSenderService) {
         startPeriodicMetricsUpdate(services, vmContext);
         await startPm2Listeners(services, vmContext);
         startZabbixPushIfConfigured(services.zabbixSenderService);
+        const port = Number.parseInt(process.env.SERVER_PORT || "3000", 10);
+        (0, api_1.runExpressServer)(port);
     }
     catch (error) {
         console.error(error);

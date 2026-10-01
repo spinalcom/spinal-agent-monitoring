@@ -126,10 +126,8 @@ export async function readFileContent(pathModel: SpinalPath): Promise<string[] |
 	try {
 		const fs: any = FileSystem.get_inst();
 
-		let path = getUrlPath(fs._protocol, fs._url, fs._port, `sceen/_?u=${pathModel._server_id}`);
-		const response = await axios.get(path, {
-			responseType: "text",
-		});
+		let path = getUrlPath(fs._protocol, fs._url, fs._port, `?u=${pathModel._server_id}`);
+		const response = await axios.get(path, { responseType: "text" });
 
 		const content = typeof response.data === "string" ? response.data : String(response.data ?? "");
 		return content.split(/\r?\n/);

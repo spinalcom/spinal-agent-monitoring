@@ -155,10 +155,8 @@ async function uploadFileNewData(pathModel, newContent) {
 async function readFileContent(pathModel) {
     try {
         const fs = spinal_core_connectorjs_1.FileSystem.get_inst();
-        let path = (0, spinal_core_connectorjs_1.getUrlPath)(fs._protocol, fs._url, fs._port, `sceen/_?u=${pathModel._server_id}`);
-        const response = await axios_1.default.get(path, {
-            responseType: "text",
-        });
+        let path = (0, spinal_core_connectorjs_1.getUrlPath)(fs._protocol, fs._url, fs._port, `?u=${pathModel._server_id}`);
+        const response = await axios_1.default.get(path, { responseType: "text" });
         const content = typeof response.data === "string" ? response.data : String(response.data ?? "");
         return content.split(/\r?\n/);
     }

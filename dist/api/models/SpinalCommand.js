@@ -43,6 +43,7 @@ class SpinalCommand extends spinal_core_connectorjs_1.Model {
             }
             this.executionResult.set(results);
             this.status.set(constants_1.SPINAL_COMMAND_STATUS.completed);
+            await this.removeFromGraph();
             return results;
         }
         catch (error) {
@@ -56,7 +57,12 @@ class SpinalCommand extends spinal_core_connectorjs_1.Model {
         let commandLst = await this.vmNode.info?.pm2_commands?.load();
         if (!commandLst)
             return false;
-        commandLst.remove(this);
+        for (let i = 0; i < commandLst.length; i++) {
+            if (commandLst[i]._server_id === this._server_id) {
+                commandLst.splice(i, 1);
+                break;
+            }
+        }
         return true;
     }
     isAvailable() {
@@ -66,7 +72,7 @@ class SpinalCommand extends spinal_core_connectorjs_1.Model {
     isNotExpired() {
         const createdAt = this.createdAt.get();
         const now = Date.now();
-        const expirationTime = 30 * 1000; // 30 seconds
+        const expirationTime = 30 * 1000; // 10 seconds
         return now - createdAt < expirationTime;
     }
 }
