@@ -4,12 +4,13 @@ exports.SpinalCommand = void 0;
 const spinal_core_connectorjs_1 = require("spinal-core-connectorjs");
 const constants_1 = require("../../utils/constants");
 const Pm2Service_1 = require("../../system/Pm2Service");
-const uuid_1 = require("uuid");
+const utils_1 = require("../../utils");
 class SpinalCommand extends spinal_core_connectorjs_1.Model {
     constructor(type, processesIds, vmNode) {
         super();
         this.add_attr({
-            id: (0, uuid_1.v4)(),
+            // id: uuidv4(),
+            id: (0, utils_1.generateUniqId)(),
             type,
             processesIds,
             status: new spinal_core_connectorjs_1.Choice(0, Object.values(constants_1.SPINAL_COMMAND_STATUS)),

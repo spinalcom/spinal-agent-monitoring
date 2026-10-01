@@ -145,6 +145,7 @@ class GraphService {
             promises.push(endpointService._updateErroredEndpoint(processFound, 1));
         const value = ["stop", "exit", "errored", "error"].includes(eventType) ? 0 : 1;
         promises.push(endpointService._updateRebootEndpoint(processFound, value));
+        promises.push(this.updateOrCreatePm2Process(vmNode, [event.process]));
         return Promise.all(promises);
     }
     async updatePm2ProcessesMetrics(vmNode, pm2Processes, existingNodes, isInit = false) {

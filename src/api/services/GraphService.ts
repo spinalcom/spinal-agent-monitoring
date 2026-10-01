@@ -168,6 +168,7 @@ export class GraphService {
 
 		const value = ["stop", "exit", "errored", "error"].includes(eventType) ? 0 : 1;
 		promises.push(endpointService._updateRebootEndpoint(processFound, value));
+		promises.push(this.updateOrCreatePm2Process(vmNode, [event.process]));
 
 		return Promise.all(promises);
 	}

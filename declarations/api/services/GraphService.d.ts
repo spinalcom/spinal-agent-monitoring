@@ -24,7 +24,7 @@ export declare class GraphService {
     getPm2ProcessesNodes(vmNode: SpinalContext): Promise<SpinalNode[]>;
     updateOrCreatePm2Process(vmNode: SpinalContext, pm2Process: ProcessDescription[]): Promise<SpinalNode[]>;
     getPm2ProcessNodeByKey(vmNode: SpinalContext, key: string | number): Promise<SpinalNode | undefined>;
-    handlePm2Event(vmNode: SpinalContext, event: IPm2EventData): Promise<SpinalNode<any> | SpinalNode<any>[]>;
+    handlePm2Event(vmNode: SpinalContext, event: IPm2EventData): Promise<SpinalNode<any> | (SpinalNode<any> | SpinalNode<any>[])[]>;
     updatePm2ProcessesMetrics(vmNode: SpinalContext, pm2Processes: ProcessDescription | ProcessDescription[], existingNodes?: {
         [key: string]: SpinalNode;
     }, isInit?: boolean): Promise<void[]>;

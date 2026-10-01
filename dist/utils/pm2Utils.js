@@ -49,6 +49,7 @@ exports.executeIntervalProcessAction = executeIntervalProcessAction;
 exports._initLogPathInHub = _initLogPathInHub;
 exports.splitActionResults = splitActionResults;
 exports.partitionResults = partitionResults;
+exports.generateUniqId = generateUniqId;
 const pm2_1 = __importDefault(require("pm2"));
 const spinal_core_connectorjs_1 = require("spinal-core-connectorjs");
 // import { Pm2Process } from "../spinal-monitoring-service/models";
@@ -195,5 +196,8 @@ function partitionResults(result, successKey) {
         [successKey]: success,
         failed,
     };
+}
+function generateUniqId() {
+    return `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 }
 //# sourceMappingURL=pm2Utils.js.map

@@ -176,3 +176,7 @@ export function partitionResults<T extends string>(result: ActionResponse[], suc
 		failed,
 	} as { [K in T]: ActionResponse[] } & { failed: ActionResponse[] };
 }
+
+export function generateUniqId(): string {
+	return `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+}

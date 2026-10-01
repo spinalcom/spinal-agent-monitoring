@@ -3,15 +3,17 @@ import { SPINAL_COMMAND_STATUS, SPINAL_COMMAND_TYPE } from "../../utils/constant
 import { IProcessInfo } from "../../interfaces/interfaces";
 import { Pm2Service } from "../../system/Pm2Service";
 import { ActionResponse } from "../../interfaces/IResponses";
-import { v4 as uuidv4 } from "uuid";
+// import { v4 as uuidv4 } from "uuid";
 import type { SpinalContext } from "spinal-model-graph";
 import { exec } from "child_process";
+import { generateUniqId } from "../../utils";
 
 class SpinalCommand extends Model {
 	constructor(type?: (typeof SPINAL_COMMAND_TYPE)[keyof typeof SPINAL_COMMAND_TYPE], processesIds?: string | number | (string | number)[], vmNode?: SpinalContext) {
 		super();
 		this.add_attr({
-			id: uuidv4(),
+			// id: uuidv4(),
+			id: generateUniqId(),
 			type,
 			processesIds,
 			status: new Choice(0, Object.values(SPINAL_COMMAND_STATUS)),

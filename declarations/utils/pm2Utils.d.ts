@@ -25,3 +25,4 @@ export declare function partitionResults<T extends string>(result: ActionRespons
 } & {
     failed: ActionResponse[];
 };
+export declare function generateUniqId(): string;
