@@ -124,12 +124,32 @@ function startPeriodicMetricsUpdate(services: RuntimeServices, vmContext: any): 
 }
 
 async function startPm2Listeners(services: RuntimeServices, vmContext: any): Promise<void> {
-	const treatPm2EventDebounced = lodash.debounce(services.graphService.handlePm2Event.bind(services.graphService), 1000);
+	const debouncedPm2Handlers = new Map<string | number, lodash.DebouncedFunc<(context: any, event: IPm2EventData) => void>>();
+
+	// Listen to PM2 actions and handle them with debounced handlers to avoid excessive updates.
+	// Debounced handlers help to reduce the frequency of updates for the same PM2 process
 
 	await services.pm2Service.listenToPm2Actions(async (data: IPm2EventData) => {
-		treatPm2EventDebounced(vmContext, data);
+		const processKey = data.process?.pm_id ?? data.process?.name;
+
+		if (processKey === undefined || processKey === null) {
+			await services.graphService.handlePm2Event(vmContext, data);
+			return;
+		}
+
+		let debouncedHandler = debouncedPm2Handlers.get(processKey);
+		if (!debouncedHandler) {
+			debouncedHandler = lodash.debounce((context: any, event: IPm2EventData) => {
+				void services.graphService.handlePm2Event(context, event);
+			}, 1000);
+			// Store the debounced handler for future use to prevent creating multiple handlers for the same process.
+			debouncedPm2Handlers.set(processKey, debouncedHandler);
+		}
+
+		debouncedHandler(vmContext, data);
 	});
 
+	// Watch for PM2 log updates and update the corresponding log files in the graph.
 	await services.pm2Service.watchPm2Logs(async (data: Pm2LogPayload) => {
 		const pm_id = data.pm_id || data.name;
 		const pm2Node = await services.graphService.getPm2ProcessNodeByKey(vmContext, pm_id);
