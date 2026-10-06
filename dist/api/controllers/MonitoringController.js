@@ -445,8 +445,11 @@ let MonitoringController = class MonitoringController extends tsoa_1.Controller 
             restarts: info.restarts,
             uptime: info.uptime,
             heapMemory: info.heapMemory,
+            createdAt: info.created_at,
             monit: info.monit,
             cwd: info.cwd,
+            outLogPath: info.log?.out || "",
+            errLogPath: info.log?.err || "",
         };
     }
     _formatPm2ProcessMetrics(pm2Process) {

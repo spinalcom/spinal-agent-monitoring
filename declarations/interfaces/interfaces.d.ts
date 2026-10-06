@@ -1,7 +1,9 @@
 import { ProcessDescription } from "pm2";
 export interface ILog {
-    timeStamp: number;
-    message: string;
+    timeStamp?: number;
+    message?: string;
+    out?: string;
+    err?: string;
 }
 export interface IControlAction {
     actionType: string;

@@ -28,6 +28,7 @@ export declare class GraphService {
     updatePm2ProcessesMetrics(vmNode: SpinalContext, pm2Processes: ProcessDescription | ProcessDescription[], existingNodes?: {
         [key: string]: SpinalNode;
     }, isInit?: boolean): Promise<void[]>;
+    private _updateInfo;
     initializeOrRetrievePm2LogsNodes(processNode: SpinalNode, logType?: "out" | "err"): Promise<{
         node: SpinalNode;
         path: string;

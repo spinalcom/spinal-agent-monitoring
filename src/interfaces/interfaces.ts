@@ -2,8 +2,10 @@ import { ProcessDescription } from "pm2";
 import { Lst, Model, Str } from "spinal-core-connectorjs";
 
 export interface ILog {
-	timeStamp: number;
-	message: string;
+	timeStamp?: number;
+	message?: string;
+	out?: string;
+	err?: string;
 }
 
 export interface IControlAction {

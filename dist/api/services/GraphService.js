@@ -159,10 +159,19 @@ class GraphService {
             const processNode = existingNodes[pm2Process.pm_id] || existingNodes[pm2Process.name];
             if (!processNode)
                 continue;
-            // const { heapData, memory, cpu } = this._updateInfo(processNode, pm2Process);
+            this._updateInfo(processNode, pm2Process);
             promises.push(endpointService.updateOrCreatePm2ProcessEndpoints(processNode, isInit));
         }
         return Promise.all(promises);
+    }
+    _updateInfo(pm2Node, pm2Process) {
+        const info = this._buildPm2ProcessNodeInfo(pm2Process);
+        const memory = info.monit?.memory || 0;
+        const cpu = info.monit?.cpu || 0;
+        const heapInfo = info.heapMemory || {};
+        pm2Node.info.memory.set(memory);
+        pm2Node.info.cpu.set(cpu);
+        pm2Node.info.heapMemory.set(heapInfo);
     }
     async initializeOrRetrievePm2LogsNodes(processNode, logType = "out") {
         const pathNodes = await processNode.getChildren([utils_1.HAS_LOG]);

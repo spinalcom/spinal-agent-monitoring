@@ -476,8 +476,11 @@ export class MonitoringController extends Controller {
 			restarts: info.restarts,
 			uptime: info.uptime,
 			heapMemory: info.heapMemory,
+			createdAt: info.created_at,
 			monit: info.monit,
 			cwd: info.cwd,
+			outLogPath: info.log?.out || "",
+			errLogPath: info.log?.err || "",
 		};
 	}
 

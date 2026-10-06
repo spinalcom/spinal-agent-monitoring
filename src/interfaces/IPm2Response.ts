@@ -13,7 +13,7 @@ export interface IPm2Response {
 	monit: IMonit;
 	cwd: string;
 	created_at: number;
-	log: ILog;
+	log?: ILog;
 }
 export interface IHeapMemory {
 	heapSize: IHeapSize;

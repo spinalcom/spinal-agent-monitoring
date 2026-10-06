@@ -183,12 +183,24 @@ export class GraphService {
 			const processNode = existingNodes[pm2Process.pm_id as number] || existingNodes[pm2Process.name as string];
 			if (!processNode) continue;
 
-			// const { heapData, memory, cpu } = this._updateInfo(processNode, pm2Process);
+			this._updateInfo(processNode, pm2Process);
 
 			promises.push(endpointService.updateOrCreatePm2ProcessEndpoints(processNode, isInit));
 		}
 
 		return Promise.all(promises);
+	}
+
+	private _updateInfo(pm2Node: SpinalNode, pm2Process: ProcessDescription) {
+		const info = this._buildPm2ProcessNodeInfo(pm2Process);
+
+		const memory = info.monit?.memory || 0;
+		const cpu = info.monit?.cpu || 0;
+		const heapInfo = info.heapMemory || {};
+
+		pm2Node.info.memory.set(memory);
+		pm2Node.info.cpu.set(cpu);
+		pm2Node.info.heapMemory.set(heapInfo);
 	}
 
 	public async initializeOrRetrievePm2LogsNodes(processNode: SpinalNode, logType: "out" | "err" = "out"): Promise<{ node: SpinalNode; path: string; model: any } | null> {
@@ -377,6 +389,7 @@ export class GraphService {
 
 	private _updatePm2ProcessNodeInfo(processNode: SpinalNode, pm2Process: ProcessDescription) {
 		const updatedInfo: any = this._buildPm2ProcessNodeInfo(pm2Process);
+
 		for (const key in updatedInfo) {
 			const value = updatedInfo[key];
 			if (processNode.info[key]) processNode.info[key].set(value);
