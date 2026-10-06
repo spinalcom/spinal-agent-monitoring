@@ -130,24 +130,22 @@ class GraphService {
         });
     }
     async handlePm2Event(vmNode, event) {
-        const processKey = event.process.pm_id ?? event.process.name;
+        // const processKey = event.process.pm_id ?? event.process.name;
         const processData = event.process;
-        let processFound = await this.getPm2ProcessNodeByKey(vmNode, processKey);
-        if (!processFound)
-            processFound = (await this._addPm2ProcessToGraph(vmNode, processData));
+        const [processFound] = await this.updateOrCreatePm2Process(vmNode, [processData]);
         // change organ config_data
-        if (event.type == "process:config_data_change")
+        if (event.type == "process:config_data_change") {
             return this._updateOrganConfigData(processFound, event.data);
-        // it's a process event, update the reboot and errored endpoints
-        const eventType = event.event || "";
-        const promises = [];
-        const isErrorEvent = ["errored", "error"].includes(eventType);
-        if (isErrorEvent)
-            promises.push(endpointService._updateErroredEndpoint(processFound, 1));
-        const value = ["stop", "exit", "errored", "error"].includes(eventType) ? 0 : 1;
-        promises.push(endpointService._updateRebootEndpoint(processFound, value));
-        promises.push(this.updateOrCreatePm2Process(vmNode, [processData]));
-        return Promise.all(promises);
+        }
+        return processFound;
+        // const promises = [];
+        // const isErrorEvent = ["errored", "error"].includes(eventType);
+        // if (isErrorEvent) promises.push(endpointService._updateErroredEndpoint(processFound, 1));
+        // promises.push(this.updateOrCreatePm2Process(vmNode, [processData]));
+        // const value = ["stop", "stopped", "restart", "restarted", "exit", "errored", "error"].includes(eventType) ? 1 : 0;
+        // promises.push(endpointService._updateRebootEndpoint(processFound, value));
+        // promises.push(this.updateOrCreatePm2Process(vmNode, [processData]));
+        // return Promise.all(promises);
     }
     async updatePm2ProcessesMetrics(vmNode, pm2Processes, existingNodes, isInit = false) {
         if (!Array.isArray(pm2Processes))
@@ -156,7 +154,7 @@ class GraphService {
         if (!existingNodes)
             existingNodes = await this.getPm2ProcessesNodesAsObj(vmNode);
         for (const pm2Process of pm2Processes) {
-            const processNode = existingNodes[pm2Process.pm_id] || existingNodes[pm2Process.name];
+            const processNode = existingNodes[pm2Process.pm_id] || existingNodes[pm2Process.name] || existingNodes[pm2Process.pid];
             if (!processNode)
                 continue;
             this._updateInfo(processNode, pm2Process);
@@ -169,8 +167,8 @@ class GraphService {
         const memory = info.monit?.memory || 0;
         const cpu = info.monit?.cpu || 0;
         const heapInfo = info.heapMemory || {};
-        pm2Node.info.memory.set(memory);
-        pm2Node.info.cpu.set(cpu);
+        pm2Node.info.monit.memory.set(memory);
+        pm2Node.info.monit.cpu.set(cpu);
         pm2Node.info.heapMemory.set(heapInfo);
     }
     async initializeOrRetrievePm2LogsNodes(processNode, logType = "out") {

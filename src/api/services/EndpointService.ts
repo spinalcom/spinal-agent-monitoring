@@ -70,6 +70,9 @@ export class EndpointService {
 		const cpu = pm2Node.info?.monit?.cpu?.get() || 0;
 		const heapInfo = pm2Node.info?.heapMemory?.get() || {};
 
+		const isUp = pm2Node.info?.status.get() === "online" ? 1 : 0;
+		const erroredValue = pm2Node.info?.status?.get() === "errored" ? 1 : 0;
+
 		const heapData: IHeapInfo = {
 			heapSize: heapInfo?.heapSize?.value || 0,
 			heapUsage: heapInfo?.heapUsage?.value || 0,
@@ -82,8 +85,9 @@ export class EndpointService {
 		promises.push(this._updateOrCreateRamEndpoint(pm2Node, memory, endpoints, isInit));
 		promises.push(this._updateOrCreateCPUEndpoint(pm2Node, cpu, endpoints, isInit));
 		promises.push(this._updateOrCreateHeapMemoryEndpoints(pm2Node, heapData, endpoints, isInit));
-		promises.push(this._updateRebootEndpoint(pm2Node, pm2Node.info?.reboot?.get() || 0, endpoints, isInit));
-		promises.push(this._updateErroredEndpoint(pm2Node, pm2Node.info?.errored?.get() || 0, endpoints, isInit));
+
+		promises.push(this._updateRebootEndpoint(pm2Node, isUp, endpoints, isInit));
+		promises.push(this._updateErroredEndpoint(pm2Node, erroredValue, endpoints, isInit));
 
 		await Promise.all(promises);
 	}
