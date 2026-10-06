@@ -13,7 +13,7 @@ export interface HealthResponse {
 }
 export interface Pm2ProcessResponse {
     name?: string;
-    pid?: number;
+    pid?: number | string;
     pm_id?: number;
     status?: string;
     cpu?: number;

@@ -472,6 +472,7 @@ export class MonitoringController extends Controller {
 			staticId: info.staticId,
 			dynamicId: info.dynamicId,
 			pm_id: info.pm_id,
+			pid: info.pid,
 			status: info.status,
 			restarts: info.restarts,
 			uptime: info.uptime,

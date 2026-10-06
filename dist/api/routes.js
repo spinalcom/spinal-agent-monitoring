@@ -56,7 +56,7 @@ const models = {
         "dataType": "refObject",
         "properties": {
             "name": { "dataType": "string" },
-            "pid": { "dataType": "double" },
+            "pid": { "dataType": "union", "subSchemas": [{ "dataType": "double" }, { "dataType": "string" }] },
             "pm_id": { "dataType": "double" },
             "status": { "dataType": "string" },
             "cpu": { "dataType": "double" },

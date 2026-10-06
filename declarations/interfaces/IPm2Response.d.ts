@@ -1,6 +1,7 @@
 import { ILog } from "./interfaces";
 export interface IPm2Response {
     name: string;
+    pid: number | string;
     type: string;
     staticId: string;
     dynamicId: string;

@@ -112,8 +112,15 @@
                         "type": "string"
                     },
                     "pid": {
-                        "type": "number",
-                        "format": "double"
+                        "anyOf": [
+                            {
+                                "type": "number",
+                                "format": "double"
+                            },
+                            {
+                                "type": "string"
+                            }
+                        ]
                     },
                     "pm_id": {
                         "type": "number",

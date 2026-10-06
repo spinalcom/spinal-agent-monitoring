@@ -362,6 +362,7 @@ export class GraphService {
 
 		return {
 			pm_id: pm2Process.pm_id,
+			pid: pm2Process.pid,
 			status: pm2Env?.status,
 			restarts: pm2Env?.restart_time,
 			uptime: pm2Env?.pm_uptime,
@@ -370,7 +371,7 @@ export class GraphService {
 				memory: pm2Process.monit?.memory,
 				cpu: pm2Process.monit?.cpu,
 			},
-			cwd: pm2Env?.cwd,
+			cwd: pm2Env?.pm_cwd,
 			created_at: pm2Env?.created_at,
 			log: {
 				out: pm2Env?.pm_out_log_path,
