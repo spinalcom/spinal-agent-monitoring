@@ -6,10 +6,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.GraphService = void 0;
 const spinal_model_graph_1 = require("spinal-model-graph");
 const utils_1 = require("../../utils");
-const spinal_core_connectorjs_1 = require("spinal-core-connectorjs");
 const EndpointService_1 = require("./EndpointService");
 const models_1 = require("../models");
 const SpinalhubService_1 = __importDefault(require("./SpinalhubService"));
+const spinal_core_connectorjs_1 = require("spinal-core-connectorjs");
+const utils_2 = require("../controllers/utils");
 const endpointService = EndpointService_1.EndpointService.getInstance();
 class GraphService {
     constructor() {
@@ -116,10 +117,34 @@ class GraphService {
         const existingProcessesObj = await this.getPm2ProcessesNodesAsObj(vmNode);
         return Object.values(existingProcessesObj);
     }
+    async getPm2ProcessClassifiedByBos(vmNode) {
+        const processes = await this.getPm2ProcessesNodes(vmNode);
+        const classified = [];
+        for (const processNode of processes) {
+            const { keys, meta } = this._getBosClassificationData(processNode);
+            let processFound = classified.find((item) => {
+                const found = item.keys.some((key) => keys.includes(key));
+                return found;
+            });
+            if (processFound) {
+                processFound = this.consolidateGroupInfo(processFound, meta);
+                processFound.processes.push(processNode);
+                continue;
+            }
+            classified.push({ keys, ...meta, processes: [processNode] });
+        }
+        return classified.map(({ keys, ...withoutKeys }) => withoutKeys);
+    }
     async updateOrCreatePm2Process(vmNode, pm2Process) {
-        const exstingNodes = await this._syncPm2Processes(vmNode, pm2Process);
-        await this.updatePm2ProcessesMetrics(vmNode, pm2Process, exstingNodes, true);
-        return Object.values(exstingNodes);
+        const nodes = await this._syncPm2Processes(vmNode, pm2Process);
+        const existingNodes = nodes.reduce((acc, node) => {
+            const pm_id = node.info?.pm_id?.get() || node.info?.name?.get();
+            if (pm_id)
+                acc[pm_id] = node;
+            return acc;
+        }, {});
+        await this.updatePm2ProcessesMetrics(vmNode, pm2Process, existingNodes, true);
+        return nodes;
     }
     async getPm2ProcessNodeByKey(vmNode, key) {
         const existingProcessesObj = await this.getPm2ProcessesNodesAsObj(vmNode);
@@ -134,8 +159,11 @@ class GraphService {
         const processData = event.process;
         const [processFound] = await this.updateOrCreatePm2Process(vmNode, [processData]);
         // change organ config_data
-        if (event.type == "process:config_data_change") {
+        if (event.type === utils_1.PROCESS_CONFIG_DATA_CHANGE) {
             return this._updateOrganConfigData(processFound, event.data);
+        }
+        if (event.type === utils_1.PROCESS_HUB_DATA_RESPONSE) {
+            return this._updateOrganHubData(processFound, event.data);
         }
         return processFound;
         // const promises = [];
@@ -282,7 +310,7 @@ class GraphService {
         }
         const promises = nodes.map(async (node) => endpointService.updateOrCreatePm2ProcessEndpoints(node));
         return Promise.all(promises).then(() => {
-            return existingPm2Processes;
+            return nodes;
         });
     }
     async _addPm2ProcessToGraph(vmContext, pm2Process) {
@@ -330,16 +358,86 @@ class GraphService {
             processNode.info.configFile.set(configData);
         return processNode;
     }
+    _updateOrganHubData(processNode, hubData) {
+        if (!processNode.info.hubData)
+            processNode.info.add_attr("hubData", hubData);
+        else
+            processNode.info.hubData.set(hubData);
+        return processNode;
+    }
     _updatePm2ProcessNodeInfo(processNode, pm2Process) {
         const updatedInfo = this._buildPm2ProcessNodeInfo(pm2Process);
         for (const key in updatedInfo) {
             const value = updatedInfo[key];
+            if (typeof value === "undefined")
+                continue;
             if (processNode.info[key])
                 processNode.info[key].set(value);
             else
                 processNode.info.add_attr(key, value);
         }
         return processNode;
+    }
+    _getBosClassificationData(processNode) {
+        const processFormatted = (0, utils_2._formatPm2Process)(processNode);
+        const { bosName, protocol, url, port } = processFormatted.bosData || {};
+        const hasConnectionData = Boolean(protocol && url && port);
+        const keys = [];
+        if (bosName)
+            keys.push(bosName);
+        if (hasConnectionData)
+            keys.push(`${protocol}://${url}:${port}/${bosName}`);
+        if (hasConnectionData) {
+            return {
+                keys,
+                meta: { protocol, url, port, bosName },
+            };
+        }
+        return { keys, meta: { bosName } };
+    }
+    // private _getClassificationKey(processNode: SpinalNode): string[] {
+    // 	const processFormatted = _formatPm2Process(processNode);
+    // 	const { bosName, protocol, host, port } = processFormatted.bosData || {};
+    // 	const keys = [bosName];
+    // 	const hasConnectionData = Boolean(protocol && host && port && bosName);
+    // 	if (hasConnectionData) keys.push(`${protocol}://${host}:${port}/${bosName}`);
+    // 	if (bosName) keys.push(bosName);
+    // 	return keys;
+    // }
+    // private _mergeByBosName(classifiedProcesses: { [key: string]: any; processes: SpinalNode[] }[]): { [key: string]: any; processes: SpinalNode[] }[] {
+    // 	const mergedByBosName: Record<string, { [key: string]: any; processes: SpinalNode[] }> = {};
+    // 	for (const group of classifiedProcesses) {
+    // 		const bosName = group.bosName || "unknown";
+    // 		if (!mergedByBosName[bosName]) {
+    // 			mergedByBosName[bosName] = {
+    // 				processes: [],
+    // 				bosName,
+    // 			};
+    // 		}
+    // 		const mergedGroup = mergedByBosName[bosName];
+    // 		this.consolidateGroupInfo(group, mergedGroup);
+    // 		mergedGroup.processes.push(...group.processes);
+    // 	}
+    // 	return Object.values(mergedByBosName);
+    // }
+    consolidateGroupInfo(targetObj, sourceObj) {
+        for (const key in sourceObj) {
+            if (key === "processes" || key === "keys")
+                continue; // skip the processes array as it is handled separately
+            const value = sourceObj[key];
+            // Merge the group's key-value pairs into the mergedGroup, handling arrays and objects appropriately
+            const existingValue = targetObj[key];
+            if (existingValue === undefined) {
+                targetObj[key] = value;
+            }
+            else if (Array.isArray(existingValue) && Array.isArray(value)) {
+                targetObj[key] = [...existingValue, ...value];
+            }
+            else if (existingValue && value && typeof existingValue === "object" && typeof value === "object" && !Array.isArray(existingValue) && !Array.isArray(value)) {
+                targetObj[key] = { ...existingValue, ...value };
+            }
+        }
+        return targetObj;
     }
 }
 exports.GraphService = GraphService;

@@ -1,4 +1,12 @@
 import { InputDataEndpoint, InputDataEndpointDataType, InputDataEndpointType } from "spinal-model-bmsnetwork";
+export declare const PROCESS_HUB_DATA_RESPONSE: string;
+export declare const PROCESS_CONFIG_DATA_CHANGE: string;
+export declare const PROCESS_EVENT: string;
+export declare const PROCESS_ONLINE: string;
+export declare const PROCESS_EXIT: string;
+export declare const PROCESS_DELETE: string;
+export declare const PROCESS_KILL: string;
+export declare const PROCESS_EXCEPTION: string;
 export declare const SPINAL_COMMAND_TYPE: {
     readonly start: "start";
     readonly restart: "restart";

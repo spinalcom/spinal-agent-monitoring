@@ -1,11 +1,12 @@
 import { SPINAL_RELATION_PTR_LST_TYPE, SpinalContext, SpinalGraph, SpinalNode } from "spinal-model-graph";
-import { _initLogPathInHub, getHeapInfo, HAS_LOG, HAS_PM2_PROCESS_RELATION_NAME, METRICS_ENDPOINTS, PM2_ENDPOINTS, PM2_LOG_NODE_TYPE, PM2_PROCESS_NODE_TYPE, readFileContent, SPINAL_COMMAND_STATUS, uploadFileNewData, VM_CONTEXT_NODE_TYPE, waitUntil } from "../../utils";
+import { _initLogPathInHub, getHeapInfo, HAS_LOG, HAS_PM2_PROCESS_RELATION_NAME, METRICS_ENDPOINTS, PM2_ENDPOINTS, PM2_LOG_NODE_TYPE, PM2_PROCESS_NODE_TYPE, PROCESS_CONFIG_DATA_CHANGE, PROCESS_HUB_DATA_RESPONSE, readFileContent, SPINAL_COMMAND_STATUS, uploadFileNewData, VM_CONTEXT_NODE_TYPE, waitUntil } from "../../utils";
 import { ActionResponse, IPm2EventData, ISystemMetrics, Pm2ProcessLogsResponse } from "../../interfaces";
-import { ProcessDescription } from "pm2";
-import { Lst, Ptr } from "spinal-core-connectorjs";
 import { EndpointService } from "./EndpointService";
 import { SpinalCommand } from "../models";
 import SpinalhubService from "./SpinalhubService";
+import { ProcessDescription } from "pm2";
+import { Lst, Ptr } from "spinal-core-connectorjs";
+import { _formatPm2Process } from "../controllers/utils";
 
 const endpointService = EndpointService.getInstance();
 
@@ -130,11 +131,43 @@ export class GraphService {
 		return Object.values(existingProcessesObj);
 	}
 
-	public async updateOrCreatePm2Process(vmNode: SpinalContext, pm2Process: ProcessDescription[]): Promise<SpinalNode[]> {
-		const exstingNodes = await this._syncPm2Processes(vmNode, pm2Process);
-		await this.updatePm2ProcessesMetrics(vmNode, pm2Process, exstingNodes, true);
+	public async getPm2ProcessClassifiedByBos(vmNode: SpinalContext): Promise<{ [key: string]: any; processes: SpinalNode[] }[]> {
+		const processes = await this.getPm2ProcessesNodes(vmNode);
 
-		return Object.values(exstingNodes);
+		const classified: any[] = [];
+
+		for (const processNode of processes) {
+			const { keys, meta } = this._getBosClassificationData(processNode);
+
+			let processFound = classified.find((item) => {
+				const found = item.keys.some((key: string) => keys.includes(key));
+				return found;
+			});
+
+			if (processFound) {
+				processFound = this.consolidateGroupInfo(processFound, meta);
+				processFound.processes.push(processNode);
+				continue;
+			}
+
+			classified.push({ keys, ...meta, processes: [processNode] });
+		}
+
+		return classified.map(({ keys, ...withoutKeys }) => withoutKeys);
+	}
+
+	public async updateOrCreatePm2Process(vmNode: SpinalContext, pm2Process: ProcessDescription[]): Promise<SpinalNode[]> {
+		const nodes = await this._syncPm2Processes(vmNode, pm2Process);
+
+		const existingNodes = nodes.reduce((acc, node) => {
+			const pm_id = node.info?.pm_id?.get() || node.info?.name?.get();
+			if (pm_id) acc[pm_id] = node;
+			return acc;
+		}, {} as { [key: string]: SpinalNode });
+
+		await this.updatePm2ProcessesMetrics(vmNode, pm2Process, existingNodes, true);
+
+		return nodes;
 	}
 
 	public async getPm2ProcessNodeByKey(vmNode: SpinalContext, key: string | number): Promise<SpinalNode | undefined> {
@@ -155,8 +188,12 @@ export class GraphService {
 		const [processFound] = await this.updateOrCreatePm2Process(vmNode, [processData]);
 
 		// change organ config_data
-		if (event.type == "process:config_data_change") {
+		if (event.type === PROCESS_CONFIG_DATA_CHANGE) {
 			return this._updateOrganConfigData(processFound, event.data);
+		}
+
+		if (event.type === PROCESS_HUB_DATA_RESPONSE) {
+			return this._updateOrganHubData(processFound, event.data);
 		}
 
 		return processFound;
@@ -309,9 +346,9 @@ export class GraphService {
 		return existingNode as SpinalContext;
 	}
 
-	private async _syncPm2Processes(context: SpinalContext, pm2Processes: ProcessDescription[]) {
+	private async _syncPm2Processes(context: SpinalContext, pm2Processes: ProcessDescription[]): Promise<SpinalNode[]> {
 		const existingPm2Processes = await this.getPm2ProcessesNodesAsObj(context);
-		const nodes = [];
+		const nodes: SpinalNode[] = [];
 
 		for (const pm2Process of pm2Processes) {
 			let processAlreadyExist: SpinalNode | null = existingPm2Processes[pm2Process.pm_id as number] || existingPm2Processes[pm2Process.name as string] || null;
@@ -332,7 +369,7 @@ export class GraphService {
 
 		const promises = nodes.map(async (node) => endpointService.updateOrCreatePm2ProcessEndpoints(node));
 		return Promise.all(promises).then(() => {
-			return existingPm2Processes;
+			return nodes;
 		});
 	}
 
@@ -389,11 +426,20 @@ export class GraphService {
 		return processNode;
 	}
 
+	private _updateOrganHubData(processNode: SpinalNode, hubData: { [key: string]: any }) {
+		if (!processNode.info.hubData) processNode.info.add_attr("hubData", hubData);
+		else processNode.info.hubData.set(hubData);
+
+		return processNode;
+	}
+
 	private _updatePm2ProcessNodeInfo(processNode: SpinalNode, pm2Process: ProcessDescription) {
 		const updatedInfo: any = this._buildPm2ProcessNodeInfo(pm2Process);
 
 		for (const key in updatedInfo) {
 			const value = updatedInfo[key];
+			if (typeof value === "undefined") continue;
+
 			if (processNode.info[key]) processNode.info[key].set(value);
 			else processNode.info.add_attr(key, value);
 		}
@@ -401,6 +447,81 @@ export class GraphService {
 		return processNode;
 	}
 
+	private _getBosClassificationData(processNode: SpinalNode): { keys: string[]; meta: Record<string, any> } {
+		const processFormatted = _formatPm2Process(processNode);
+
+		const { bosName, protocol, url, port } = processFormatted.bosData || {};
+
+		const hasConnectionData = Boolean(protocol && url && port);
+
+		const keys: string[] = [];
+
+		if (bosName) keys.push(bosName);
+		if (hasConnectionData) keys.push(`${protocol}://${url}:${port}/${bosName}`);
+
+		if (hasConnectionData) {
+			return {
+				keys,
+				meta: { protocol, url, port, bosName },
+			};
+		}
+
+		return { keys, meta: { bosName } };
+	}
+
+	// private _getClassificationKey(processNode: SpinalNode): string[] {
+	// 	const processFormatted = _formatPm2Process(processNode);
+	// 	const { bosName, protocol, host, port } = processFormatted.bosData || {};
+	// 	const keys = [bosName];
+
+	// 	const hasConnectionData = Boolean(protocol && host && port && bosName);
+	// 	if (hasConnectionData) keys.push(`${protocol}://${host}:${port}/${bosName}`);
+	// 	if (bosName) keys.push(bosName);
+
+	// 	return keys;
+	// }
+
+	// private _mergeByBosName(classifiedProcesses: { [key: string]: any; processes: SpinalNode[] }[]): { [key: string]: any; processes: SpinalNode[] }[] {
+	// 	const mergedByBosName: Record<string, { [key: string]: any; processes: SpinalNode[] }> = {};
+
+	// 	for (const group of classifiedProcesses) {
+	// 		const bosName = group.bosName || "unknown";
+
+	// 		if (!mergedByBosName[bosName]) {
+	// 			mergedByBosName[bosName] = {
+	// 				processes: [],
+	// 				bosName,
+	// 			};
+	// 		}
+
+	// 		const mergedGroup = mergedByBosName[bosName];
+	// 		this.consolidateGroupInfo(group, mergedGroup);
+
+	// 		mergedGroup.processes.push(...group.processes);
+	// 	}
+
+	// 	return Object.values(mergedByBosName);
+	// }
+
+	private consolidateGroupInfo(targetObj: { [key: string]: any; processes: SpinalNode[] }, sourceObj: { [key: string]: any }) {
+		for (const key in sourceObj) {
+			if (key === "processes" || key === "keys") continue; // skip the processes array as it is handled separately
+
+			const value = sourceObj[key];
+			// Merge the group's key-value pairs into the mergedGroup, handling arrays and objects appropriately
+			const existingValue = targetObj[key];
+
+			if (existingValue === undefined) {
+				targetObj[key] = value;
+			} else if (Array.isArray(existingValue) && Array.isArray(value)) {
+				targetObj[key] = [...existingValue, ...value];
+			} else if (existingValue && value && typeof existingValue === "object" && typeof value === "object" && !Array.isArray(existingValue) && !Array.isArray(value)) {
+				targetObj[key] = { ...existingValue, ...value };
+			}
+		}
+
+		return targetObj;
+	}
 	// private async _watchAndSyncLogs() {
 	// 	const promises = Array.from(this.pm2Maps.entries()).map(async ([key, processNode]) => {
 	// 		try {

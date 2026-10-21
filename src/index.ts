@@ -102,7 +102,7 @@ async function initializeGraphContext(services: RuntimeServices) {
 	return vmContext;
 }
 
-function startPeriodicMetricsUpdate(services: RuntimeServices, vmContext: any): void {
+async function startPeriodicMetricsUpdate(services: RuntimeServices, vmContext: any): Promise<void> {
 	const updateSystemAndPm2Metrics = async () => {
 		console.log("Updating system metrics and PM2 processes...");
 		const currentSystemMetrics = services.systemOverviewService.getSystemMetricsFormatted();
@@ -118,9 +118,18 @@ function startPeriodicMetricsUpdate(services: RuntimeServices, vmContext: any): 
 
 	const intervalMs = Number.parseInt(process.env.SYSTEM_INFO_SEND_INTERVAL_MS || "30000", 10);
 
-	setInterval(() => {
-		void updateSystemAndPm2Metrics();
-	}, intervalMs);
+	let nextUpdateTime = Date.now() + intervalMs;
+
+	// Periodically update system and PM2 metrics based on the defined interval.
+	// use while to not have overlapping updates and ensure consistent intervals.
+
+	while (true) {
+		const now = Date.now();
+		if (nextUpdateTime > now) await new Promise((resolve) => setTimeout(resolve, nextUpdateTime - now));
+
+		await updateSystemAndPm2Metrics();
+		nextUpdateTime = Date.now() + intervalMs;
+	}
 }
 
 async function startPm2Listeners(services: RuntimeServices, vmContext: any): Promise<void> {

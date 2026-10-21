@@ -39,13 +39,17 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Pm2Service = void 0;
 const pm2_1 = __importDefault(require("pm2"));
 const pm2Utils_1 = require("../utils/pm2Utils");
+const utils_1 = require("../utils");
 const fs = __importStar(require("fs"));
-class Pm2Service {
+const events_1 = require("events");
+class Pm2Service extends events_1.EventEmitter {
     constructor() {
+        super();
         this._isConnected = false;
         this.pm2Maps = new Map();
         this.logsWatcher = new Map();
         this._isPm2LogBusSubscribed = false;
+        this._processIdToHubData = new Map();
     }
     static getInstance() {
         if (!this._instance)
@@ -84,13 +88,13 @@ class Pm2Service {
                 return;
             }
             const scheduleSync = () => this._schedulePm2LogWatchersSync();
-            bus.on("process:event", scheduleSync);
-            bus.on("process:online", scheduleSync);
-            bus.on("process:exit", scheduleSync);
-            bus.on("process:delete", scheduleSync);
-            bus.on("process:kill", scheduleSync);
-            bus.on("process:exception", scheduleSync);
-            bus.on("process:config_data_change", scheduleSync);
+            bus.on(utils_1.PROCESS_EVENT, scheduleSync);
+            bus.on(utils_1.PROCESS_ONLINE, scheduleSync);
+            bus.on(utils_1.PROCESS_EXIT, scheduleSync);
+            bus.on(utils_1.PROCESS_DELETE, scheduleSync);
+            bus.on(utils_1.PROCESS_KILL, scheduleSync);
+            bus.on(utils_1.PROCESS_EXCEPTION, scheduleSync);
+            bus.on(utils_1.PROCESS_CONFIG_DATA_CHANGE, scheduleSync);
         });
     }
     _schedulePm2LogWatchersSync() {
@@ -240,6 +244,62 @@ class Pm2Service {
             // this._disconnectFromPm2();
         }
     }
+    // public async getAllProcessesClassifiedByBos(): Promise<{ [key: string]: { [key: string]: any; processes: pm2.ProcessDescription[] } }> {
+    // 	const processes = await this.getAllPm2Processes();
+    // 	const bos: { [key: string]: { [key: string]: any; processes: pm2.ProcessDescription[] } } = {};
+    // 	return processes.reduce(async (objProm, process) => {
+    // 		const obj: { [key: string]: { [key: string]: any; processes: pm2.ProcessDescription[] } } = await objProm;
+    // 		const bosInfo = await this._getBosInfoForProcess(process);
+    // 		const bosName = bosInfo.bosName;
+    // 		if (!obj[bosName]) {
+    // 			obj[bosName] = { ...bosInfo, processes: [] };
+    // 		}
+    // 		obj[bosName].processes.push(process);
+    // 		return obj;
+    // 	}, Promise.resolve({}));
+    // }
+    // private async _getBosInfoForProcess(process: pm2.ProcessDescription) {
+    // 	const bosName = this._getBosNameFromProcess(process);
+    // 	const hubData: any = (await this._getHubData(process)) || {};
+    // 	if (typeof hubData.id === "undefined") hubData.id = bosName;
+    // 	hubData.bosName = bosName;
+    // 	return hubData;
+    // }
+    // private _getBosNameFromProcess(process: pm2.ProcessDescription): string {
+    // 	const path = process.pm2_env?.pm_cwd ?? "";
+    // 	const splittedPath = path.split("/");
+    // 	const spinalcomIndex = splittedPath.findIndex((segment) => segment.toLowerCase() === "spinalcom");
+    // 	if (spinalcomIndex !== -1 && spinalcomIndex + 1 < splittedPath.length) {
+    // 		return splittedPath[spinalcomIndex + 1];
+    // 	}
+    // 	return "";
+    // }
+    // private _getHubData(pm2Process: pm2.ProcessDescription) {
+    // 	const id: any = pm2Process.pm_id ?? pm2Process.name;
+    // 	if (this._processIdToHubData.has(id)) return this._processIdToHubData.get(id);
+    // 	try {
+    // 		const id: any = pm2Process.pm_id ?? pm2Process.name;
+    // 		return new Promise((resolve, reject) => {
+    // 			const packet = {
+    // 				id,
+    // 				type: "process:msg",
+    // 				topic: true,
+    // 				data: { type: "process:get_hub_data" },
+    // 			};
+    // 			pm2.sendDataToProcessId(id, packet, (err) => {
+    // 				if (err) return resolve(null);
+    // 				console.log(`listen ${id}:`, err);
+    // 				this.once(`${pm2Process.pm_id ?? pm2Process.name}:hub_data`, (data) => {
+    // 					if (data.pm_id == pm2Process.pm_id) {
+    // 						resolve(data.hubData);
+    // 					}
+    // 				});
+    // 			});
+    // 		});
+    // 	} catch (error) {
+    // 		return null;
+    // 	}
+    // }
     async getPm2ProcessByKey(key) {
         try {
             await this._connectToPm2();
@@ -377,20 +437,28 @@ class Pm2Service {
         pm2_1.default.launchBus((err, bus) => {
             if (err)
                 throw err;
-            bus.on("process:config_data_change", async (data) => {
-                data.type = "process:config_data_change";
+            bus.on(utils_1.PROCESS_CONFIG_DATA_CHANGE, async (data) => {
+                data.type = utils_1.PROCESS_CONFIG_DATA_CHANGE;
                 if (typeof callback === "function")
                     await callback(data);
             });
             // Listen to general PM2 events (start, stop, restart, etc.)
-            bus.on("process:event", async (data) => {
+            bus.on(utils_1.PROCESS_EVENT, async (data) => {
                 const id = data.process.pm_id ?? data.process.name;
-                data.type = "process:event";
+                data.type = utils_1.PROCESS_EVENT;
                 // getRealDescription
                 data.process = (await this.getPm2ProcessByKey(id));
                 if (typeof callback === "function")
                     await callback(data);
                 this._savePm2Event(data);
+            });
+            bus.on(utils_1.PROCESS_HUB_DATA_RESPONSE, async (data) => {
+                // const id: any = data.process.pm_id ?? data.process.name;
+                // console.log("Received process:hub_data_response for id:", id, "data:", data);
+                // this._processIdToHubData.set(id, data.data);
+                data.type = utils_1.PROCESS_HUB_DATA_RESPONSE;
+                if (typeof callback === "function")
+                    await callback(data);
             });
         });
     }

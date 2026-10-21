@@ -1,6 +1,7 @@
 import pm2 from "pm2";
 import { ActionResponse, Pm2LogType, Pm2ProcessLogsResponse, Pm2ProcessMetricsResponse, Pm2StatusSummaryResponse } from "../interfaces/IResponses";
 import { SpinalNode } from "spinal-model-graph";
+import { EventEmitter } from "events";
 import { IPm2EventData } from "../interfaces";
 export type Pm2LogPayload = {
     pm_id: number;
@@ -10,7 +11,7 @@ export type Pm2LogPayload = {
     content: string;
 };
 export type Pm2LogCallback = (data: Pm2LogPayload) => void;
-declare class Pm2Service {
+declare class Pm2Service extends EventEmitter {
     private static _instance;
     private _isConnected;
     pm2Maps: Map<string | number, SpinalNode>;
@@ -18,6 +19,7 @@ declare class Pm2Service {
     private _pm2LogWatchCallback?;
     private _pm2LogWatchSyncTimer?;
     private _isPm2LogBusSubscribed;
+    private _processIdToHubData;
     private constructor();
     static getInstance(): Pm2Service;
     listenToPm2Actions(callback: (data: IPm2EventData) => void): Promise<void>;

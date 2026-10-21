@@ -16,7 +16,12 @@ export declare class MonitoringController extends Controller {
     /**
      * Lists all PM2-managed applications with their current runtime state.
      */
-    getApps(vmKey: string): Promise<Pm2ProcessResponse[] | ErrorResponse>;
+    getApps(vmKey: string, classifyByBos?: boolean): Promise<Pm2ProcessResponse[] | ErrorResponse>;
+    getClassifiedApps(vmKey: string): Promise<{
+        [key: string]: any;
+        processes: Pm2ProcessResponse[];
+    }[] | ErrorResponse>;
+    getAppsByBosName(vmKey: string, bosName: string): Promise<Pm2ProcessResponse[] | ErrorResponse>;
     /**
      * Lists PM2 metrics (cpu, memory, uptime, status) for all applications.
      */
@@ -92,14 +97,4 @@ export declare class MonitoringController extends Controller {
         deleted: ActionResponse[];
         failed: ActionResponse[];
     } | ErrorResponse>;
-    /**
-     * Executes a PM2 action across one or more applications.
-     * @param data Request body containing action and target keys.
-     */
-    /**
-     * Returns a Zabbix LLD-compatible discovery payload for PM2 processes.
-     */
-    private _formatVmNode;
-    private _formatPm2Process;
-    private _formatPm2ProcessMetrics;
 }

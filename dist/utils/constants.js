@@ -1,7 +1,15 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.METRICS_ENDPOINTS = exports.PM2_ENDPOINTS = exports.PM2_PROCESS_STATES = exports.HAS_LOG = exports.HAS_PM2_PROCESS_RELATION_NAME = exports.PM2_PROCESS_CONTEXT_NAME = exports.SYSTEM_METRICS_NODE_NAME = exports.PM2_LOG_NODE_TYPE = exports.PM2_PROCESS_CONTEXT_TYPE = exports.PM2_PROCESS_NODE_TYPE = exports.SYSTEM_METRICS_NODE_TYPE = exports.VM_CONTEXT_NODE_TYPE = exports.websocketEventTypes = exports.PM2_METRICS_EVENT_TYPE = exports.ZABBIX_PUSH_EVENT_TYPE = exports.LOG_STREAM_EVENT_TYPE = exports.PM2_PROCESS_EVENT_TYPE = exports.SYSTEM_METRICS_EVENT_TYPE = exports.MONITORING_MESSAGE_TYPE = exports.SPINAL_COMMAND_STATUS = exports.SPINAL_COMMAND_TYPE = void 0;
+exports.METRICS_ENDPOINTS = exports.PM2_ENDPOINTS = exports.PM2_PROCESS_STATES = exports.HAS_LOG = exports.HAS_PM2_PROCESS_RELATION_NAME = exports.PM2_PROCESS_CONTEXT_NAME = exports.SYSTEM_METRICS_NODE_NAME = exports.PM2_LOG_NODE_TYPE = exports.PM2_PROCESS_CONTEXT_TYPE = exports.PM2_PROCESS_NODE_TYPE = exports.SYSTEM_METRICS_NODE_TYPE = exports.VM_CONTEXT_NODE_TYPE = exports.websocketEventTypes = exports.PM2_METRICS_EVENT_TYPE = exports.ZABBIX_PUSH_EVENT_TYPE = exports.LOG_STREAM_EVENT_TYPE = exports.PM2_PROCESS_EVENT_TYPE = exports.SYSTEM_METRICS_EVENT_TYPE = exports.MONITORING_MESSAGE_TYPE = exports.SPINAL_COMMAND_STATUS = exports.SPINAL_COMMAND_TYPE = exports.PROCESS_EXCEPTION = exports.PROCESS_KILL = exports.PROCESS_DELETE = exports.PROCESS_EXIT = exports.PROCESS_ONLINE = exports.PROCESS_EVENT = exports.PROCESS_CONFIG_DATA_CHANGE = exports.PROCESS_HUB_DATA_RESPONSE = void 0;
 const spinal_model_bmsnetwork_1 = require("spinal-model-bmsnetwork");
+exports.PROCESS_HUB_DATA_RESPONSE = "process:hub_data_response";
+exports.PROCESS_CONFIG_DATA_CHANGE = "process:config_data_change";
+exports.PROCESS_EVENT = "process:event";
+exports.PROCESS_ONLINE = "process:online";
+exports.PROCESS_EXIT = "process:exit";
+exports.PROCESS_DELETE = "process:delete";
+exports.PROCESS_KILL = "process:kill";
+exports.PROCESS_EXCEPTION = "process:exception";
 exports.SPINAL_COMMAND_TYPE = {
     start: "start",
     restart: "restart",

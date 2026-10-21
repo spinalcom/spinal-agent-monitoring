@@ -22,6 +22,10 @@ export declare class GraphService {
         [key: string]: SpinalNode;
     }>;
     getPm2ProcessesNodes(vmNode: SpinalContext): Promise<SpinalNode[]>;
+    getPm2ProcessClassifiedByBos(vmNode: SpinalContext): Promise<{
+        [key: string]: any;
+        processes: SpinalNode[];
+    }[]>;
     updateOrCreatePm2Process(vmNode: SpinalContext, pm2Process: ProcessDescription[]): Promise<SpinalNode[]>;
     getPm2ProcessNodeByKey(vmNode: SpinalContext, key: string | number): Promise<SpinalNode | undefined>;
     handlePm2Event(vmNode: SpinalContext, event: IPm2EventData): Promise<SpinalNode<any>>;
@@ -44,6 +48,9 @@ export declare class GraphService {
     private _addLogRelationToPm2Process;
     private _buildPm2ProcessNodeInfo;
     private _updateOrganConfigData;
+    private _updateOrganHubData;
     private _updatePm2ProcessNodeInfo;
+    private _getBosClassificationData;
+    private consolidateGroupInfo;
 }
 export default GraphService;

@@ -2,14 +2,15 @@ import pm2, { ProcessDescription } from "pm2";
 import { executeCommand, formatProcess } from "../utils/pm2Utils";
 import { ActionResponse, Pm2LogType, Pm2ProcessLogsResponse, Pm2ProcessMetricsResponse, Pm2StatusSummaryResponse } from "../interfaces/IResponses";
 import { SpinalNode } from "spinal-model-graph";
-import { _initLogPathInHub } from "../utils";
+import { _initLogPathInHub, PROCESS_EVENT, PROCESS_ONLINE, PROCESS_EXIT, PROCESS_DELETE, PROCESS_KILL, PROCESS_EXCEPTION, PROCESS_CONFIG_DATA_CHANGE, PROCESS_HUB_DATA_RESPONSE } from "../utils";
 import * as fs from "fs";
+import { EventEmitter } from "events";
 import { IPm2EventData } from "../interfaces";
 
 export type Pm2LogPayload = { pm_id: number; name: string; type: Pm2LogType; file: string; content: string };
 export type Pm2LogCallback = (data: Pm2LogPayload) => void;
 
-class Pm2Service {
+class Pm2Service extends EventEmitter {
 	private static _instance: Pm2Service;
 	private _isConnected: boolean = false;
 	public pm2Maps: Map<string | number, SpinalNode> = new Map();
@@ -17,8 +18,11 @@ class Pm2Service {
 	private _pm2LogWatchCallback?: Pm2LogCallback;
 	private _pm2LogWatchSyncTimer?: NodeJS.Timeout;
 	private _isPm2LogBusSubscribed: boolean = false;
+	private _processIdToHubData: Map<string | number, any> = new Map();
 
-	private constructor() {}
+	private constructor() {
+		super();
+	}
 
 	public static getInstance(): Pm2Service {
 		if (!this._instance) this._instance = new Pm2Service();
@@ -65,13 +69,13 @@ class Pm2Service {
 
 			const scheduleSync = () => this._schedulePm2LogWatchersSync();
 
-			bus.on("process:event", scheduleSync);
-			bus.on("process:online", scheduleSync);
-			bus.on("process:exit", scheduleSync);
-			bus.on("process:delete", scheduleSync);
-			bus.on("process:kill", scheduleSync);
-			bus.on("process:exception", scheduleSync);
-			bus.on("process:config_data_change", scheduleSync);
+			bus.on(PROCESS_EVENT, scheduleSync);
+			bus.on(PROCESS_ONLINE, scheduleSync);
+			bus.on(PROCESS_EXIT, scheduleSync);
+			bus.on(PROCESS_DELETE, scheduleSync);
+			bus.on(PROCESS_KILL, scheduleSync);
+			bus.on(PROCESS_EXCEPTION, scheduleSync);
+			bus.on(PROCESS_CONFIG_DATA_CHANGE, scheduleSync);
 		});
 	}
 
@@ -233,6 +237,76 @@ class Pm2Service {
 		}
 	}
 
+	// public async getAllProcessesClassifiedByBos(): Promise<{ [key: string]: { [key: string]: any; processes: pm2.ProcessDescription[] } }> {
+	// 	const processes = await this.getAllPm2Processes();
+	// 	const bos: { [key: string]: { [key: string]: any; processes: pm2.ProcessDescription[] } } = {};
+
+	// 	return processes.reduce(async (objProm, process) => {
+	// 		const obj: { [key: string]: { [key: string]: any; processes: pm2.ProcessDescription[] } } = await objProm;
+	// 		const bosInfo = await this._getBosInfoForProcess(process);
+	// 		const bosName = bosInfo.bosName;
+	// 		if (!obj[bosName]) {
+	// 			obj[bosName] = { ...bosInfo, processes: [] };
+	// 		}
+	// 		obj[bosName].processes.push(process);
+	// 		return obj;
+	// 	}, Promise.resolve({}));
+	// }
+
+	// private async _getBosInfoForProcess(process: pm2.ProcessDescription) {
+	// 	const bosName = this._getBosNameFromProcess(process);
+	// 	const hubData: any = (await this._getHubData(process)) || {};
+
+	// 	if (typeof hubData.id === "undefined") hubData.id = bosName;
+	// 	hubData.bosName = bosName;
+
+	// 	return hubData;
+	// }
+
+	// private _getBosNameFromProcess(process: pm2.ProcessDescription): string {
+	// 	const path = process.pm2_env?.pm_cwd ?? "";
+	// 	const splittedPath = path.split("/");
+
+	// 	const spinalcomIndex = splittedPath.findIndex((segment) => segment.toLowerCase() === "spinalcom");
+
+	// 	if (spinalcomIndex !== -1 && spinalcomIndex + 1 < splittedPath.length) {
+	// 		return splittedPath[spinalcomIndex + 1];
+	// 	}
+
+	// 	return "";
+	// }
+
+	// private _getHubData(pm2Process: pm2.ProcessDescription) {
+	// 	const id: any = pm2Process.pm_id ?? pm2Process.name;
+
+	// 	if (this._processIdToHubData.has(id)) return this._processIdToHubData.get(id);
+
+	// 	try {
+	// 		const id: any = pm2Process.pm_id ?? pm2Process.name;
+
+	// 		return new Promise((resolve, reject) => {
+	// 			const packet = {
+	// 				id,
+	// 				type: "process:msg",
+	// 				topic: true,
+	// 				data: { type: "process:get_hub_data" },
+	// 			};
+	// 			pm2.sendDataToProcessId(id, packet, (err) => {
+	// 				if (err) return resolve(null);
+
+	// 				console.log(`listen ${id}:`, err);
+	// 				this.once(`${pm2Process.pm_id ?? pm2Process.name}:hub_data`, (data) => {
+	// 					if (data.pm_id == pm2Process.pm_id) {
+	// 						resolve(data.hubData);
+	// 					}
+	// 				});
+	// 			});
+	// 		});
+	// 	} catch (error) {
+	// 		return null;
+	// 	}
+	// }
+
 	public async getPm2ProcessByKey(key: string): Promise<pm2.ProcessDescription | null> {
 		try {
 			await this._connectToPm2();
@@ -381,22 +455,30 @@ class Pm2Service {
 		pm2.launchBus((err, bus) => {
 			if (err) throw err;
 
-			bus.on("process:config_data_change", async (data: any) => {
-				data.type = "process:config_data_change";
+			bus.on(PROCESS_CONFIG_DATA_CHANGE, async (data: any) => {
+				data.type = PROCESS_CONFIG_DATA_CHANGE;
 				if (typeof callback === "function") await callback(data);
 			});
 
 			// Listen to general PM2 events (start, stop, restart, etc.)
-			bus.on("process:event", async (data: IPm2EventData) => {
+			bus.on(PROCESS_EVENT, async (data: IPm2EventData) => {
 				const id = data.process.pm_id ?? data.process.name;
 
-				data.type = "process:event";
+				data.type = PROCESS_EVENT;
 
 				// getRealDescription
 				data.process = (await this.getPm2ProcessByKey(id as any)) as ProcessDescription;
 
 				if (typeof callback === "function") await callback(data);
 				this._savePm2Event(data);
+			});
+
+			bus.on(PROCESS_HUB_DATA_RESPONSE, async (data: IPm2EventData) => {
+				// const id: any = data.process.pm_id ?? data.process.name;
+				// console.log("Received process:hub_data_response for id:", id, "data:", data);
+				// this._processIdToHubData.set(id, data.data);
+				data.type = PROCESS_HUB_DATA_RESPONSE;
+				if (typeof callback === "function") await callback(data);
 			});
 		});
 	}

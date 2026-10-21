@@ -106,6 +106,12 @@
                 "type": "object",
                 "additionalProperties": false
             },
+            "Record_string.any_": {
+                "properties": {},
+                "additionalProperties": {},
+                "type": "object",
+                "description": "Construct a type with a set of properties K of type T"
+            },
             "Pm2ProcessResponse": {
                 "properties": {
                     "name": {
@@ -165,7 +171,10 @@
                         "type": "string"
                     },
                     "heapMemory": {},
-                    "monit": {}
+                    "monit": {},
+                    "bosData": {
+                        "$ref": "#/components/schemas/Record_string.any_"
+                    }
                 },
                 "type": "object",
                 "additionalProperties": false
@@ -590,6 +599,116 @@
                     {
                         "in": "path",
                         "name": "vmKey",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "classifyByBos",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    }
+                ]
+            }
+        },
+        "/monitoring/{vmKey}/apps/classified": {
+            "get": {
+                "operationId": "GetClassifiedApps",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "items": {
+                                                "properties": {
+                                                    "processes": {
+                                                        "items": {
+                                                            "$ref": "#/components/schemas/Pm2ProcessResponse"
+                                                        },
+                                                        "type": "array"
+                                                    }
+                                                },
+                                                "additionalProperties": {},
+                                                "required": [
+                                                    "processes"
+                                                ],
+                                                "type": "object"
+                                            },
+                                            "type": "array"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/ErrorResponse"
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "Monitoring"
+                ],
+                "security": [],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "vmKey",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/monitoring/{vmKey}/apps/by-bos-name": {
+            "get": {
+                "operationId": "GetAppsByBosName",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "items": {
+                                                "$ref": "#/components/schemas/Pm2ProcessResponse"
+                                            },
+                                            "type": "array"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/ErrorResponse"
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "Monitoring"
+                ],
+                "security": [],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "vmKey",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "bosName",
                         "required": true,
                         "schema": {
                             "type": "string"

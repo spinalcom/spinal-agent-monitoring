@@ -17,10 +17,58 @@ const tsoa_1 = require("tsoa");
 const GraphService_1 = require("../services/GraphService");
 const pm2Utils_1 = require("../../utils/pm2Utils");
 const HTTP_RESPONSE_1 = require("../../utils/HTTP_RESPONSE");
+const utils_1 = require("./utils");
 let MonitoringController = class MonitoringController extends tsoa_1.Controller {
     constructor() {
         super(...arguments);
         this.graphService = GraphService_1.GraphService.getInstance();
+        /**
+         * Executes a PM2 action across one or more applications.
+         * @param data Request body containing action and target keys.
+         */
+        // @Post("{vmKey}/apps/action")
+        // @Response<ErrorResponse>(400, "Invalid PM2 action payload")
+        // public async runPm2Action(@Path() vmKey: string, @Body() data: { action: "start" | "stop" | "restart" | "reload" | "delete"; keys: (string | number)[] }): Promise<{ action: string; done: ActionResponse[]; failed: ActionResponse[] } | ErrorResponse> {
+        // 	try {
+        // 		const vm = await this.graphService.getVirtualMachine(vmKey);
+        // 		if (!vm) {
+        // 			this.setStatus(HTTP_RESPONSES.NOT_FOUND.code);
+        // 			throw new Error("Virtual machine not found");
+        // 		}
+        // 		return this.graphService
+        // 			.executeCommand(vm, data.action, data.keys)
+        // 			.then((results) => {
+        // 				this.setStatus(HTTP_RESPONSES.OK.code);
+        // 				const dataResult = partitionResults(results, `${data.action}ed`);
+        // 				return {
+        // 					action: data.action,
+        // 					done: dataResult.done || [],
+        // 					failed: dataResult.failed || [],
+        // 				};
+        // 			})
+        // 			.catch((err) => {
+        // 				this.setStatus(HTTP_RESPONSES.BAD_REQUEST.code);
+        // 				return { error: err.message || `Unable to ${data.action} PM2 process` };
+        // 			});
+        // 	} catch (error: Error | any) {
+        // 		this.setStatus(HTTP_RESPONSES.INTERNAL_SERVER_ERROR.code);
+        // 		return { error: error.message || "Unable to execute PM2 action" };
+        // 	}
+        // }
+        /**
+         * Returns a Zabbix LLD-compatible discovery payload for PM2 processes.
+         */
+        // @Get("{vmKey}/zabbix/discovery")
+        // @SuccessResponse("200", "OK")
+        // public async getZabbixDiscovery(@Path() vmKey: string): Promise<Pm2Discovery | ErrorResponse> {
+        // 	try {
+        // 		void vmKey;
+        // 		return await this.zabbixSenderService.getPm2Discovery();
+        // 	} catch (error: Error | any) {
+        // 		this.setStatus(HTTP_RESPONSES.INTERNAL_SERVER_ERROR.code);
+        // 		return { error: error.message || "Unable to build PM2 discovery payload" };
+        // 	}
+        // }
     }
     // private readonly pm2Service = Pm2Service.getInstance();
     // private readonly systemOverviewService = SystemOverviewService.getInstance();
@@ -40,7 +88,7 @@ let MonitoringController = class MonitoringController extends tsoa_1.Controller 
     async getAllVirtualMachines() {
         try {
             const vms = await this.graphService.getAllVirtualMachines();
-            const result = vms.map((vm) => this._formatVmNode(vm));
+            const result = vms.map((vm) => (0, utils_1._formatVmNode)(vm));
             this.setStatus(HTTP_RESPONSE_1.HTTP_RESPONSES.OK.code);
             return result;
         }
@@ -54,7 +102,7 @@ let MonitoringController = class MonitoringController extends tsoa_1.Controller 
             const vm = await this.graphService.getVirtualMachine(vmKey);
             if (!vm)
                 throw new Error("Virtual machine not found");
-            const result = this._formatVmNode(vm);
+            const result = (0, utils_1._formatVmNode)(vm);
             this.setStatus(HTTP_RESPONSE_1.HTTP_RESPONSES.OK.code);
             return result;
         }
@@ -71,7 +119,7 @@ let MonitoringController = class MonitoringController extends tsoa_1.Controller 
             const vm = await this.graphService.getVirtualMachine(vmKey);
             if (!vm)
                 throw new Error("Virtual machine not found");
-            const systemMetrics = this._formatVmNode(vm);
+            const systemMetrics = (0, utils_1._formatVmNode)(vm);
             this.setStatus(HTTP_RESPONSE_1.HTTP_RESPONSES.OK.code);
             return systemMetrics;
         }
@@ -83,18 +131,53 @@ let MonitoringController = class MonitoringController extends tsoa_1.Controller 
     /**
      * Lists all PM2-managed applications with their current runtime state.
      */
-    async getApps(vmKey) {
+    async getApps(vmKey, classifyByBos) {
         try {
             const vm = await this.graphService.getVirtualMachine(vmKey);
             if (!vm)
                 throw new Error("Virtual machine not found");
             const processes = await this.graphService.getPm2ProcessesNodes(vm);
             this.setStatus(HTTP_RESPONSE_1.HTTP_RESPONSES.OK.code);
-            return processes.map((process) => this._formatPm2Process(process));
+            return processes.map((process) => (0, utils_1._formatPm2Process)(process));
         }
         catch (error) {
             this.setStatus(HTTP_RESPONSE_1.HTTP_RESPONSES.INTERNAL_SERVER_ERROR.code);
             return { error: error.message || "Unable to retrieve PM2 processes" };
+        }
+    }
+    async getClassifiedApps(vmKey) {
+        try {
+            const vm = await this.graphService.getVirtualMachine(vmKey);
+            if (!vm)
+                throw new Error("Virtual machine not found");
+            const bosClassified = await this.graphService.getPm2ProcessClassifiedByBos(vm);
+            const mergedByBosName = bosClassified.map((el) => ({
+                ...el,
+                processes: el.processes.map((process) => (0, utils_1._formatPm2Process)(process)),
+            }));
+            this.setStatus(HTTP_RESPONSE_1.HTTP_RESPONSES.OK.code);
+            return mergedByBosName;
+        }
+        catch (error) {
+            this.setStatus(HTTP_RESPONSE_1.HTTP_RESPONSES.INTERNAL_SERVER_ERROR.code);
+            return { error: error.message || "Unable to retrieve classified PM2 processes" };
+        }
+    }
+    async getAppsByBosName(vmKey, bosName) {
+        try {
+            const vm = await this.graphService.getVirtualMachine(vmKey);
+            if (!vm)
+                throw new Error("Virtual machine not found");
+            const bosClassified = await this.graphService.getPm2ProcessClassifiedByBos(vm);
+            const bos = bosClassified.find((el) => el.key === bosName);
+            if (!bos)
+                throw new Error("BOS not found");
+            this.setStatus(HTTP_RESPONSE_1.HTTP_RESPONSES.OK.code);
+            return bos.processes.map((process) => (0, utils_1._formatPm2Process)(process));
+        }
+        catch (error) {
+            this.setStatus(HTTP_RESPONSE_1.HTTP_RESPONSES.INTERNAL_SERVER_ERROR.code);
+            return { error: error.message || "Unable to retrieve PM2 processes by BOS name" };
         }
     }
     /**
@@ -167,7 +250,7 @@ let MonitoringController = class MonitoringController extends tsoa_1.Controller 
                 return { error: `Process '${key}' not found.` };
             }
             this.setStatus(HTTP_RESPONSE_1.HTTP_RESPONSES.OK.code);
-            return this._formatPm2Process(processNode);
+            return (0, utils_1._formatPm2Process)(processNode);
         }
         catch (error) {
             this.setStatus(HTTP_RESPONSE_1.HTTP_RESPONSES.INTERNAL_SERVER_ERROR.code);
@@ -188,7 +271,7 @@ let MonitoringController = class MonitoringController extends tsoa_1.Controller 
                 this.setStatus(HTTP_RESPONSE_1.HTTP_RESPONSES.NOT_FOUND.code);
                 return { error: `Process '${key}' not found.` };
             }
-            const metrics = this._formatPm2ProcessMetrics(processNode);
+            const metrics = (0, utils_1._formatPm2ProcessMetrics)(processNode);
             this.setStatus(HTTP_RESPONSE_1.HTTP_RESPONSES.OK.code);
             return metrics;
         }
@@ -363,108 +446,6 @@ let MonitoringController = class MonitoringController extends tsoa_1.Controller 
             return { error: error.message || "Unable to delete PM2 process" };
         }
     }
-    /**
-     * Executes a PM2 action across one or more applications.
-     * @param data Request body containing action and target keys.
-     */
-    // @Post("{vmKey}/apps/action")
-    // @Response<ErrorResponse>(400, "Invalid PM2 action payload")
-    // public async runPm2Action(@Path() vmKey: string, @Body() data: { action: "start" | "stop" | "restart" | "reload" | "delete"; keys: (string | number)[] }): Promise<{ action: string; done: ActionResponse[]; failed: ActionResponse[] } | ErrorResponse> {
-    // 	try {
-    // 		const vm = await this.graphService.getVirtualMachine(vmKey);
-    // 		if (!vm) {
-    // 			this.setStatus(HTTP_RESPONSES.NOT_FOUND.code);
-    // 			throw new Error("Virtual machine not found");
-    // 		}
-    // 		return this.graphService
-    // 			.executeCommand(vm, data.action, data.keys)
-    // 			.then((results) => {
-    // 				this.setStatus(HTTP_RESPONSES.OK.code);
-    // 				const dataResult = partitionResults(results, `${data.action}ed`);
-    // 				return {
-    // 					action: data.action,
-    // 					done: dataResult.done || [],
-    // 					failed: dataResult.failed || [],
-    // 				};
-    // 			})
-    // 			.catch((err) => {
-    // 				this.setStatus(HTTP_RESPONSES.BAD_REQUEST.code);
-    // 				return { error: err.message || `Unable to ${data.action} PM2 process` };
-    // 			});
-    // 	} catch (error: Error | any) {
-    // 		this.setStatus(HTTP_RESPONSES.INTERNAL_SERVER_ERROR.code);
-    // 		return { error: error.message || "Unable to execute PM2 action" };
-    // 	}
-    // }
-    /**
-     * Returns a Zabbix LLD-compatible discovery payload for PM2 processes.
-     */
-    // @Get("{vmKey}/zabbix/discovery")
-    // @SuccessResponse("200", "OK")
-    // public async getZabbixDiscovery(@Path() vmKey: string): Promise<Pm2Discovery | ErrorResponse> {
-    // 	try {
-    // 		void vmKey;
-    // 		return await this.zabbixSenderService.getPm2Discovery();
-    // 	} catch (error: Error | any) {
-    // 		this.setStatus(HTTP_RESPONSES.INTERNAL_SERVER_ERROR.code);
-    // 		return { error: error.message || "Unable to build PM2 discovery payload" };
-    // 	}
-    // }
-    _formatVmNode(vmNode) {
-        const info = vmNode.info.get();
-        return {
-            name: info.name,
-            type: info.type,
-            staticId: info.id,
-            dynamicId: vmNode._server_id,
-            macAddress: info.macAddress,
-            ipAddress: info.ipAddress,
-            port: info.port,
-            cpuUsage: info.cpuUsage,
-            ramUsagePercent: info.ramUsagePercent,
-            ramUsage: info.ramUsage,
-            totalRam: info.totalRam,
-            freeRam: info.freeRam,
-            totalDisk: info.totalDisk,
-            freeDisk: info.freeDisk,
-            diskUsage: info.diskUsage,
-            diskUsagePercent: info.diskUsagePercent,
-            cpuUsagePercent: info.cpuUsagePercent,
-            cpuIdle: info.cpuIdle,
-            cpuIdlePercent: info.cpuIdlePercent,
-        };
-    }
-    _formatPm2Process(pm2Process) {
-        const info = pm2Process.info.get();
-        return {
-            name: info.name,
-            staticId: info.staticId,
-            dynamicId: info.dynamicId,
-            pm_id: info.pm_id,
-            pid: info.pid,
-            status: info.status,
-            restarts: info.restarts,
-            uptime: info.uptime,
-            heapMemory: info.heapMemory,
-            createdAt: info.created_at,
-            monit: info.monit,
-            cwd: info.cwd,
-            outLogPath: info.log?.out || "",
-            errLogPath: info.log?.err || "",
-        };
-    }
-    _formatPm2ProcessMetrics(pm2Process) {
-        const info = pm2Process.info.get();
-        return {
-            name: info.name,
-            pm_id: info.pm_id,
-            status: info.status,
-            cpu: info.monit.cpu,
-            memory: info.monit.memory,
-            uptime: info.uptime,
-            restarts: info.restarts,
-        };
-    }
 };
 exports.MonitoringController = MonitoringController;
 __decorate([
@@ -501,10 +482,28 @@ __decorate([
     (0, tsoa_1.Get)("{vmKey}/apps"),
     (0, tsoa_1.SuccessResponse)("200", "OK"),
     __param(0, (0, tsoa_1.Path)()),
+    __param(1, (0, tsoa_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Boolean]),
+    __metadata("design:returntype", Promise)
+], MonitoringController.prototype, "getApps", null);
+__decorate([
+    (0, tsoa_1.Get)("{vmKey}/apps/classified"),
+    (0, tsoa_1.SuccessResponse)("200", "OK"),
+    __param(0, (0, tsoa_1.Path)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
-], MonitoringController.prototype, "getApps", null);
+], MonitoringController.prototype, "getClassifiedApps", null);
+__decorate([
+    (0, tsoa_1.Get)("{vmKey}/apps/by-bos-name"),
+    (0, tsoa_1.SuccessResponse)("200", "OK"),
+    __param(0, (0, tsoa_1.Path)()),
+    __param(1, (0, tsoa_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", Promise)
+], MonitoringController.prototype, "getAppsByBosName", null);
 __decorate([
     (0, tsoa_1.Get)("{vmKey}/apps/metrics"),
     (0, tsoa_1.SuccessResponse)("200", "OK"),

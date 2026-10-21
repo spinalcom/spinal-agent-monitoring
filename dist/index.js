@@ -76,7 +76,7 @@ async function initializeGraphContext(services) {
     console.log("System overview and PM2 service initialized successfully.");
     return vmContext;
 }
-function startPeriodicMetricsUpdate(services, vmContext) {
+async function startPeriodicMetricsUpdate(services, vmContext) {
     const updateSystemAndPm2Metrics = async () => {
         console.log("Updating system metrics and PM2 processes...");
         const currentSystemMetrics = services.systemOverviewService.getSystemMetricsFormatted();
@@ -88,9 +88,16 @@ function startPeriodicMetricsUpdate(services, vmContext) {
         console.log("System metrics and PM2 processes updated successfully.");
     };
     const intervalMs = Number.parseInt(process.env.SYSTEM_INFO_SEND_INTERVAL_MS || "30000", 10);
-    setInterval(() => {
-        void updateSystemAndPm2Metrics();
-    }, intervalMs);
+    let nextUpdateTime = Date.now() + intervalMs;
+    // Periodically update system and PM2 metrics based on the defined interval.
+    // use while to not have overlapping updates and ensure consistent intervals.
+    while (true) {
+        const now = Date.now();
+        if (nextUpdateTime > now)
+            await new Promise((resolve) => setTimeout(resolve, nextUpdateTime - now));
+        await updateSystemAndPm2Metrics();
+        nextUpdateTime = Date.now() + intervalMs;
+    }
 }
 async function startPm2Listeners(services, vmContext) {
     const debouncedPm2Handlers = new Map();

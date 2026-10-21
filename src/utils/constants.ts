@@ -1,6 +1,15 @@
 import { time } from "console";
 import { InputDataEndpoint, InputDataEndpointDataType, InputDataEndpointType } from "spinal-model-bmsnetwork";
 
+export const PROCESS_HUB_DATA_RESPONSE: string = "process:hub_data_response";
+export const PROCESS_CONFIG_DATA_CHANGE: string = "process:config_data_change";
+export const PROCESS_EVENT: string = "process:event";
+export const PROCESS_ONLINE: string = "process:online";
+export const PROCESS_EXIT: string = "process:exit";
+export const PROCESS_DELETE: string = "process:delete";
+export const PROCESS_KILL: string = "process:kill";
+export const PROCESS_EXCEPTION: string = "process:exception";
+
 export const SPINAL_COMMAND_TYPE = {
 	start: "start",
 	restart: "restart",

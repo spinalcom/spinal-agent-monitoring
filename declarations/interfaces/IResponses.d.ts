@@ -28,6 +28,7 @@ export interface Pm2ProcessResponse {
     dynamicId?: string;
     heapMemory?: any;
     monit?: any;
+    bosData?: Record<string, any>;
 }
 export interface Pm2StatusSummaryResponse {
     total: number;

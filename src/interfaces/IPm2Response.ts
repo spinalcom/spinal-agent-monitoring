@@ -15,6 +15,7 @@ export interface IPm2Response {
 	cwd: string;
 	created_at: number;
 	log?: ILog;
+	hubData?: Record<string, any>;
 }
 export interface IHeapMemory {
 	heapSize: IHeapSize;

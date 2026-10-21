@@ -1,12 +1,12 @@
 import { Body, Controller, Get, Path, Post, Query, Response, Route, SuccessResponse, Tags } from "tsoa";
 import { GraphService } from "../services/GraphService";
-import { SpinalContext, SpinalNode } from "spinal-model-graph";
 import ZabbixSenderService, { Pm2Discovery } from "../../system/ZabbixSenderService";
 import { ActionResponse, ErrorResponse, HealthResponse, Pm2LogType, Pm2ProcessLogsResponse, Pm2ProcessMetricsResponse, Pm2ProcessResponse, Pm2StatusSummaryResponse } from "../../interfaces/IResponses";
-import { formatProcess, partitionResults, splitActionResults } from "../../utils/pm2Utils";
-import { HTTP_RESPONSES } from "../../utils/HTTP_RESPONSE";
 import { IVMResponse } from "../../interfaces/IVMResponse";
-import { IPm2Response } from "../../interfaces";
+
+import { partitionResults, splitActionResults } from "../../utils/pm2Utils";
+import { HTTP_RESPONSES } from "../../utils/HTTP_RESPONSE";
+import { _formatPm2Process, _formatPm2ProcessMetrics, _formatVmNode } from "./utils";
 
 @Route("monitoring")
 @Tags("Monitoring")
@@ -35,7 +35,7 @@ export class MonitoringController extends Controller {
 	public async getAllVirtualMachines(): Promise<IVMResponse[] | ErrorResponse> {
 		try {
 			const vms = await this.graphService.getAllVirtualMachines();
-			const result = vms.map((vm) => this._formatVmNode(vm));
+			const result = vms.map((vm) => _formatVmNode(vm));
 			this.setStatus(HTTP_RESPONSES.OK.code);
 			return result;
 		} catch (error: Error | any) {
@@ -50,7 +50,7 @@ export class MonitoringController extends Controller {
 		try {
 			const vm = await this.graphService.getVirtualMachine(vmKey);
 			if (!vm) throw new Error("Virtual machine not found");
-			const result = this._formatVmNode(vm);
+			const result = _formatVmNode(vm);
 			this.setStatus(HTTP_RESPONSES.OK.code);
 			return result;
 		} catch (error: Error | any) {
@@ -68,7 +68,7 @@ export class MonitoringController extends Controller {
 		try {
 			const vm = await this.graphService.getVirtualMachine(vmKey);
 			if (!vm) throw new Error("Virtual machine not found");
-			const systemMetrics = this._formatVmNode(vm);
+			const systemMetrics = _formatVmNode(vm);
 			this.setStatus(HTTP_RESPONSES.OK.code);
 			return systemMetrics;
 		} catch (error) {
@@ -82,16 +82,57 @@ export class MonitoringController extends Controller {
 	 */
 	@Get("{vmKey}/apps")
 	@SuccessResponse("200", "OK")
-	public async getApps(@Path() vmKey: string): Promise<Pm2ProcessResponse[] | ErrorResponse> {
+	public async getApps(@Path() vmKey: string, @Query() classifyByBos?: boolean): Promise<Pm2ProcessResponse[] | ErrorResponse> {
 		try {
 			const vm = await this.graphService.getVirtualMachine(vmKey);
 			if (!vm) throw new Error("Virtual machine not found");
 			const processes = await this.graphService.getPm2ProcessesNodes(vm);
 			this.setStatus(HTTP_RESPONSES.OK.code);
-			return processes.map((process) => this._formatPm2Process(process));
+			return processes.map((process) => _formatPm2Process(process));
 		} catch (error: Error | any) {
 			this.setStatus(HTTP_RESPONSES.INTERNAL_SERVER_ERROR.code);
 			return { error: error.message || "Unable to retrieve PM2 processes" };
+		}
+	}
+
+	@Get("{vmKey}/apps/classified")
+	@SuccessResponse("200", "OK")
+	public async getClassifiedApps(@Path() vmKey: string): Promise<{ [key: string]: any; processes: Pm2ProcessResponse[] }[] | ErrorResponse> {
+		try {
+			const vm = await this.graphService.getVirtualMachine(vmKey);
+			if (!vm) throw new Error("Virtual machine not found");
+
+			const bosClassified = await this.graphService.getPm2ProcessClassifiedByBos(vm);
+
+			const mergedByBosName = bosClassified.map((el) => ({
+				...el,
+				processes: el.processes.map((process) => _formatPm2Process(process)),
+			}));
+
+			this.setStatus(HTTP_RESPONSES.OK.code);
+			return mergedByBosName;
+		} catch (error: Error | any) {
+			this.setStatus(HTTP_RESPONSES.INTERNAL_SERVER_ERROR.code);
+			return { error: error.message || "Unable to retrieve classified PM2 processes" };
+		}
+	}
+
+	@Get("{vmKey}/apps/by-bos-name")
+	@SuccessResponse("200", "OK")
+	public async getAppsByBosName(@Path() vmKey: string, @Query() bosName: string): Promise<Pm2ProcessResponse[] | ErrorResponse> {
+		try {
+			const vm = await this.graphService.getVirtualMachine(vmKey);
+			if (!vm) throw new Error("Virtual machine not found");
+
+			const bosClassified = await this.graphService.getPm2ProcessClassifiedByBos(vm);
+			const bos = bosClassified.find((el) => el.key === bosName);
+			if (!bos) throw new Error("BOS not found");
+
+			this.setStatus(HTTP_RESPONSES.OK.code);
+			return bos.processes.map((process) => _formatPm2Process(process));
+		} catch (error: Error | any) {
+			this.setStatus(HTTP_RESPONSES.INTERNAL_SERVER_ERROR.code);
+			return { error: error.message || "Unable to retrieve PM2 processes by BOS name" };
 		}
 	}
 
@@ -172,7 +213,7 @@ export class MonitoringController extends Controller {
 			}
 
 			this.setStatus(HTTP_RESPONSES.OK.code);
-			return this._formatPm2Process(processNode);
+			return _formatPm2Process(processNode);
 		} catch (error: Error | any) {
 			this.setStatus(HTTP_RESPONSES.INTERNAL_SERVER_ERROR.code);
 			return { error: error.message || "Unable to retrieve PM2 process" };
@@ -196,7 +237,7 @@ export class MonitoringController extends Controller {
 				return { error: `Process '${key}' not found.` };
 			}
 
-			const metrics = this._formatPm2ProcessMetrics(processNode);
+			const metrics = _formatPm2ProcessMetrics(processNode);
 			this.setStatus(HTTP_RESPONSES.OK.code);
 			return metrics;
 		} catch (error: Error | any) {
@@ -439,62 +480,4 @@ export class MonitoringController extends Controller {
 	// 		return { error: error.message || "Unable to build PM2 discovery payload" };
 	// 	}
 	// }
-
-	private _formatVmNode(vmNode: SpinalContext): IVMResponse {
-		const info = vmNode.info.get();
-		return {
-			name: info.name,
-			type: info.type,
-			staticId: info.id,
-			dynamicId: vmNode._server_id,
-			macAddress: info.macAddress,
-			ipAddress: info.ipAddress,
-			port: info.port,
-			cpuUsage: info.cpuUsage,
-			ramUsagePercent: info.ramUsagePercent,
-			ramUsage: info.ramUsage,
-			totalRam: info.totalRam,
-			freeRam: info.freeRam,
-			totalDisk: info.totalDisk,
-			freeDisk: info.freeDisk,
-			diskUsage: info.diskUsage,
-			diskUsagePercent: info.diskUsagePercent,
-			cpuUsagePercent: info.cpuUsagePercent,
-			cpuIdle: info.cpuIdle,
-			cpuIdlePercent: info.cpuIdlePercent,
-		};
-	}
-
-	private _formatPm2Process(pm2Process: SpinalNode): Pm2ProcessResponse {
-		const info: IPm2Response = pm2Process.info.get();
-		return {
-			name: info.name,
-			staticId: info.staticId,
-			dynamicId: info.dynamicId,
-			pm_id: info.pm_id,
-			pid: info.pid,
-			status: info.status,
-			restarts: info.restarts,
-			uptime: info.uptime,
-			heapMemory: info.heapMemory,
-			createdAt: info.created_at,
-			monit: info.monit,
-			cwd: info.cwd,
-			outLogPath: info.log?.out || "",
-			errLogPath: info.log?.err || "",
-		};
-	}
-
-	private _formatPm2ProcessMetrics(pm2Process: SpinalNode): Pm2ProcessMetricsResponse {
-		const info: IPm2Response = pm2Process.info.get();
-		return {
-			name: info.name,
-			pm_id: info.pm_id,
-			status: info.status,
-			cpu: info.monit.cpu,
-			memory: info.monit.memory,
-			uptime: info.uptime,
-			restarts: info.restarts,
-		};
-	}
 }
