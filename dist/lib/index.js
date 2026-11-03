@@ -21,10 +21,9 @@ exports.registerMonitoringAgent = registerMonitoringAgent;
 const routes_1 = require("../api/routes");
 const swagger_1 = require("../api/swagger");
 const webSocketMiddleware_1 = require("../api/middleware/webSocketMiddleware");
-const SpinalApiMiddleware_1 = __importDefault(require("../api/middleware/SpinalApiMiddleware"));
 const SpinalhubService_1 = __importDefault(require("../api/services/SpinalhubService"));
-async function registerMonitoringAgent(app, io, conn, configFilePath, spinalApiMiddleware = SpinalApiMiddleware_1.default) {
-    SpinalhubService_1.default.getInstance().setConnection(conn);
+async function registerMonitoringAgent(app, io, spinalApiMiddleware, configFilePath) {
+    SpinalhubService_1.default.getInstance().setConnection(spinalApiMiddleware.conn);
     await SpinalhubService_1.default.getInstance().initializeConfigFile(configFilePath);
     // await UserService.getInstance().initialize();
     if (!spinalApiMiddleware.checkMonitoringToken) {
