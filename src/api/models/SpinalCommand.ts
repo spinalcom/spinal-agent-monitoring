@@ -1,18 +1,14 @@
 import { Choice, Lst, Model, Ptr, spinalCore } from "spinal-core-connectorjs";
-import { SPINAL_COMMAND_STATUS, SPINAL_COMMAND_TYPE } from "../../utils/constants";
-import { IProcessInfo } from "../../interfaces/interfaces";
+import { SPINAL_COMMAND_STATUS, SPINAL_COMMAND_TIMEOUT_MS, SPINAL_COMMAND_TYPE, SpinalCommandAction } from "../../utils/constants";
 import { Pm2Service } from "../../system/Pm2Service";
 import { ActionResponse } from "../../interfaces/IResponses";
-// import { v4 as uuidv4 } from "uuid";
 import type { SpinalContext } from "spinal-model-graph";
-import { exec } from "child_process";
 import { generateUniqId } from "../../utils";
 
 class SpinalCommand extends Model {
-	constructor(type?: (typeof SPINAL_COMMAND_TYPE)[keyof typeof SPINAL_COMMAND_TYPE], processesIds?: string | number | (string | number)[], vmNode?: SpinalContext) {
+	constructor(type?: SpinalCommandAction, processesIds?: string | number | (string | number)[], vmNode?: SpinalContext) {
 		super();
 		this.add_attr({
-			// id: uuidv4(),
 			id: generateUniqId(),
 			type,
 			processesIds,
@@ -45,6 +41,12 @@ class SpinalCommand extends Model {
 				case SPINAL_COMMAND_TYPE.stop:
 					results = await pm2ServiceInstance.stopPm2Process(keys);
 					break;
+				case SPINAL_COMMAND_TYPE.reload:
+					results = await pm2ServiceInstance.reloadPm2Process(keys);
+					break;
+				case SPINAL_COMMAND_TYPE.delete:
+					results = await pm2ServiceInstance.deletePm2Process(keys);
+					break;
 				default:
 					throw new Error(`Unsupported command type: ${type}`);
 			}
@@ -57,6 +59,7 @@ class SpinalCommand extends Model {
 			const response = { success: false, message: `Command execution failed: ${error.message}` };
 			this.executionResult.set([response]);
 			this.status.set(SPINAL_COMMAND_STATUS.failed);
+			await this.removeFromGraph();
 			return [response];
 		}
 	}
@@ -83,9 +86,7 @@ class SpinalCommand extends Model {
 	isNotExpired(): boolean {
 		const createdAt = this.createdAt.get();
 		const now = Date.now();
-		const expirationTime = 30 * 1000; // 10 seconds
-
-		return now - createdAt < expirationTime;
+		return now - createdAt < SPINAL_COMMAND_TIMEOUT_MS;
 	}
 }
 

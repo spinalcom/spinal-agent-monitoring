@@ -11,10 +11,14 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MonitoringController = void 0;
 const tsoa_1 = require("tsoa");
 const GraphService_1 = require("../services/GraphService");
+const SystemOverviewService_1 = __importDefault(require("../../system/SystemOverviewService"));
 const pm2Utils_1 = require("../../utils/pm2Utils");
 const HTTP_RESPONSE_1 = require("../../utils/HTTP_RESPONSE");
 const utils_1 = require("./utils");
@@ -83,6 +87,20 @@ let MonitoringController = class MonitoringController extends tsoa_1.Controller 
         catch (error) {
             this.setStatus(HTTP_RESPONSE_1.HTTP_RESPONSES.INTERNAL_SERVER_ERROR.code);
             return { status: HTTP_RESPONSE_1.HTTP_RESPONSES.INTERNAL_SERVER_ERROR.code, message: "Unable to retrieve health status" };
+        }
+    }
+    /**
+     * Clears the Linux page cache on the monitored host.
+     */
+    async clearCache() {
+        try {
+            await SystemOverviewService_1.default.getInstance().clearLinuxPageCache();
+            this.setStatus(HTTP_RESPONSE_1.HTTP_RESPONSES.OK.code);
+            return { success: true, message: "Linux page cache cleared" };
+        }
+        catch (error) {
+            this.setStatus(HTTP_RESPONSE_1.HTTP_RESPONSES.INTERNAL_SERVER_ERROR.code);
+            return { error: error instanceof Error ? error.message : "Unable to clear Linux page cache" };
         }
     }
     async getAllVirtualMachines() {
@@ -450,13 +468,24 @@ let MonitoringController = class MonitoringController extends tsoa_1.Controller 
 exports.MonitoringController = MonitoringController;
 __decorate([
     (0, tsoa_1.Get)("/health"),
+    (0, tsoa_1.Tags)("vm"),
     (0, tsoa_1.SuccessResponse)("200", "OK"),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Object)
 ], MonitoringController.prototype, "getHealth", null);
 __decorate([
+    (0, tsoa_1.Post)("/cache/clear"),
+    (0, tsoa_1.Tags)("vm"),
+    (0, tsoa_1.SuccessResponse)("200", "Linux page cache cleared"),
+    (0, tsoa_1.Response)(500, "Unable to clear Linux page cache"),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], MonitoringController.prototype, "clearCache", null);
+__decorate([
     (0, tsoa_1.Get)("/all_vms"),
+    (0, tsoa_1.Tags)("vm"),
     (0, tsoa_1.SuccessResponse)("200", "OK"),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
@@ -464,6 +493,7 @@ __decorate([
 ], MonitoringController.prototype, "getAllVirtualMachines", null);
 __decorate([
     (0, tsoa_1.Get)("{vmKey}"),
+    (0, tsoa_1.Tags)("vm"),
     (0, tsoa_1.SuccessResponse)("200", "OK"),
     __param(0, (0, tsoa_1.Path)()),
     __metadata("design:type", Function),
@@ -472,6 +502,7 @@ __decorate([
 ], MonitoringController.prototype, "getVirtualMachine", null);
 __decorate([
     (0, tsoa_1.Get)("{vmKey}/system"),
+    (0, tsoa_1.Tags)("vm"),
     (0, tsoa_1.SuccessResponse)("200", "OK"),
     __param(0, (0, tsoa_1.Path)()),
     __metadata("design:type", Function),
@@ -480,6 +511,7 @@ __decorate([
 ], MonitoringController.prototype, "getSystemMetrics", null);
 __decorate([
     (0, tsoa_1.Get)("{vmKey}/apps"),
+    (0, tsoa_1.Tags)("pm2"),
     (0, tsoa_1.SuccessResponse)("200", "OK"),
     __param(0, (0, tsoa_1.Path)()),
     __param(1, (0, tsoa_1.Query)()),
@@ -489,6 +521,7 @@ __decorate([
 ], MonitoringController.prototype, "getApps", null);
 __decorate([
     (0, tsoa_1.Get)("{vmKey}/apps/classified"),
+    (0, tsoa_1.Tags)("pm2"),
     (0, tsoa_1.SuccessResponse)("200", "OK"),
     __param(0, (0, tsoa_1.Path)()),
     __metadata("design:type", Function),
@@ -497,6 +530,7 @@ __decorate([
 ], MonitoringController.prototype, "getClassifiedApps", null);
 __decorate([
     (0, tsoa_1.Get)("{vmKey}/apps/by-bos-name"),
+    (0, tsoa_1.Tags)("pm2"),
     (0, tsoa_1.SuccessResponse)("200", "OK"),
     __param(0, (0, tsoa_1.Path)()),
     __param(1, (0, tsoa_1.Query)()),
@@ -506,6 +540,7 @@ __decorate([
 ], MonitoringController.prototype, "getAppsByBosName", null);
 __decorate([
     (0, tsoa_1.Get)("{vmKey}/apps/metrics"),
+    (0, tsoa_1.Tags)("pm2"),
     (0, tsoa_1.SuccessResponse)("200", "OK"),
     __param(0, (0, tsoa_1.Path)()),
     __metadata("design:type", Function),
@@ -514,6 +549,7 @@ __decorate([
 ], MonitoringController.prototype, "getAppsMetrics", null);
 __decorate([
     (0, tsoa_1.Get)("{vmKey}/apps/status/summary"),
+    (0, tsoa_1.Tags)("pm2"),
     (0, tsoa_1.SuccessResponse)("200", "OK"),
     __param(0, (0, tsoa_1.Path)()),
     __metadata("design:type", Function),
@@ -522,6 +558,7 @@ __decorate([
 ], MonitoringController.prototype, "getAppsStatusSummary", null);
 __decorate([
     (0, tsoa_1.Get)("{vmKey}/apps/{key}"),
+    (0, tsoa_1.Tags)("pm2"),
     (0, tsoa_1.Response)(404, "Process not found"),
     __param(0, (0, tsoa_1.Path)()),
     __param(1, (0, tsoa_1.Path)()),
@@ -531,6 +568,7 @@ __decorate([
 ], MonitoringController.prototype, "getAppByKey", null);
 __decorate([
     (0, tsoa_1.Get)("{vmKey}/apps/{key}/metrics"),
+    (0, tsoa_1.Tags)("pm2"),
     (0, tsoa_1.Response)(404, "Process not found"),
     __param(0, (0, tsoa_1.Path)()),
     __param(1, (0, tsoa_1.Path)()),
@@ -540,6 +578,7 @@ __decorate([
 ], MonitoringController.prototype, "getAppMetricsByKey", null);
 __decorate([
     (0, tsoa_1.Get)("{vmKey}/apps/{key}/logs"),
+    (0, tsoa_1.Tags)("pm2"),
     (0, tsoa_1.Response)(404, "Process not found"),
     __param(0, (0, tsoa_1.Path)()),
     __param(1, (0, tsoa_1.Path)()),
@@ -551,6 +590,7 @@ __decorate([
 ], MonitoringController.prototype, "getAppLogsByKey", null);
 __decorate([
     (0, tsoa_1.Post)("{vmKey}/apps/start"),
+    (0, tsoa_1.Tags)("pm2"),
     (0, tsoa_1.Response)(400, "Unable to start process"),
     __param(0, (0, tsoa_1.Path)()),
     __param(1, (0, tsoa_1.Body)()),
@@ -560,6 +600,7 @@ __decorate([
 ], MonitoringController.prototype, "startApp", null);
 __decorate([
     (0, tsoa_1.Post)("{vmKey}/apps/stop"),
+    (0, tsoa_1.Tags)("pm2"),
     (0, tsoa_1.Response)(400, "Unable to stop process"),
     __param(0, (0, tsoa_1.Path)()),
     __param(1, (0, tsoa_1.Body)()),
@@ -569,6 +610,7 @@ __decorate([
 ], MonitoringController.prototype, "stopApp", null);
 __decorate([
     (0, tsoa_1.Post)("{vmKey}/apps/restart"),
+    (0, tsoa_1.Tags)("pm2"),
     (0, tsoa_1.Response)(400, "Unable to restart process"),
     __param(0, (0, tsoa_1.Path)()),
     __param(1, (0, tsoa_1.Body)()),
@@ -578,6 +620,7 @@ __decorate([
 ], MonitoringController.prototype, "restartApp", null);
 __decorate([
     (0, tsoa_1.Post)("{vmKey}/apps/reload"),
+    (0, tsoa_1.Tags)("pm2"),
     (0, tsoa_1.Response)(400, "Unable to reload process"),
     __param(0, (0, tsoa_1.Path)()),
     __param(1, (0, tsoa_1.Body)()),
@@ -587,6 +630,7 @@ __decorate([
 ], MonitoringController.prototype, "reloadApp", null);
 __decorate([
     (0, tsoa_1.Post)("{vmKey}/apps/delete"),
+    (0, tsoa_1.Tags)("pm2"),
     (0, tsoa_1.Response)(400, "Unable to delete process"),
     __param(0, (0, tsoa_1.Path)()),
     __param(1, (0, tsoa_1.Body)()),
@@ -595,7 +639,6 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], MonitoringController.prototype, "deleteApp", null);
 exports.MonitoringController = MonitoringController = __decorate([
-    (0, tsoa_1.Route)("monitoring"),
-    (0, tsoa_1.Tags)("Monitoring")
+    (0, tsoa_1.Route)("monitoring")
 ], MonitoringController);
 //# sourceMappingURL=MonitoringController.js.map

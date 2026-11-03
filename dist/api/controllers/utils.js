@@ -20,6 +20,7 @@ function _formatVmNode(vmNode) {
         ramUsage: info.ramUsage,
         totalRam: info.totalRam,
         freeRam: info.freeRam,
+        cachedRam: info.cachedRam,
         totalDisk: info.totalDisk,
         freeDisk: info.freeDisk,
         diskUsage: info.diskUsage,

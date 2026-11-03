@@ -14,9 +14,12 @@ export const SPINAL_COMMAND_TYPE = {
 	start: "start",
 	restart: "restart",
 	stop: "stop",
-	online: "online",
-	exit: "exit",
+	reload: "reload",
+	delete: "delete",
 } as const;
+
+export type SpinalCommandAction = (typeof SPINAL_COMMAND_TYPE)[keyof typeof SPINAL_COMMAND_TYPE];
+export const SPINAL_COMMAND_TIMEOUT_MS = 10_000;
 
 export const SPINAL_COMMAND_STATUS = {
 	pending: "pending",

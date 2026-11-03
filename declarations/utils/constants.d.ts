@@ -11,9 +11,11 @@ export declare const SPINAL_COMMAND_TYPE: {
     readonly start: "start";
     readonly restart: "restart";
     readonly stop: "stop";
-    readonly online: "online";
-    readonly exit: "exit";
+    readonly reload: "reload";
+    readonly delete: "delete";
 };
+export type SpinalCommandAction = (typeof SPINAL_COMMAND_TYPE)[keyof typeof SPINAL_COMMAND_TYPE];
+export declare const SPINAL_COMMAND_TIMEOUT_MS = 10000;
 export declare const SPINAL_COMMAND_STATUS: {
     readonly pending: "pending";
     readonly in_progress: "in_progress";

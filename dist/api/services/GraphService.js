@@ -15,7 +15,6 @@ const endpointService = EndpointService_1.EndpointService.getInstance();
 class GraphService {
     constructor() {
         this._graph = null;
-        this.pm2Maps = new Map();
     }
     static getInstance() {
         if (!this._instance) {
@@ -39,7 +38,7 @@ class GraphService {
         if (systemMetrics)
             await this.updateOrCreateSystemMetrics(existingNode, systemMetrics, true);
         if (pm2List)
-            await this.updateOrCreatePm2Process(existingNode, pm2List);
+            await this.updateOrCreatePm2Process(existingNode, pm2List, true, true);
         await this._initCommandList(existingNode);
         return existingNode;
     }
@@ -53,12 +52,12 @@ class GraphService {
         return null;
     }
     async executeCommand(vmNode, type, processesIds) {
-        return new Promise(async (resolve, reject) => {
-            const command = new models_1.SpinalCommand(type, processesIds, vmNode);
-            await this._initCommandList(vmNode, command);
+        const command = new models_1.SpinalCommand(type, processesIds, vmNode);
+        await this._initCommandList(vmNode, command);
+        return new Promise((resolve, reject) => {
             const timeoutId = setTimeout(() => {
                 command.status.set(utils_1.SPINAL_COMMAND_STATUS.timeout);
-            }, 10000);
+            }, utils_1.SPINAL_COMMAND_TIMEOUT_MS);
             command.status.bind(() => {
                 const status = command.status.get();
                 if (status === utils_1.SPINAL_COMMAND_STATUS.completed || status === utils_1.SPINAL_COMMAND_STATUS.failed) {
@@ -92,7 +91,7 @@ class GraphService {
     }
     async getAllVirtualMachines() {
         const contexts = await this.getGraph()?.getChildren();
-        return (contexts || []).filter((context) => context instanceof spinal_model_graph_1.SpinalContext);
+        return (contexts || []).filter((context) => context instanceof spinal_model_graph_1.SpinalContext && context.getType().get() === utils_1.VM_CONTEXT_NODE_TYPE);
     }
     updateOrCreateSystemMetrics(vmNode, systemMetrics, isInit = false) {
         for (const [key, value] of Object.entries(systemMetrics)) {
@@ -105,17 +104,20 @@ class GraphService {
     }
     async getPm2ProcessesNodesAsObj(context) {
         const existingProcesses = await context.getChildren(utils_1.HAS_PM2_PROCESS_RELATION_NAME);
-        const obj = {};
+        const obj = Object.create(null);
         for (const process of existingProcesses) {
-            const pm_id = process.info?.pm_id?.get() || process.info?.name?.get();
-            if (pm_id)
-                obj[pm_id] = process;
+            const pmId = process.info?.pm_id?.get();
+            const name = process.getName().get();
+            if (pmId !== undefined && pmId !== null)
+                obj[pmId] = process;
+            if (name)
+                obj[name] = process;
         }
         return obj;
     }
     async getPm2ProcessesNodes(vmNode) {
         const existingProcessesObj = await this.getPm2ProcessesNodesAsObj(vmNode);
-        return Object.values(existingProcessesObj);
+        return Array.from(new Set(Object.values(existingProcessesObj)));
     }
     async getPm2ProcessClassifiedByBos(vmNode) {
         const processes = await this.getPm2ProcessesNodes(vmNode);
@@ -135,15 +137,18 @@ class GraphService {
         }
         return classified.map(({ keys, ...withoutKeys }) => withoutKeys);
     }
-    async updateOrCreatePm2Process(vmNode, pm2Process) {
-        const nodes = await this._syncPm2Processes(vmNode, pm2Process);
+    async updateOrCreatePm2Process(vmNode, pm2Process, isInit = false, reconcileSnapshot = false) {
+        const nodes = await this._syncPm2Processes(vmNode, pm2Process, reconcileSnapshot);
         const existingNodes = nodes.reduce((acc, node) => {
-            const pm_id = node.info?.pm_id?.get() || node.info?.name?.get();
-            if (pm_id)
-                acc[pm_id] = node;
+            const pmId = node.info?.pm_id?.get();
+            const name = node.getName().get();
+            if (pmId !== undefined && pmId !== null)
+                acc[pmId] = node;
+            if (name)
+                acc[name] = node;
             return acc;
-        }, {});
-        await this.updatePm2ProcessesMetrics(vmNode, pm2Process, existingNodes, true);
+        }, Object.create(null));
+        await this.updatePm2ProcessesMetrics(vmNode, pm2Process, existingNodes, isInit);
         return nodes;
     }
     async getPm2ProcessNodeByKey(vmNode, key) {
@@ -155,8 +160,18 @@ class GraphService {
         });
     }
     async handlePm2Event(vmNode, event) {
-        // const processKey = event.process.pm_id ?? event.process.name;
+        if (event.type === utils_1.PROCESS_DELETE) {
+            const processKey = event.process?.pm_id ?? event.process?.name;
+            if (processKey === undefined || processKey === null)
+                return null;
+            const processNode = await this.getPm2ProcessNodeByKey(vmNode, processKey);
+            if (processNode)
+                await this.removePm2ProcessFromGraph(vmNode, processNode);
+            return null;
+        }
         const processData = event.process;
+        if (!processData)
+            return null;
         const [processFound] = await this.updateOrCreatePm2Process(vmNode, [processData]);
         // change organ config_data
         if (event.type === utils_1.PROCESS_CONFIG_DATA_CHANGE) {
@@ -166,14 +181,6 @@ class GraphService {
             return this._updateOrganHubData(processFound, event.data);
         }
         return processFound;
-        // const promises = [];
-        // const isErrorEvent = ["errored", "error"].includes(eventType);
-        // if (isErrorEvent) promises.push(endpointService._updateErroredEndpoint(processFound, 1));
-        // promises.push(this.updateOrCreatePm2Process(vmNode, [processData]));
-        // const value = ["stop", "stopped", "restart", "restarted", "exit", "errored", "error"].includes(eventType) ? 1 : 0;
-        // promises.push(endpointService._updateRebootEndpoint(processFound, value));
-        // promises.push(this.updateOrCreatePm2Process(vmNode, [processData]));
-        // return Promise.all(promises);
     }
     async updatePm2ProcessesMetrics(vmNode, pm2Processes, existingNodes, isInit = false) {
         if (!Array.isArray(pm2Processes))
@@ -255,29 +262,16 @@ class GraphService {
         }
     }
     async removePm2ProcessFromGraph(vmNode, processNode) {
-        const processKey = typeof processNode == "string" ? processNode : processNode.info?.pm_id?.get() || processNode.getName().get();
-        // I use the process key to retrieve the actual process node from the graph
-        // This ensures that the process is linked to the graph correctly before attempting removal
-        const processFound = await this.getPm2ProcessNodeByKey(vmNode, processKey);
+        const processFound = typeof processNode === "string" ? await this.getPm2ProcessNodeByKey(vmNode, processNode) : processNode;
         if (!processFound)
             throw new Error(`Process is not in this vm`);
-        return vmNode.removeChild(processFound, utils_1.HAS_PM2_PROCESS_RELATION_NAME, spinal_model_graph_1.SPINAL_RELATION_PTR_LST_TYPE).then(async () => {
-            await processFound.removeRelation(utils_1.HAS_LOG, spinal_model_graph_1.SPINAL_RELATION_PTR_LST_TYPE);
-        });
-        // return processNode.removeFromGraph().then(async () => {
-        // 	// const name = processNode.getName().get();
-        // 	// const pm_id = processNode.info?.pm_id?.get();
-        // 	// if (name) this.pm2Maps.delete(name);
-        // 	// if (pm_id) this.pm2Maps.delete(pm_id);
-        // 	await processNode.removeRelation(HAS_LOG, SPINAL_RELATION_PTR_LST_TYPE).then((result) => {
-        // 		const pathWatched = this._logSyncked.get(processNode._server_id as number);
-        // 		if (pathWatched) {
-        // 			fs.unwatchFile(pathWatched);
-        // 			this._logSyncked.delete(processNode._server_id as number);
-        // 		}
-        // 		return result;
-        // 	});
-        // });
+        const processes = await vmNode.getChildren(utils_1.HAS_PM2_PROCESS_RELATION_NAME);
+        if (!processes.some((process) => process._server_id === processFound._server_id)) {
+            throw new Error(`Process is not in this vm`);
+        }
+        await vmNode.removeChild(processFound, utils_1.HAS_PM2_PROCESS_RELATION_NAME, spinal_model_graph_1.SPINAL_RELATION_PTR_LST_TYPE);
+        await processFound.removeRelation(utils_1.HAS_LOG, spinal_model_graph_1.SPINAL_RELATION_PTR_LST_TYPE);
+        return processFound;
     }
     async createOrRetrieveVmContext(graph, hostName) {
         let existingNode = await graph.getContext(hostName);
@@ -288,39 +282,47 @@ class GraphService {
         await (0, utils_1.waitUntil)(() => typeof existingNode._server_id !== "undefined", 1000);
         return existingNode;
     }
-    async _syncPm2Processes(context, pm2Processes) {
+    async _syncPm2Processes(context, pm2Processes, reconcileSnapshot) {
         const existingPm2Processes = await this.getPm2ProcessesNodesAsObj(context);
         const nodes = [];
         for (const pm2Process of pm2Processes) {
-            let processAlreadyExist = existingPm2Processes[pm2Process.pm_id] || existingPm2Processes[pm2Process.name] || null;
+            const processKey = pm2Process.pm_id ?? pm2Process.name;
+            let processAlreadyExist = processKey === undefined ? null : existingPm2Processes[processKey] || null;
             if (processAlreadyExist && processAlreadyExist.getName().get() === pm2Process.name) {
                 this._updatePm2ProcessNodeInfo(processAlreadyExist, pm2Process);
             }
             else if (!processAlreadyExist || processAlreadyExist.getName().get() !== pm2Process.name) {
-                if (processAlreadyExist)
+                if (processAlreadyExist) {
                     await this.removePm2ProcessFromGraph(context, processAlreadyExist);
-                // Add the new process to the graph and update the map
+                    for (const [key, node] of Object.entries(existingPm2Processes)) {
+                        if (node === processAlreadyExist)
+                            delete existingPm2Processes[key];
+                    }
+                }
                 processAlreadyExist = await this._addPm2ProcessToGraph(context, pm2Process);
-                const key = pm2Process.pm_id ?? pm2Process.name;
-                if (processAlreadyExist && key)
-                    existingPm2Processes[key] = processAlreadyExist;
+                if (processAlreadyExist) {
+                    if (pm2Process.pm_id !== undefined && pm2Process.pm_id !== null)
+                        existingPm2Processes[pm2Process.pm_id] = processAlreadyExist;
+                    if (pm2Process.name)
+                        existingPm2Processes[pm2Process.name] = processAlreadyExist;
+                }
             }
             if (processAlreadyExist)
                 nodes.push(processAlreadyExist);
         }
-        const promises = nodes.map(async (node) => endpointService.updateOrCreatePm2ProcessEndpoints(node));
-        return Promise.all(promises).then(() => {
-            return nodes;
-        });
+        if (reconcileSnapshot) {
+            const activeNodes = new Set(nodes);
+            const existingNodes = await this.getPm2ProcessesNodes(context);
+            for (const node of existingNodes) {
+                if (!activeNodes.has(node))
+                    await this.removePm2ProcessFromGraph(context, node);
+            }
+        }
+        return nodes;
     }
     async _addPm2ProcessToGraph(vmContext, pm2Process) {
-        const existingNode = this.pm2Maps.get(pm2Process.pm_id) || this.pm2Maps.get(pm2Process.name);
-        if (existingNode)
-            return existingNode;
         const node = new spinal_model_graph_1.SpinalNode(pm2Process.name, utils_1.PM2_PROCESS_NODE_TYPE);
         node.info.add_attr(this._buildPm2ProcessNodeInfo(pm2Process));
-        if (pm2Process.pm_id)
-            this.pm2Maps.set(pm2Process.pm_id, node);
         return vmContext.addChildInContext(node, utils_1.HAS_PM2_PROCESS_RELATION_NAME, spinal_model_graph_1.SPINAL_RELATION_PTR_LST_TYPE, vmContext);
     }
     async _addLogRelationToPm2Process(node, logType) {
@@ -348,7 +350,6 @@ class GraphService {
                 out: pm2Env?.pm_out_log_path,
                 err: pm2Env?.pm_err_log_path,
             },
-            // logPathInHub: this._initLogPathInHub(pm2Process.name as string),
         };
     }
     _updateOrganConfigData(processNode, configData) {
@@ -395,31 +396,6 @@ class GraphService {
         }
         return { keys, meta: { bosName } };
     }
-    // private _getClassificationKey(processNode: SpinalNode): string[] {
-    // 	const processFormatted = _formatPm2Process(processNode);
-    // 	const { bosName, protocol, host, port } = processFormatted.bosData || {};
-    // 	const keys = [bosName];
-    // 	const hasConnectionData = Boolean(protocol && host && port && bosName);
-    // 	if (hasConnectionData) keys.push(`${protocol}://${host}:${port}/${bosName}`);
-    // 	if (bosName) keys.push(bosName);
-    // 	return keys;
-    // }
-    // private _mergeByBosName(classifiedProcesses: { [key: string]: any; processes: SpinalNode[] }[]): { [key: string]: any; processes: SpinalNode[] }[] {
-    // 	const mergedByBosName: Record<string, { [key: string]: any; processes: SpinalNode[] }> = {};
-    // 	for (const group of classifiedProcesses) {
-    // 		const bosName = group.bosName || "unknown";
-    // 		if (!mergedByBosName[bosName]) {
-    // 			mergedByBosName[bosName] = {
-    // 				processes: [],
-    // 				bosName,
-    // 			};
-    // 		}
-    // 		const mergedGroup = mergedByBosName[bosName];
-    // 		this.consolidateGroupInfo(group, mergedGroup);
-    // 		mergedGroup.processes.push(...group.processes);
-    // 	}
-    // 	return Object.values(mergedByBosName);
-    // }
     consolidateGroupInfo(targetObj, sourceObj) {
         for (const key in sourceObj) {
             if (key === "processes" || key === "keys")

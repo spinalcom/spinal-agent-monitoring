@@ -18,6 +18,7 @@ export function _formatVmNode(vmNode: SpinalContext): IVMResponse {
 		ramUsage: info.ramUsage,
 		totalRam: info.totalRam,
 		freeRam: info.freeRam,
+		cachedRam: info.cachedRam,
 		totalDisk: info.totalDisk,
 		freeDisk: info.freeDisk,
 		diskUsage: info.diskUsage,

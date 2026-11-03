@@ -11,82 +11,96 @@ type EndpointTimeSeriesResponse = { id: string; name: string; values: Array<{ da
 type UpdateMaxDayBody = { maxDay: number | string };
 
 @Route("monitoring/endpoints")
-@Tags("Monitoring")
 export class EndpointController extends Controller {
 	private readonly endpointUtils = EndpointUtils.getInstance();
 	private readonly VMGraphServiceInstance = GraphService.getInstance();
 
 	@Get("{vmKey}/pm2/{pm2Key}/ram/value")
+	@Tags("pm2")
 	public async getPm2RamHistoryValue(@Path() vmKey: string, @Path() pm2Key: string): Promise<EndpointValueResponse | ErrorResponse> {
 		return this.getPm2EndpointValueByName(vmKey, pm2Key, PM2_ENDPOINTS.RAM_HISTORY.name);
 	}
 
 	@Get("{vmKey}/pm2/{pm2Key}/ram/timeseries")
+	@Tags("timeSeries")
 	public async getPm2RamHistoryTimeseries(@Path() vmKey: string, @Path() pm2Key: string, @Query() startTime?: number, @Query() endTime?: number): Promise<EndpointTimeSeriesResponse | ErrorResponse> {
 		return this.getPm2EndpointTimeSeriesByName(vmKey, pm2Key, PM2_ENDPOINTS.RAM_HISTORY.name, startTime, endTime);
 	}
 
 	@Get("{vmKey}/pm2/{pm2Key}/cpu/value")
+	@Tags("pm2")
 	public async getPm2CpuHistoryValue(@Path() vmKey: string, @Path() pm2Key: string): Promise<EndpointValueResponse | ErrorResponse> {
 		return this.getPm2EndpointValueByName(vmKey, pm2Key, PM2_ENDPOINTS.CPU_HISTORY.name);
 	}
 
 	@Get("{vmKey}/pm2/{pm2Key}/cpu/timeseries")
+	@Tags("timeSeries")
 	public async getPm2CpuHistoryTimeseries(@Path() vmKey: string, @Path() pm2Key: string, @Query() startTime?: number, @Query() endTime?: number): Promise<EndpointTimeSeriesResponse | ErrorResponse> {
 		return this.getPm2EndpointTimeSeriesByName(vmKey, pm2Key, PM2_ENDPOINTS.CPU_HISTORY.name, startTime, endTime);
 	}
 
 	@Get("{vmKey}/pm2/{pm2Key}/heap_size/value")
+	@Tags("pm2")
 	public async getPm2HeapSizeHistoryValue(@Path() vmKey: string, @Path() pm2Key: string): Promise<EndpointValueResponse | ErrorResponse> {
 		return this.getPm2EndpointValueByName(vmKey, pm2Key, PM2_ENDPOINTS.HEAP_SIZE_HISTORY.name);
 	}
 
 	@Get("{vmKey}/pm2/{pm2Key}/heap_size/timeseries")
+	@Tags("timeSeries")
 	public async getPm2HeapSizeHistoryTimeseries(@Path() vmKey: string, @Path() pm2Key: string, @Query() startTime?: number, @Query() endTime?: number): Promise<EndpointTimeSeriesResponse | ErrorResponse> {
 		return this.getPm2EndpointTimeSeriesByName(vmKey, pm2Key, PM2_ENDPOINTS.HEAP_SIZE_HISTORY.name, startTime, endTime);
 	}
 
 	@Get("{vmKey}/pm2/{pm2Key}/heap_usage/value")
+	@Tags("pm2")
 	public async getPm2HeapUsageHistoryValue(@Path() vmKey: string, @Path() pm2Key: string): Promise<EndpointValueResponse | ErrorResponse> {
 		return this.getPm2EndpointValueByName(vmKey, pm2Key, PM2_ENDPOINTS.HEAP_USAGE_HISTORY.name);
 	}
 
 	@Get("{vmKey}/pm2/{pm2Key}/heap_usage/timeseries")
+	@Tags("timeSeries")
 	public async getPm2HeapUsageHistoryTimeseries(@Path() vmKey: string, @Path() pm2Key: string, @Query() startTime?: number, @Query() endTime?: number): Promise<EndpointTimeSeriesResponse | ErrorResponse> {
 		return this.getPm2EndpointTimeSeriesByName(vmKey, pm2Key, PM2_ENDPOINTS.HEAP_USAGE_HISTORY.name, startTime, endTime);
 	}
 
 	@Get("{vmKey}/pm2/{pm2Key}/heap_used_size/value")
+	@Tags("pm2")
 	public async getPm2HeapUsedSizeHistoryValue(@Path() vmKey: string, @Path() pm2Key: string): Promise<EndpointValueResponse | ErrorResponse> {
 		return this.getPm2EndpointValueByName(vmKey, pm2Key, PM2_ENDPOINTS.HEAP_USED_SIZE_HISTORY.name);
 	}
 
 	@Get("{vmKey}/pm2/{pm2Key}/heap_used_size/timeseries")
+	@Tags("timeSeries")
 	public async getPm2HeapUsedSizeHistoryTimeseries(@Path() vmKey: string, @Path() pm2Key: string, @Query() startTime?: number, @Query() endTime?: number): Promise<EndpointTimeSeriesResponse | ErrorResponse> {
 		return this.getPm2EndpointTimeSeriesByName(vmKey, pm2Key, PM2_ENDPOINTS.HEAP_USED_SIZE_HISTORY.name, startTime, endTime);
 	}
 
 	@Get("{vmKey}/pm2/{pm2Key}/reboot/value")
+	@Tags("pm2")
 	public async getPm2RebootHistoryValue(@Path() vmKey: string, @Path() pm2Key: string): Promise<EndpointValueResponse | ErrorResponse> {
 		return this.getPm2EndpointValueByName(vmKey, pm2Key, PM2_ENDPOINTS.REBOOT_HISTORY.name);
 	}
 
 	@Get("{vmKey}/pm2/{pm2Key}/reboot/timeseries")
+	@Tags("timeSeries")
 	public async getPm2RebootHistoryTimeseries(@Path() vmKey: string, @Path() pm2Key: string, @Query() startTime?: number, @Query() endTime?: number): Promise<EndpointTimeSeriesResponse | ErrorResponse> {
 		return this.getPm2EndpointTimeSeriesByName(vmKey, pm2Key, PM2_ENDPOINTS.REBOOT_HISTORY.name, startTime, endTime);
 	}
 
 	@Get("{vmKey}/pm2/{pm2Key}/errored/value")
+	@Tags("pm2")
 	public async getPm2ErroredHistoryValue(@Path() vmKey: string, @Path() pm2Key: string): Promise<EndpointValueResponse | ErrorResponse> {
 		return this.getPm2EndpointValueByName(vmKey, pm2Key, PM2_ENDPOINTS.ERRORED_HISTORY.name);
 	}
 
 	@Get("{vmKey}/pm2/{pm2Key}/errored/timeseries")
+	@Tags("timeSeries")
 	public async getPm2ErroredHistoryTimeseries(@Path() vmKey: string, @Path() pm2Key: string, @Query() startTime?: number, @Query() endTime?: number): Promise<EndpointTimeSeriesResponse | ErrorResponse> {
 		return this.getPm2EndpointTimeSeriesByName(vmKey, pm2Key, PM2_ENDPOINTS.ERRORED_HISTORY.name, startTime, endTime);
 	}
 
 	@Post("{vmKey}/pm2/{pm2Key}/{endpoint}/timeseries/maxDay")
+	@Tags("timeSeries")
 	public async updatePm2EndpointMaxDay(@Path() vmKey: string, @Path() pm2Key: string, @Path() endpoint: string, @Body() body: UpdateMaxDayBody): Promise<ActionResponse | ErrorResponse> {
 		try {
 			const parsedMaxDay = Number(body?.maxDay);
@@ -126,36 +140,43 @@ export class EndpointController extends Controller {
 	}
 
 	@Get("{vmKey}/vm/cpu_usage/value")
+	@Tags("vm")
 	public async getVmCpuUsageValue(@Path() vmKey: string): Promise<EndpointValueResponse | ErrorResponse> {
 		return this.getVmEndpointValueByName(vmKey, METRICS_ENDPOINTS.CPU_USAGE.name);
 	}
 
 	@Get("{vmKey}/vm/cpu_usage/timeseries")
+	@Tags("timeSeries")
 	public async getVmCpuUsageTimeseries(@Path() vmKey: string, @Query() startTime?: number, @Query() endTime?: number): Promise<EndpointTimeSeriesResponse | ErrorResponse> {
 		return this.getVmEndpointTimeSeriesByName(vmKey, METRICS_ENDPOINTS.CPU_USAGE.name, startTime, endTime);
 	}
 
 	@Get("{vmKey}/vm/ram_usage/value")
+	@Tags("vm")
 	public async getVmRamUsageValue(@Path() vmKey: string): Promise<EndpointValueResponse | ErrorResponse> {
 		return this.getVmEndpointValueByName(vmKey, METRICS_ENDPOINTS.RAM_USAGE.name);
 	}
 
 	@Get("{vmKey}/vm/ram_usage/timeseries")
+	@Tags("timeSeries")
 	public async getVmRamUsageTimeseries(@Path() vmKey: string, @Query() startTime?: number, @Query() endTime?: number): Promise<EndpointTimeSeriesResponse | ErrorResponse> {
 		return this.getVmEndpointTimeSeriesByName(vmKey, METRICS_ENDPOINTS.RAM_USAGE.name, startTime, endTime);
 	}
 
 	@Get("{vmKey}/vm/disk_usage/value")
+	@Tags("vm")
 	public async getVmDiskUsageValue(@Path() vmKey: string): Promise<EndpointValueResponse | ErrorResponse> {
 		return this.getVmEndpointValueByName(vmKey, METRICS_ENDPOINTS.DISK_USAGE.name);
 	}
 
 	@Get("{vmKey}/vm/disk_usage/timeseries")
+	@Tags("timeSeries")
 	public async getVmDiskUsageTimeseries(@Path() vmKey: string, @Query() startTime?: number, @Query() endTime?: number): Promise<EndpointTimeSeriesResponse | ErrorResponse> {
 		return this.getVmEndpointTimeSeriesByName(vmKey, METRICS_ENDPOINTS.DISK_USAGE.name, startTime, endTime);
 	}
 
 	@Post("{vmKey}/vm/{endpoint}/timeseries/maxDay")
+	@Tags("timeSeries")
 	public async updateVmEndpointMaxDay(@Path() vmKey: string, @Path() endpoint: string, @Body() body: UpdateMaxDayBody): Promise<ActionResponse | ErrorResponse> {
 		try {
 			const parsedMaxDay = Number(body?.maxDay);

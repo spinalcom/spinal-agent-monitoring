@@ -1,8 +1,16 @@
 import os from "os";
+import { execFile } from "child_process";
+import { readFileSync } from "fs";
+import { promisify } from "util";
 import { ICpuInfo } from "../interfaces/ICpu";
 import { IMemoryInfo } from "../interfaces/IMemoryInfo";
 import { getDiskInfoSync } from "node-disk-info";
 import { ISystemMetrics } from "../interfaces/interfaces";
+import Pm2Service from "./Pm2Service";
+
+const execFileAsync = promisify(execFile);
+
+export type SystemAdminAction = "clear-linux-page-cache" | "reboot" | "pm2-resurrect";
 
 export default class SystemOverviewService {
 	private static _instance: SystemOverviewService;
@@ -60,8 +68,8 @@ export default class SystemOverviewService {
 			total,
 			used,
 			idle,
-			usedPercent: ((used / total) * 100).toFixed(2),
-			idlePercent: ((idle / total) * 100).toFixed(2),
+			usedPercent: Number(((used / total) * 100).toFixed(2)),
+			idlePercent: Number(((idle / total) * 100).toFixed(2)),
 			unit: "ms",
 		};
 	}
@@ -75,10 +83,24 @@ export default class SystemOverviewService {
 			total: totalMemory,
 			used: usedMemory,
 			free: freeMemory,
-			usedPercent: ((usedMemory / totalMemory) * 100).toFixed(2),
-			freePercent: ((freeMemory / totalMemory) * 100).toFixed(2),
+			usedPercent: Number(((usedMemory / totalMemory) * 100).toFixed(2)),
+			freePercent: Number(((freeMemory / totalMemory) * 100).toFixed(2)),
 			unit: "bytes",
 		};
+	}
+
+	private getCachedMemoryBytes(): number | undefined {
+		if (process.platform !== "linux") {
+			return undefined;
+		}
+
+		const memoryInfo = readFileSync("/proc/meminfo", "utf8");
+		const cachedMemory = memoryInfo.match(/^Cached:\s+(\d+)\s+kB$/m);
+		if (!cachedMemory) {
+			throw new Error("Unable to read cached memory from /proc/meminfo");
+		}
+
+		return Number(cachedMemory[1]) * 1024;
 	}
 
 	public getDiskInfo(diskPath?: string): IMemoryInfo {
@@ -87,24 +109,26 @@ export default class SystemOverviewService {
 
 		const diskInfo = disk.find((d) => d.mounted === diskPath) || disk[0]; // Fallback to the first disk if the specified path is not found
 		return {
-			total: ((diskInfo.blocks * 1024) / 1e9).toFixed(2),
-			free: ((diskInfo.available * 1024) / 1e9).toFixed(2),
-			used: (((diskInfo.blocks - diskInfo.available) * 1024) / 1e9).toFixed(2),
-			usedPercent: (((diskInfo.blocks - diskInfo.available) / diskInfo.blocks) * 100).toFixed(2),
-			freePercent: ((diskInfo.available / diskInfo.blocks) * 100).toFixed(2),
+			total: Number(((diskInfo.blocks * 1024) / 1e9).toFixed(2)),
+			free: Number(((diskInfo.available * 1024) / 1e9).toFixed(2)),
+			used: Number((((diskInfo.blocks - diskInfo.available) * 1024) / 1e9).toFixed(2)),
+			usedPercent: Number((((diskInfo.blocks - diskInfo.available) / diskInfo.blocks) * 100).toFixed(2)),
+			freePercent: Number(((diskInfo.available / diskInfo.blocks) * 100).toFixed(2)),
 			unit: "GB",
 		};
 	}
 
-	public getSystemMetrics(): { cpu: ICpuInfo; memory: IMemoryInfo; disk: IMemoryInfo } {
+	public getSystemMetrics(): { cpu: ICpuInfo; memory: IMemoryInfo; disk: IMemoryInfo; cachedMemory?: number } {
 		const cpuInfo = this.getCpuInfo();
 		const memoryInfo = this.getMemoryInfo();
 		const diskInfo = this.getDiskInfo();
+		const cachedMemory = this.getCachedMemoryBytes();
 
 		return {
 			cpu: cpuInfo,
 			memory: memoryInfo,
 			disk: diskInfo,
+			cachedMemory,
 		};
 	}
 
@@ -113,22 +137,23 @@ export default class SystemOverviewService {
 
 		return {
 			//cpu
-			cpuUsage: systemInfo.cpu.used.toString(),
-			cpuUsagePercent: systemInfo.cpu.usedPercent as string,
-			cpuIdle: systemInfo.cpu.idle.toString(),
-			cpuIdlePercent: systemInfo.cpu.idlePercent as string,
+			cpuUsage: systemInfo.cpu.used,
+			cpuUsagePercent: systemInfo.cpu.usedPercent,
+			cpuIdle: systemInfo.cpu.idle,
+			cpuIdlePercent: systemInfo.cpu.idlePercent,
 
 			// ram
-			ramUsagePercent: systemInfo.memory.usedPercent as string,
-			ramUsage: `${systemInfo.memory.used} ${systemInfo.memory.unit}`,
-			totalRam: `${systemInfo.memory.total} ${systemInfo.memory.unit}`,
-			freeRam: `${systemInfo.memory.free} ${systemInfo.memory.unit}`,
+			ramUsagePercent: systemInfo.memory.usedPercent,
+			ramUsage: systemInfo.memory.used,
+			totalRam: systemInfo.memory.total,
+			freeRam: systemInfo.memory.free,
+			cachedRam: systemInfo.cachedMemory === undefined ? undefined : systemInfo.cachedMemory,
 
 			// disk
-			totalDisk: `${systemInfo.disk.total} ${systemInfo.disk.unit}`,
-			freeDisk: `${systemInfo.disk.free} ${systemInfo.disk.unit}`,
-			diskUsage: `${systemInfo.disk.used} ${systemInfo.disk.unit}`,
-			diskUsagePercent: systemInfo.disk.usedPercent as string,
+			totalDisk: systemInfo.disk.total,
+			freeDisk: systemInfo.disk.free,
+			diskUsage: systemInfo.disk.used,
+			diskUsagePercent: systemInfo.disk.usedPercent,
 
 			// network
 			macAddress: this.getMacAddress(),
@@ -137,6 +162,39 @@ export default class SystemOverviewService {
 			//port
 			port: process.env.SERVER_PORT || 3000,
 		};
+	}
+
+	public async executeAdminAction(action: SystemAdminAction): Promise<void> {
+		switch (action) {
+			case "clear-linux-page-cache":
+				await this.clearLinuxPageCache();
+				return;
+			case "reboot":
+				await this.reboot();
+				return;
+			case "pm2-resurrect":
+				await Pm2Service.getInstance().resurrectProcesses();
+				return;
+			default:
+				throw new Error(`Unsupported system action: ${action}`);
+		}
+	}
+
+	public async clearLinuxPageCache(): Promise<void> {
+		this._assertLinux();
+		await execFileAsync("sync", [], { timeout: 30 * 1000 });
+		await execFileAsync("sudo", ["-n", "sysctl", "-w", "vm.drop_caches=3"], { timeout: 30 * 1000 });
+	}
+
+	public async reboot(): Promise<void> {
+		this._assertLinux();
+		await execFileAsync("reboot", [], { timeout: 30 * 1000 });
+	}
+
+	private _assertLinux(): void {
+		if (process.platform !== "linux") {
+			throw new Error("This system action is only supported on Linux");
+		}
 	}
 }
 

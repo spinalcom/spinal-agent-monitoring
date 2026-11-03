@@ -7,6 +7,10 @@ export declare class MonitoringController extends Controller {
      * Returns a simple health status to confirm the monitoring API is reachable.
      */
     getHealth(): HealthResponse | ErrorResponse;
+    /**
+     * Clears the Linux page cache on the monitored host.
+     */
+    clearCache(): Promise<ActionResponse | ErrorResponse>;
     getAllVirtualMachines(): Promise<IVMResponse[] | ErrorResponse>;
     getVirtualMachine(vmKey: string): Promise<IVMResponse | ErrorResponse>;
     /**

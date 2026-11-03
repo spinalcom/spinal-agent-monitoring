@@ -189,7 +189,7 @@ function startZabbixPushIfConfigured(zabbixSenderService: ZabbixSenderService): 
 		startZabbixPushIfConfigured(services.zabbixSenderService);
 
 		const port = Number.parseInt(process.env.SERVER_PORT || "3000", 10);
-		runExpressServer(port);
+		await runExpressServer(port);
 	} catch (error) {
 		console.error(error);
 	}

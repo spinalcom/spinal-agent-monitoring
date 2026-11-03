@@ -7,6 +7,8 @@ const MonitoringController_1 = require("./controllers/MonitoringController");
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 const EndpointController_1 = require("./controllers/EndpointController");
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+const AuthController_1 = require("./controllers/AuthController");
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 const models = {
     "HealthResponse": {
         "dataType": "refObject",
@@ -26,6 +28,16 @@ const models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ActionResponse": {
+        "dataType": "refObject",
+        "properties": {
+            "message": { "dataType": "string", "required": true },
+            "success": { "dataType": "boolean" },
+            "key": { "dataType": "union", "subSchemas": [{ "dataType": "string" }, { "dataType": "double" }] },
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "IVMResponse": {
         "dataType": "refObject",
         "properties": {
@@ -34,6 +46,7 @@ const models = {
             "ramUsage": { "dataType": "string" },
             "totalRam": { "dataType": "string" },
             "freeRam": { "dataType": "string" },
+            "cachedRam": { "dataType": "string" },
             "totalDisk": { "dataType": "string" },
             "freeDisk": { "dataType": "string" },
             "diskUsage": { "dataType": "string" },
@@ -124,16 +137,6 @@ const models = {
         "type": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["out"] }, { "dataType": "enum", "enums": ["err"] }, { "dataType": "enum", "enums": ["all"] }], "validators": {} },
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "ActionResponse": {
-        "dataType": "refObject",
-        "properties": {
-            "message": { "dataType": "string", "required": true },
-            "success": { "dataType": "boolean" },
-            "key": { "dataType": "union", "subSchemas": [{ "dataType": "string" }, { "dataType": "double" }] },
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "EndpointValueResponse": {
         "dataType": "refAlias",
         "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "unit": { "dataType": "union", "subSchemas": [{ "dataType": "string" }, { "dataType": "enum", "enums": [null] }], "required": true }, "currentValue": { "dataType": "union", "subSchemas": [{ "dataType": "string" }, { "dataType": "double" }, { "dataType": "boolean" }, { "dataType": "enum", "enums": [null] }], "required": true }, "name": { "dataType": "string", "required": true }, "id": { "dataType": "string", "required": true } }, "validators": {} },
@@ -147,6 +150,25 @@ const models = {
     "UpdateMaxDayBody": {
         "dataType": "refAlias",
         "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "maxDay": { "dataType": "union", "subSchemas": [{ "dataType": "double" }, { "dataType": "string" }], "required": true } }, "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "AdminLoginResponse": {
+        "dataType": "refObject",
+        "properties": {
+            "token": { "dataType": "string", "required": true },
+            "tokenType": { "dataType": "enum", "enums": ["Bearer"], "required": true },
+            "expiresIn": { "dataType": "double", "required": true },
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "AdminLoginRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "username": { "dataType": "string", "required": true },
+            "password": { "dataType": "string", "required": true },
+        },
+        "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 };
@@ -166,6 +188,27 @@ function RegisterRoutes(app) {
             const controller = new MonitoringController_1.MonitoringController();
             await templateService.apiHandler({
                 methodName: 'getHealth',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsMonitoringController_clearCache = {};
+    app.post('/monitoring/cache/clear', ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController)), ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController.prototype.clearCache)), async function MonitoringController_clearCache(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsMonitoringController_clearCache, request, response });
+            const controller = new MonitoringController_1.MonitoringController();
+            await templateService.apiHandler({
+                methodName: 'clearCache',
                 controller,
                 response,
                 next,
@@ -1094,6 +1137,29 @@ function RegisterRoutes(app) {
                 next,
                 validatedArgs,
                 successStatus: undefined,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsAuthController_login = {
+        credentials: { "in": "body", "name": "credentials", "required": true, "ref": "AdminLoginRequest" },
+    };
+    app.post('/auth/login', ...((0, runtime_1.fetchMiddlewares)(AuthController_1.AuthController)), ...((0, runtime_1.fetchMiddlewares)(AuthController_1.AuthController.prototype.login)), async function AuthController_login(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsAuthController_login, request, response });
+            const controller = new AuthController_1.AuthController();
+            await templateService.apiHandler({
+                methodName: 'login',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
             });
         }
         catch (err) {

@@ -20,4 +20,5 @@ __exportStar(require("./interfaces"), exports);
 __exportStar(require("./IResponses"), exports);
 __exportStar(require("./IVMResponse"), exports);
 __exportStar(require("./IPm2Response"), exports);
+__exportStar(require("./ISpinalApiMiddleware"), exports);
 //# sourceMappingURL=index.js.map

@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Path, Post, Query, Response, Route, SuccessResponse, Tags } from "tsoa";
 import { GraphService } from "../services/GraphService";
+import SystemOverviewService from "../../system/SystemOverviewService";
 import ZabbixSenderService, { Pm2Discovery } from "../../system/ZabbixSenderService";
 import { ActionResponse, ErrorResponse, HealthResponse, Pm2LogType, Pm2ProcessLogsResponse, Pm2ProcessMetricsResponse, Pm2ProcessResponse, Pm2StatusSummaryResponse } from "../../interfaces/IResponses";
 import { IVMResponse } from "../../interfaces/IVMResponse";
@@ -9,7 +10,6 @@ import { HTTP_RESPONSES } from "../../utils/HTTP_RESPONSE";
 import { _formatPm2Process, _formatPm2ProcessMetrics, _formatVmNode } from "./utils";
 
 @Route("monitoring")
-@Tags("Monitoring")
 export class MonitoringController extends Controller {
 	private readonly graphService = GraphService.getInstance();
 	// private readonly pm2Service = Pm2Service.getInstance();
@@ -20,6 +20,7 @@ export class MonitoringController extends Controller {
 	 * Returns a simple health status to confirm the monitoring API is reachable.
 	 */
 	@Get("/health")
+	@Tags("vm")
 	@SuccessResponse("200", "OK")
 	public getHealth(): HealthResponse | ErrorResponse {
 		try {
@@ -30,7 +31,26 @@ export class MonitoringController extends Controller {
 		}
 	}
 
+	/**
+	 * Clears the Linux page cache on the monitored host.
+	 */
+	@Post("/cache/clear")
+	@Tags("vm")
+	@SuccessResponse("200", "Linux page cache cleared")
+	@Response<ErrorResponse>(500, "Unable to clear Linux page cache")
+	public async clearCache(): Promise<ActionResponse | ErrorResponse> {
+		try {
+			await SystemOverviewService.getInstance().clearLinuxPageCache();
+			this.setStatus(HTTP_RESPONSES.OK.code);
+			return { success: true, message: "Linux page cache cleared" };
+		} catch (error) {
+			this.setStatus(HTTP_RESPONSES.INTERNAL_SERVER_ERROR.code);
+			return { error: error instanceof Error ? error.message : "Unable to clear Linux page cache" };
+		}
+	}
+
 	@Get("/all_vms")
+	@Tags("vm")
 	@SuccessResponse("200", "OK")
 	public async getAllVirtualMachines(): Promise<IVMResponse[] | ErrorResponse> {
 		try {
@@ -45,6 +65,7 @@ export class MonitoringController extends Controller {
 	}
 
 	@Get("{vmKey}")
+	@Tags("vm")
 	@SuccessResponse("200", "OK")
 	public async getVirtualMachine(@Path() vmKey: string): Promise<IVMResponse | ErrorResponse> {
 		try {
@@ -63,6 +84,7 @@ export class MonitoringController extends Controller {
 	 * Returns current CPU, memory, and system-level metrics collected by the agent.
 	 */
 	@Get("{vmKey}/system")
+	@Tags("vm")
 	@SuccessResponse("200", "OK")
 	public async getSystemMetrics(@Path() vmKey: string): Promise<IVMResponse | ErrorResponse> {
 		try {
@@ -81,6 +103,7 @@ export class MonitoringController extends Controller {
 	 * Lists all PM2-managed applications with their current runtime state.
 	 */
 	@Get("{vmKey}/apps")
+	@Tags("pm2")
 	@SuccessResponse("200", "OK")
 	public async getApps(@Path() vmKey: string, @Query() classifyByBos?: boolean): Promise<Pm2ProcessResponse[] | ErrorResponse> {
 		try {
@@ -96,6 +119,7 @@ export class MonitoringController extends Controller {
 	}
 
 	@Get("{vmKey}/apps/classified")
+	@Tags("pm2")
 	@SuccessResponse("200", "OK")
 	public async getClassifiedApps(@Path() vmKey: string): Promise<{ [key: string]: any; processes: Pm2ProcessResponse[] }[] | ErrorResponse> {
 		try {
@@ -118,6 +142,7 @@ export class MonitoringController extends Controller {
 	}
 
 	@Get("{vmKey}/apps/by-bos-name")
+	@Tags("pm2")
 	@SuccessResponse("200", "OK")
 	public async getAppsByBosName(@Path() vmKey: string, @Query() bosName: string): Promise<Pm2ProcessResponse[] | ErrorResponse> {
 		try {
@@ -140,6 +165,7 @@ export class MonitoringController extends Controller {
 	 * Lists PM2 metrics (cpu, memory, uptime, status) for all applications.
 	 */
 	@Get("{vmKey}/apps/metrics")
+	@Tags("pm2")
 	@SuccessResponse("200", "OK")
 	public async getAppsMetrics(@Path() vmKey: string): Promise<Pm2ProcessMetricsResponse[] | ErrorResponse> {
 		try {
@@ -172,6 +198,7 @@ export class MonitoringController extends Controller {
 	 * Returns PM2 process counts grouped by status.
 	 */
 	@Get("{vmKey}/apps/status/summary")
+	@Tags("pm2")
 	@SuccessResponse("200", "OK")
 	public async getAppsStatusSummary(@Path() vmKey: string): Promise<Pm2StatusSummaryResponse | ErrorResponse> {
 		try {
@@ -200,6 +227,7 @@ export class MonitoringController extends Controller {
 	 * @param key PM2 process key used to find the app.
 	 */
 	@Get("{vmKey}/apps/{key}")
+	@Tags("pm2")
 	@Response<ErrorResponse>(404, "Process not found")
 	public async getAppByKey(@Path() vmKey: string, @Path() key: string): Promise<Pm2ProcessResponse | ErrorResponse> {
 		try {
@@ -225,6 +253,7 @@ export class MonitoringController extends Controller {
 	 * @param key PM2 process key used to find the app.
 	 */
 	@Get("{vmKey}/apps/{key}/metrics")
+	@Tags("pm2")
 	@Response<ErrorResponse>(404, "Process not found")
 	public async getAppMetricsByKey(@Path() vmKey: string, @Path() key: string): Promise<Pm2ProcessMetricsResponse | ErrorResponse> {
 		try {
@@ -253,6 +282,7 @@ export class MonitoringController extends Controller {
 	 * @param logType Which stream to return: out, err, or all.
 	 */
 	@Get("{vmKey}/apps/{key}/logs")
+	@Tags("pm2")
 	@Response<ErrorResponse>(404, "Process not found")
 	public async getAppLogsByKey(@Path() vmKey: string, @Path() key: string, @Query() tail: number = 100, @Query() logType: Pm2LogType = "all"): Promise<Pm2ProcessLogsResponse | ErrorResponse> {
 		try {
@@ -284,6 +314,7 @@ export class MonitoringController extends Controller {
 	 * @param data Request body containing the list of application keys to start.
 	 */
 	@Post("{vmKey}/apps/start")
+	@Tags("pm2")
 	@Response<ErrorResponse>(400, "Unable to start process")
 	public async startApp(@Path() vmKey: string, @Body() data: { keys: (string | number)[] }): Promise<{ started: ActionResponse[]; failed: ActionResponse[] } | ErrorResponse> {
 		try {
@@ -314,6 +345,7 @@ export class MonitoringController extends Controller {
 	 * @param data Request body containing the list of application keys to stop.
 	 */
 	@Post("{vmKey}/apps/stop")
+	@Tags("pm2")
 	@Response<ErrorResponse>(400, "Unable to stop process")
 	public async stopApp(@Path() vmKey: string, @Body() data: { keys: (string | number)[] }): Promise<{ stopped: ActionResponse[]; failed: ActionResponse[] } | ErrorResponse> {
 		try {
@@ -344,6 +376,7 @@ export class MonitoringController extends Controller {
 	 * @param data Request body containing the list of application keys to restart.
 	 */
 	@Post("{vmKey}/apps/restart")
+	@Tags("pm2")
 	@Response<ErrorResponse>(400, "Unable to restart process")
 	public async restartApp(@Path() vmKey: string, @Body() data: { keys: (string | number)[] }): Promise<{ restarted: ActionResponse[]; failed: ActionResponse[] } | ErrorResponse> {
 		try {
@@ -375,6 +408,7 @@ export class MonitoringController extends Controller {
 	 * @param data Request body containing the list of application keys to reload.
 	 */
 	@Post("{vmKey}/apps/reload")
+	@Tags("pm2")
 	@Response<ErrorResponse>(400, "Unable to reload process")
 	public async reloadApp(@Path() vmKey: string, @Body() data: { keys: (string | number)[] }): Promise<{ reloaded: ActionResponse[]; failed: ActionResponse[] } | ErrorResponse> {
 		try {
@@ -405,6 +439,7 @@ export class MonitoringController extends Controller {
 	 * @param data Request body containing the list of application keys to delete.
 	 */
 	@Post("{vmKey}/apps/delete")
+	@Tags("pm2")
 	@Response<ErrorResponse>(400, "Unable to delete process")
 	public async deleteApp(@Path() vmKey: string, @Body() data: { keys: (string | number)[] }): Promise<{ deleted: ActionResponse[]; failed: ActionResponse[] } | ErrorResponse> {
 		try {

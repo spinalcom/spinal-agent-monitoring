@@ -9,7 +9,6 @@ class SpinalCommand extends spinal_core_connectorjs_1.Model {
     constructor(type, processesIds, vmNode) {
         super();
         this.add_attr({
-            // id: uuidv4(),
             id: (0, utils_1.generateUniqId)(),
             type,
             processesIds,
@@ -39,6 +38,12 @@ class SpinalCommand extends spinal_core_connectorjs_1.Model {
                 case constants_1.SPINAL_COMMAND_TYPE.stop:
                     results = await pm2ServiceInstance.stopPm2Process(keys);
                     break;
+                case constants_1.SPINAL_COMMAND_TYPE.reload:
+                    results = await pm2ServiceInstance.reloadPm2Process(keys);
+                    break;
+                case constants_1.SPINAL_COMMAND_TYPE.delete:
+                    results = await pm2ServiceInstance.deletePm2Process(keys);
+                    break;
                 default:
                     throw new Error(`Unsupported command type: ${type}`);
             }
@@ -51,6 +56,7 @@ class SpinalCommand extends spinal_core_connectorjs_1.Model {
             const response = { success: false, message: `Command execution failed: ${error.message}` };
             this.executionResult.set([response]);
             this.status.set(constants_1.SPINAL_COMMAND_STATUS.failed);
+            await this.removeFromGraph();
             return [response];
         }
     }
@@ -73,8 +79,7 @@ class SpinalCommand extends spinal_core_connectorjs_1.Model {
     isNotExpired() {
         const createdAt = this.createdAt.get();
         const now = Date.now();
-        const expirationTime = 30 * 1000; // 10 seconds
-        return now - createdAt < expirationTime;
+        return now - createdAt < constants_1.SPINAL_COMMAND_TIMEOUT_MS;
     }
 }
 exports.SpinalCommand = SpinalCommand;

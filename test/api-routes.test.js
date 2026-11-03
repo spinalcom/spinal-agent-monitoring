@@ -9,6 +9,13 @@ const { ValidateError } = require("tsoa");
 const { RegisterRoutes } = require("../src/api/routes");
 const { GraphService } = require("../src/api/services/GraphService");
 const EndpointService = require("../src/api/services/EndpointService").default;
+const SystemOverviewService = require("../src/system/SystemOverviewService").default;
+const UserService = require("../src/api/services/UserService").default;
+const TEST_BEARER_TOKEN = "test-tsoa-bearer-token";
+
+UserService.getInstance = () => ({
+    isTokenValid: (token) => token === TEST_BEARER_TOKEN,
+});
 
 function createApp() {
     const app = express();
@@ -48,7 +55,10 @@ async function callRoute(app, method, path, body) {
         const { port } = server.address();
         const response = await fetch(`http://127.0.0.1:${port}${path}`, {
             method,
-            headers: { "content-type": "application/json" },
+            headers: {
+                "content-type": "application/json",
+                authorization: `Bearer ${TEST_BEARER_TOKEN}`,
+            },
             body: body ? JSON.stringify(body) : undefined,
         });
 
@@ -152,6 +162,24 @@ async function withPatchedEndpointService(overrides, callback) {
     }
 }
 
+async function withPatchedSystemOverviewService(overrides, callback) {
+    const systemOverviewService = SystemOverviewService.getInstance();
+    const originals = {};
+
+    for (const key of Object.keys(overrides)) {
+        originals[key] = systemOverviewService[key];
+        systemOverviewService[key] = overrides[key];
+    }
+
+    try {
+        await callback();
+    } finally {
+        for (const key of Object.keys(overrides)) {
+            systemOverviewService[key] = originals[key];
+        }
+    }
+}
+
 function createVmNode(overrides = {}) {
     const info = {
         name: "vm-name",
@@ -165,6 +193,7 @@ function createVmNode(overrides = {}) {
         ramUsage: "4GB",
         totalRam: "8GB",
         freeRam: "4GB",
+        cachedRam: "1GB",
         totalDisk: "100GB",
         freeDisk: "60GB",
         diskUsage: "40GB",
@@ -221,6 +250,23 @@ test("business: GET /monitoring/health returns status ok", async () => {
 
     assert.equal(result.status, 200);
     assert.deepEqual(result.payload, { status: "ok" });
+});
+
+test("business: POST /monitoring/cache/clear clears Linux page cache", async () => {
+    let clearCalled = false;
+    await withPatchedSystemOverviewService(
+        {
+            clearLinuxPageCache: async () => {
+                clearCalled = true;
+            },
+        },
+        async () => {
+            const result = await callRoute(createApp(), "POST", "/monitoring/cache/clear");
+            assert.equal(result.status, 200);
+            assert.deepEqual(result.payload, { success: true, message: "Linux page cache cleared" });
+        },
+    );
+    assert.equal(clearCalled, true);
 });
 
 test("business: POST /monitoring/:vmKey/apps/start partitions action results", async () => {
@@ -452,6 +498,21 @@ test("contract: GET /monitoring/:vmKey returns VM schema", async () => {
             assert.equal(result.payload.name, "vm-single");
             assert.equal(result.payload.type, "vm");
             assert.equal(result.payload.staticId, "vm-static-id");
+        },
+    );
+});
+
+test("contract: GET /monitoring/:vmKey/system returns cached RAM", async () => {
+    await withPatchedGraphService(
+        {
+            getVirtualMachine: async () => createVmNode(),
+        },
+        async () => {
+            const app = createApp();
+            const result = await callRoute(app, "GET", `/monitoring/${vmKey}/system`);
+
+            assert.equal(result.status, 200);
+            assert.equal(result.payload.cachedRam, "1GB");
         },
     );
 });

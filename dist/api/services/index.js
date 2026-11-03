@@ -17,4 +17,5 @@ Object.defineProperty(exports, "__esModule", { value: true });
 __exportStar(require("./ConfigFileService"), exports);
 __exportStar(require("./EndpointService"), exports);
 __exportStar(require("./GraphService"), exports);
+__exportStar(require("./UserService"), exports);
 //# sourceMappingURL=index.js.map

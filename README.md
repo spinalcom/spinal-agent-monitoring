@@ -22,6 +22,14 @@ ZABBIX_RETRY_BASE_MS=1000
 ZABBIX_RETRY_MAX_MS=30000
 ```
 
+### API authentication
+
+On startup, the agent generates a cryptographically random `JWT_SECRET` and stores it in `.env` if it is missing. A configured secret must contain at least 32 bytes.
+
+The secret is used to sign and verify Bearer JWTs and is not stored in `.admin.log` or in the graph.
+
+The `SpinalApiMiddleware.checkMonitoringToken` method validates bearer tokens for protected API routes. `/auth/login`, `/monitoring/health`, Swagger UI, and the Swagger specification remain public.
+
 ### Notes
 
 - The agent sends data using native Zabbix TCP trapper protocol on port `10051`.

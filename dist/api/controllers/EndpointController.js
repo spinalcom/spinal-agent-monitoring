@@ -324,6 +324,7 @@ let EndpointController = class EndpointController extends tsoa_1.Controller {
 exports.EndpointController = EndpointController;
 __decorate([
     (0, tsoa_1.Get)("{vmKey}/pm2/{pm2Key}/ram/value"),
+    (0, tsoa_1.Tags)("pm2"),
     __param(0, (0, tsoa_1.Path)()),
     __param(1, (0, tsoa_1.Path)()),
     __metadata("design:type", Function),
@@ -332,6 +333,7 @@ __decorate([
 ], EndpointController.prototype, "getPm2RamHistoryValue", null);
 __decorate([
     (0, tsoa_1.Get)("{vmKey}/pm2/{pm2Key}/ram/timeseries"),
+    (0, tsoa_1.Tags)("timeSeries"),
     __param(0, (0, tsoa_1.Path)()),
     __param(1, (0, tsoa_1.Path)()),
     __param(2, (0, tsoa_1.Query)()),
@@ -342,6 +344,7 @@ __decorate([
 ], EndpointController.prototype, "getPm2RamHistoryTimeseries", null);
 __decorate([
     (0, tsoa_1.Get)("{vmKey}/pm2/{pm2Key}/cpu/value"),
+    (0, tsoa_1.Tags)("pm2"),
     __param(0, (0, tsoa_1.Path)()),
     __param(1, (0, tsoa_1.Path)()),
     __metadata("design:type", Function),
@@ -350,6 +353,7 @@ __decorate([
 ], EndpointController.prototype, "getPm2CpuHistoryValue", null);
 __decorate([
     (0, tsoa_1.Get)("{vmKey}/pm2/{pm2Key}/cpu/timeseries"),
+    (0, tsoa_1.Tags)("timeSeries"),
     __param(0, (0, tsoa_1.Path)()),
     __param(1, (0, tsoa_1.Path)()),
     __param(2, (0, tsoa_1.Query)()),
@@ -360,6 +364,7 @@ __decorate([
 ], EndpointController.prototype, "getPm2CpuHistoryTimeseries", null);
 __decorate([
     (0, tsoa_1.Get)("{vmKey}/pm2/{pm2Key}/heap_size/value"),
+    (0, tsoa_1.Tags)("pm2"),
     __param(0, (0, tsoa_1.Path)()),
     __param(1, (0, tsoa_1.Path)()),
     __metadata("design:type", Function),
@@ -368,6 +373,7 @@ __decorate([
 ], EndpointController.prototype, "getPm2HeapSizeHistoryValue", null);
 __decorate([
     (0, tsoa_1.Get)("{vmKey}/pm2/{pm2Key}/heap_size/timeseries"),
+    (0, tsoa_1.Tags)("timeSeries"),
     __param(0, (0, tsoa_1.Path)()),
     __param(1, (0, tsoa_1.Path)()),
     __param(2, (0, tsoa_1.Query)()),
@@ -378,6 +384,7 @@ __decorate([
 ], EndpointController.prototype, "getPm2HeapSizeHistoryTimeseries", null);
 __decorate([
     (0, tsoa_1.Get)("{vmKey}/pm2/{pm2Key}/heap_usage/value"),
+    (0, tsoa_1.Tags)("pm2"),
     __param(0, (0, tsoa_1.Path)()),
     __param(1, (0, tsoa_1.Path)()),
     __metadata("design:type", Function),
@@ -386,6 +393,7 @@ __decorate([
 ], EndpointController.prototype, "getPm2HeapUsageHistoryValue", null);
 __decorate([
     (0, tsoa_1.Get)("{vmKey}/pm2/{pm2Key}/heap_usage/timeseries"),
+    (0, tsoa_1.Tags)("timeSeries"),
     __param(0, (0, tsoa_1.Path)()),
     __param(1, (0, tsoa_1.Path)()),
     __param(2, (0, tsoa_1.Query)()),
@@ -396,6 +404,7 @@ __decorate([
 ], EndpointController.prototype, "getPm2HeapUsageHistoryTimeseries", null);
 __decorate([
     (0, tsoa_1.Get)("{vmKey}/pm2/{pm2Key}/heap_used_size/value"),
+    (0, tsoa_1.Tags)("pm2"),
     __param(0, (0, tsoa_1.Path)()),
     __param(1, (0, tsoa_1.Path)()),
     __metadata("design:type", Function),
@@ -404,6 +413,7 @@ __decorate([
 ], EndpointController.prototype, "getPm2HeapUsedSizeHistoryValue", null);
 __decorate([
     (0, tsoa_1.Get)("{vmKey}/pm2/{pm2Key}/heap_used_size/timeseries"),
+    (0, tsoa_1.Tags)("timeSeries"),
     __param(0, (0, tsoa_1.Path)()),
     __param(1, (0, tsoa_1.Path)()),
     __param(2, (0, tsoa_1.Query)()),
@@ -414,6 +424,7 @@ __decorate([
 ], EndpointController.prototype, "getPm2HeapUsedSizeHistoryTimeseries", null);
 __decorate([
     (0, tsoa_1.Get)("{vmKey}/pm2/{pm2Key}/reboot/value"),
+    (0, tsoa_1.Tags)("pm2"),
     __param(0, (0, tsoa_1.Path)()),
     __param(1, (0, tsoa_1.Path)()),
     __metadata("design:type", Function),
@@ -422,6 +433,7 @@ __decorate([
 ], EndpointController.prototype, "getPm2RebootHistoryValue", null);
 __decorate([
     (0, tsoa_1.Get)("{vmKey}/pm2/{pm2Key}/reboot/timeseries"),
+    (0, tsoa_1.Tags)("timeSeries"),
     __param(0, (0, tsoa_1.Path)()),
     __param(1, (0, tsoa_1.Path)()),
     __param(2, (0, tsoa_1.Query)()),
@@ -432,6 +444,7 @@ __decorate([
 ], EndpointController.prototype, "getPm2RebootHistoryTimeseries", null);
 __decorate([
     (0, tsoa_1.Get)("{vmKey}/pm2/{pm2Key}/errored/value"),
+    (0, tsoa_1.Tags)("pm2"),
     __param(0, (0, tsoa_1.Path)()),
     __param(1, (0, tsoa_1.Path)()),
     __metadata("design:type", Function),
@@ -440,6 +453,7 @@ __decorate([
 ], EndpointController.prototype, "getPm2ErroredHistoryValue", null);
 __decorate([
     (0, tsoa_1.Get)("{vmKey}/pm2/{pm2Key}/errored/timeseries"),
+    (0, tsoa_1.Tags)("timeSeries"),
     __param(0, (0, tsoa_1.Path)()),
     __param(1, (0, tsoa_1.Path)()),
     __param(2, (0, tsoa_1.Query)()),
@@ -450,6 +464,7 @@ __decorate([
 ], EndpointController.prototype, "getPm2ErroredHistoryTimeseries", null);
 __decorate([
     (0, tsoa_1.Post)("{vmKey}/pm2/{pm2Key}/{endpoint}/timeseries/maxDay"),
+    (0, tsoa_1.Tags)("timeSeries"),
     __param(0, (0, tsoa_1.Path)()),
     __param(1, (0, tsoa_1.Path)()),
     __param(2, (0, tsoa_1.Path)()),
@@ -460,6 +475,7 @@ __decorate([
 ], EndpointController.prototype, "updatePm2EndpointMaxDay", null);
 __decorate([
     (0, tsoa_1.Get)("{vmKey}/vm/cpu_usage/value"),
+    (0, tsoa_1.Tags)("vm"),
     __param(0, (0, tsoa_1.Path)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
@@ -467,6 +483,7 @@ __decorate([
 ], EndpointController.prototype, "getVmCpuUsageValue", null);
 __decorate([
     (0, tsoa_1.Get)("{vmKey}/vm/cpu_usage/timeseries"),
+    (0, tsoa_1.Tags)("timeSeries"),
     __param(0, (0, tsoa_1.Path)()),
     __param(1, (0, tsoa_1.Query)()),
     __param(2, (0, tsoa_1.Query)()),
@@ -476,6 +493,7 @@ __decorate([
 ], EndpointController.prototype, "getVmCpuUsageTimeseries", null);
 __decorate([
     (0, tsoa_1.Get)("{vmKey}/vm/ram_usage/value"),
+    (0, tsoa_1.Tags)("vm"),
     __param(0, (0, tsoa_1.Path)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
@@ -483,6 +501,7 @@ __decorate([
 ], EndpointController.prototype, "getVmRamUsageValue", null);
 __decorate([
     (0, tsoa_1.Get)("{vmKey}/vm/ram_usage/timeseries"),
+    (0, tsoa_1.Tags)("timeSeries"),
     __param(0, (0, tsoa_1.Path)()),
     __param(1, (0, tsoa_1.Query)()),
     __param(2, (0, tsoa_1.Query)()),
@@ -492,6 +511,7 @@ __decorate([
 ], EndpointController.prototype, "getVmRamUsageTimeseries", null);
 __decorate([
     (0, tsoa_1.Get)("{vmKey}/vm/disk_usage/value"),
+    (0, tsoa_1.Tags)("vm"),
     __param(0, (0, tsoa_1.Path)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
@@ -499,6 +519,7 @@ __decorate([
 ], EndpointController.prototype, "getVmDiskUsageValue", null);
 __decorate([
     (0, tsoa_1.Get)("{vmKey}/vm/disk_usage/timeseries"),
+    (0, tsoa_1.Tags)("timeSeries"),
     __param(0, (0, tsoa_1.Path)()),
     __param(1, (0, tsoa_1.Query)()),
     __param(2, (0, tsoa_1.Query)()),
@@ -508,6 +529,7 @@ __decorate([
 ], EndpointController.prototype, "getVmDiskUsageTimeseries", null);
 __decorate([
     (0, tsoa_1.Post)("{vmKey}/vm/{endpoint}/timeseries/maxDay"),
+    (0, tsoa_1.Tags)("timeSeries"),
     __param(0, (0, tsoa_1.Path)()),
     __param(1, (0, tsoa_1.Path)()),
     __param(2, (0, tsoa_1.Body)()),
@@ -516,7 +538,6 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], EndpointController.prototype, "updateVmEndpointMaxDay", null);
 exports.EndpointController = EndpointController = __decorate([
-    (0, tsoa_1.Route)("monitoring/endpoints"),
-    (0, tsoa_1.Tags)("Monitoring")
+    (0, tsoa_1.Route)("monitoring/endpoints")
 ], EndpointController);
 //# sourceMappingURL=EndpointController.js.map

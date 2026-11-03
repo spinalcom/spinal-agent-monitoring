@@ -24,21 +24,22 @@ export interface IGenericOrganData extends ISystemMetrics {
     controlActions: IControlAction[];
 }
 export interface ISystemMetrics {
-    cpuUsage: string;
-    ramUsage: string;
-    totalRam: string;
-    ramUsagePercent?: string;
-    freeRam: string;
-    totalDisk: string;
-    freeDisk: string;
-    diskUsage: string;
-    diskUsagePercent?: string;
+    cpuUsage: number;
+    ramUsage: number;
+    totalRam: number;
+    ramUsagePercent?: number;
+    freeRam: number;
+    cachedRam?: number;
+    totalDisk: number;
+    freeDisk: number;
+    diskUsage: number;
+    diskUsagePercent?: number;
     macAddress?: string;
     ipAddress?: string;
     port?: string | number;
-    cpuUsagePercent?: string | number;
-    cpuIdle?: string | number;
-    cpuIdlePercent?: string | number;
+    cpuUsagePercent?: number;
+    cpuIdle?: number;
+    cpuIdlePercent?: number;
 }
 export interface IProcessInfo {
     id?: string;

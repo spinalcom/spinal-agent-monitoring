@@ -4,3 +4,4 @@ export * from "./interfaces";
 export * from "./IResponses";
 export * from "./IVMResponse";
 export * from "./IPm2Response";
+export * from "./ISpinalApiMiddleware";

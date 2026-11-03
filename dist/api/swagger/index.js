@@ -38,7 +38,23 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.InitSwagger = InitSwagger;
 const swaggerUi = __importStar(require("swagger-ui-express"));
-const path_1 = __importDefault(require("path"));
+const swagger_json_1 = __importDefault(require("./swagger.json"));
+function getOpenApiDocument() {
+    const document = JSON.parse(JSON.stringify(swagger_json_1.default));
+    const bearerSecurity = [{ jwt: [] }];
+    document.security = bearerSecurity;
+    for (const [routePath, pathItem] of Object.entries(document.paths)) {
+        for (const [method, rawOperation] of Object.entries(pathItem)) {
+            if (typeof rawOperation !== "object" || rawOperation === null || Array.isArray(rawOperation) || !("responses" in rawOperation)) {
+                continue;
+            }
+            const operation = rawOperation;
+            const isPublicRoute = (method === "get" && routePath === "/monitoring/health") || (method === "post" && routePath === "/auth/login");
+            operation.security = isPublicRoute ? [] : bearerSecurity;
+        }
+    }
+    return document;
+}
 const swaggerOption = {
     swaggerOptions: {
         swaggerDefinition: {
@@ -56,10 +72,10 @@ const swaggerOption = {
 };
 function InitSwagger(app) {
     app.get("/monitoring/swagger.json", (_req, res) => {
-        res.sendFile(path_1.default.resolve(__dirname, "./swagger.json"));
+        res.json(getOpenApiDocument());
     });
     app.use("/monitoring/api-docs", swaggerUi.serve, async (_req, res, next) => {
-        return swaggerUi.setup(await Promise.resolve().then(() => __importStar(require("./swagger.json"))), swaggerOption)(_req, res, next);
+        return swaggerUi.setup(getOpenApiDocument(), swaggerOption)(_req, res, next);
     });
 }
 exports.default = InitSwagger;

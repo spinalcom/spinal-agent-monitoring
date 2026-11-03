@@ -11,10 +11,14 @@ const routes_1 = require("./routes");
 const HTTP_RESPONSE_1 = require("../utils/HTTP_RESPONSE");
 const swagger_1 = require("./swagger");
 const morgan_1 = __importDefault(require("morgan"));
-function runExpressServer(port) {
+const UserService_1 = __importDefault(require("./services/UserService"));
+const SpinalApiMiddleware_1 = __importDefault(require("./middleware/SpinalApiMiddleware"));
+async function runExpressServer(port) {
     const app = (0, express_1.default)();
+    await UserService_1.default.getInstance().initialize();
     app.use(express_1.default.json());
     app.use((0, morgan_1.default)("dev")); // Add morgan middleware for logging
+    app.use(SpinalApiMiddleware_1.default.checkMonitoringToken);
     (0, swagger_1.InitSwagger)(app);
     (0, routes_1.RegisterRoutes)(app);
     app.use((err, _req, res, next) => {

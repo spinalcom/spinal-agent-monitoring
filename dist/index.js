@@ -144,7 +144,7 @@ function startZabbixPushIfConfigured(zabbixSenderService) {
         await startPm2Listeners(services, vmContext);
         startZabbixPushIfConfigured(services.zabbixSenderService);
         const port = Number.parseInt(process.env.SERVER_PORT || "3000", 10);
-        (0, api_1.runExpressServer)(port);
+        await (0, api_1.runExpressServer)(port);
     }
     catch (error) {
         console.error(error);

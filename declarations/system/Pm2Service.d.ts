@@ -42,6 +42,7 @@ declare class Pm2Service extends EventEmitter {
     reloadPm2Process(processKeys: string | number | (string | number)[]): Promise<ActionResponse[]>;
     deletePm2Process(processKeys: string | number | (string | number)[]): Promise<ActionResponse[]>;
     runPm2Action(action: "start" | "stop" | "restart" | "reload" | "delete", processKeys: string | number | (string | number)[]): Promise<ActionResponse[]>;
+    resurrectProcesses(): Promise<void>;
     getPm2StatusSummary(): Promise<Pm2StatusSummaryResponse>;
     getPm2ProcessMetricsByKey(key: string): Promise<Pm2ProcessMetricsResponse | null>;
     getPm2ProcessLogsByKey(key: string, tail?: number, logType?: Pm2LogType): Promise<Pm2ProcessLogsResponse | null>;

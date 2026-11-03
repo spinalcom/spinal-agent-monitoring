@@ -6,12 +6,16 @@ import { RegisterRoutes } from "./routes";
 import { HTTP_RESPONSES } from "../utils/HTTP_RESPONSE";
 import { InitSwagger } from "./swagger";
 import morgan from "morgan";
+import UserService from "./services/UserService";
+import SpinalApiMiddleware from "./middleware/SpinalApiMiddleware";
 
-export function runExpressServer(port?: number | string): { app: express.Application; server: any } {
+export async function runExpressServer(port?: number | string): Promise<{ app: express.Application; server: any }> {
 	const app = express();
 
+	await UserService.getInstance().initialize();
 	app.use(express.json());
 	app.use(morgan("dev")); // Add morgan middleware for logging
+	app.use(SpinalApiMiddleware.checkMonitoringToken);
 
 	InitSwagger(app);
 

@@ -41,7 +41,12 @@ const pm2_1 = __importDefault(require("pm2"));
 const pm2Utils_1 = require("../utils/pm2Utils");
 const utils_1 = require("../utils");
 const fs = __importStar(require("fs"));
+const path_1 = __importDefault(require("path"));
+const child_process_1 = require("child_process");
+const util_1 = require("util");
 const events_1 = require("events");
+const execFileAsync = (0, util_1.promisify)(child_process_1.execFile);
+const pm2CliPath = path_1.default.join(path_1.default.dirname(require.resolve("pm2")), "bin", "pm2");
 class Pm2Service extends events_1.EventEmitter {
     constructor() {
         super();
@@ -332,6 +337,9 @@ class Pm2Service extends events_1.EventEmitter {
     async runPm2Action(action, processKeys) {
         return this._executePm2BulkAction(action, processKeys);
     }
+    async resurrectProcesses() {
+        await execFileAsync(process.execPath, [pm2CliPath, "resurrect"], { timeout: 60000 });
+    }
     async getPm2StatusSummary() {
         const processes = await this.getAllPm2Processes();
         const summary = {
@@ -439,6 +447,11 @@ class Pm2Service extends events_1.EventEmitter {
                 throw err;
             bus.on(utils_1.PROCESS_CONFIG_DATA_CHANGE, async (data) => {
                 data.type = utils_1.PROCESS_CONFIG_DATA_CHANGE;
+                if (typeof callback === "function")
+                    await callback(data);
+            });
+            bus.on(utils_1.PROCESS_DELETE, async (data) => {
+                data.type = utils_1.PROCESS_DELETE;
                 if (typeof callback === "function")
                     await callback(data);
             });

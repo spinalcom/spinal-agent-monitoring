@@ -10,7 +10,14 @@
 			"email": "developers@spinalcom.com"
 		},
 		"outputDirectory": "src/api/swagger",
-		"specVersion": 3
+		"specVersion": 3,
+		"securityDefinitions": {
+			"jwt": {
+				"type": "http",
+				"scheme": "bearer",
+				"bearerFormat": "JWT"
+			}
+		}
 	},
 	"routes": {
 		"routesDir": "src/api",

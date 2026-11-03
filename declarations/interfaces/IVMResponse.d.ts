@@ -16,6 +16,7 @@ export interface IVMMetrics {
     ramUsage?: string;
     totalRam?: string;
     freeRam?: string;
+    cachedRam?: string;
     totalDisk?: string;
     freeDisk?: string;
     diskUsage?: string;

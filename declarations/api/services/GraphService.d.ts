@@ -1,10 +1,10 @@
 import { SpinalContext, SpinalGraph, SpinalNode } from "spinal-model-graph";
+import { SpinalCommandAction } from "../../utils";
 import { ActionResponse, IPm2EventData, ISystemMetrics, Pm2ProcessLogsResponse } from "../../interfaces";
 import { ProcessDescription } from "pm2";
 export declare class GraphService {
     private static _instance;
     private _graph;
-    pm2Maps: Map<string | number, SpinalNode>;
     private constructor();
     static getInstance(): GraphService;
     setGraph(graph: SpinalGraph): void;
@@ -14,7 +14,7 @@ export declare class GraphService {
         pm2List?: ProcessDescription[];
     }): Promise<SpinalContext>;
     getVirtualMachine(vmKey: string | number): Promise<SpinalContext | null>;
-    executeCommand(vmNode: SpinalContext, type: string, processesIds?: string | number | (string | number)[]): Promise<ActionResponse[]>;
+    executeCommand(vmNode: SpinalContext, type: SpinalCommandAction, processesIds?: string | number | (string | number)[]): Promise<ActionResponse[]>;
     private _initCommandList;
     getAllVirtualMachines(): Promise<SpinalContext[]>;
     updateOrCreateSystemMetrics(vmNode: SpinalContext, systemMetrics: ISystemMetrics, isInit?: boolean): Promise<SpinalNode<any>[]>;
@@ -26,9 +26,9 @@ export declare class GraphService {
         [key: string]: any;
         processes: SpinalNode[];
     }[]>;
-    updateOrCreatePm2Process(vmNode: SpinalContext, pm2Process: ProcessDescription[]): Promise<SpinalNode[]>;
+    updateOrCreatePm2Process(vmNode: SpinalContext, pm2Process: ProcessDescription[], isInit?: boolean, reconcileSnapshot?: boolean): Promise<SpinalNode[]>;
     getPm2ProcessNodeByKey(vmNode: SpinalContext, key: string | number): Promise<SpinalNode | undefined>;
-    handlePm2Event(vmNode: SpinalContext, event: IPm2EventData): Promise<SpinalNode<any>>;
+    handlePm2Event(vmNode: SpinalContext, event: IPm2EventData): Promise<SpinalNode<any> | null>;
     updatePm2ProcessesMetrics(vmNode: SpinalContext, pm2Processes: ProcessDescription | ProcessDescription[], existingNodes?: {
         [key: string]: SpinalNode;
     }, isInit?: boolean): Promise<void[]>;
@@ -41,7 +41,7 @@ export declare class GraphService {
     updatePm2LogFileContent(processNode: SpinalNode, logType: "out" | "err" | undefined, content: string): Promise<boolean>;
     readPm2LogFileContent(processNode: SpinalNode, logType?: "out" | "err"): Promise<string[] | null>;
     getPm2ProcessLogsByKey(processNode: SpinalNode, tail?: number, logType?: "out" | "err" | "all"): Promise<Pm2ProcessLogsResponse | null>;
-    removePm2ProcessFromGraph(vmNode: SpinalContext, processNode: SpinalNode | string): Promise<void>;
+    removePm2ProcessFromGraph(vmNode: SpinalContext, processNode: SpinalNode | string): Promise<SpinalNode<any>>;
     createOrRetrieveVmContext(graph: SpinalGraph, hostName: string): Promise<SpinalContext>;
     private _syncPm2Processes;
     private _addPm2ProcessToGraph;

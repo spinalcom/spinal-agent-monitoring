@@ -4,8 +4,14 @@ import { ActionResponse, Pm2LogType, Pm2ProcessLogsResponse, Pm2ProcessMetricsRe
 import { SpinalNode } from "spinal-model-graph";
 import { _initLogPathInHub, PROCESS_EVENT, PROCESS_ONLINE, PROCESS_EXIT, PROCESS_DELETE, PROCESS_KILL, PROCESS_EXCEPTION, PROCESS_CONFIG_DATA_CHANGE, PROCESS_HUB_DATA_RESPONSE } from "../utils";
 import * as fs from "fs";
+import path from "path";
+import { execFile } from "child_process";
+import { promisify } from "util";
 import { EventEmitter } from "events";
 import { IPm2EventData } from "../interfaces";
+
+const execFileAsync = promisify(execFile);
+const pm2CliPath = path.join(path.dirname(require.resolve("pm2")), "bin", "pm2");
 
 export type Pm2LogPayload = { pm_id: number; name: string; type: Pm2LogType; file: string; content: string };
 export type Pm2LogCallback = (data: Pm2LogPayload) => void;
@@ -344,6 +350,10 @@ class Pm2Service extends EventEmitter {
 		return this._executePm2BulkAction(action, processKeys);
 	}
 
+	public async resurrectProcesses(): Promise<void> {
+		await execFileAsync(process.execPath, [pm2CliPath, "resurrect"], { timeout: 60_000 });
+	}
+
 	public async getPm2StatusSummary(): Promise<Pm2StatusSummaryResponse> {
 		const processes = await this.getAllPm2Processes();
 		const summary: Pm2StatusSummaryResponse = {
@@ -457,6 +467,11 @@ class Pm2Service extends EventEmitter {
 
 			bus.on(PROCESS_CONFIG_DATA_CHANGE, async (data: any) => {
 				data.type = PROCESS_CONFIG_DATA_CHANGE;
+				if (typeof callback === "function") await callback(data);
+			});
+
+			bus.on(PROCESS_DELETE, async (data: IPm2EventData) => {
+				data.type = PROCESS_DELETE;
 				if (typeof callback === "function") await callback(data);
 			});
 
