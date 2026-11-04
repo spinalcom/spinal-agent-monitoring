@@ -11,14 +11,10 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MonitoringController = void 0;
 const tsoa_1 = require("tsoa");
 const GraphService_1 = require("../services/GraphService");
-const SystemOverviewService_1 = __importDefault(require("../../system/SystemOverviewService"));
 const pm2Utils_1 = require("../../utils/pm2Utils");
 const HTTP_RESPONSE_1 = require("../../utils/HTTP_RESPONSE");
 const utils_1 = require("./utils");
@@ -90,13 +86,24 @@ let MonitoringController = class MonitoringController extends tsoa_1.Controller 
         }
     }
     /**
-     * Clears the Linux page cache on the monitored host.
+     * Clears the Linux page cache on a monitored virtual machine.
      */
-    async clearCache() {
+    async clearCache(vmKey) {
         try {
-            await SystemOverviewService_1.default.getInstance().clearLinuxPageCache();
-            this.setStatus(HTTP_RESPONSE_1.HTTP_RESPONSES.OK.code);
-            return { success: true, message: "Linux page cache cleared" };
+            const vm = await this.graphService.getVirtualMachine(vmKey);
+            if (!vm) {
+                this.setStatus(HTTP_RESPONSE_1.HTTP_RESPONSES.NOT_FOUND.code);
+                return { error: "Virtual machine not found" };
+            }
+            try {
+                const results = await this.graphService.executeCommand(vm, "clear-linux-page-cache", []);
+                this.setStatus(HTTP_RESPONSE_1.HTTP_RESPONSES.OK.code);
+                return (0, pm2Utils_1.partitionResults)(results, "cleared");
+            }
+            catch (error) {
+                this.setStatus(HTTP_RESPONSE_1.HTTP_RESPONSES.BAD_REQUEST.code);
+                return { error: error instanceof Error ? error.message : "Unable to clear Linux page cache" };
+            }
         }
         catch (error) {
             this.setStatus(HTTP_RESPONSE_1.HTTP_RESPONSES.INTERNAL_SERVER_ERROR.code);
@@ -475,12 +482,14 @@ __decorate([
     __metadata("design:returntype", Object)
 ], MonitoringController.prototype, "getHealth", null);
 __decorate([
-    (0, tsoa_1.Post)("/cache/clear"),
+    (0, tsoa_1.Post)("{vmKey}/cache/clear"),
     (0, tsoa_1.Tags)("vm"),
     (0, tsoa_1.SuccessResponse)("200", "Linux page cache cleared"),
-    (0, tsoa_1.Response)(500, "Unable to clear Linux page cache"),
+    (0, tsoa_1.Response)(400, "Unable to clear Linux page cache"),
+    (0, tsoa_1.Response)(404, "Virtual machine not found"),
+    __param(0, (0, tsoa_1.Path)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], MonitoringController.prototype, "clearCache", null);
 __decorate([

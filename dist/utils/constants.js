@@ -16,6 +16,7 @@ exports.SPINAL_COMMAND_TYPE = {
     stop: "stop",
     reload: "reload",
     delete: "delete",
+    clearLinuxPageCache: "clear-linux-page-cache",
 };
 exports.SPINAL_COMMAND_TIMEOUT_MS = 10000;
 exports.SPINAL_COMMAND_STATUS = {

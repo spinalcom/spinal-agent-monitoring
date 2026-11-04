@@ -1,6 +1,7 @@
 import { Choice, Lst, Model, Ptr, spinalCore } from "spinal-core-connectorjs";
 import { SPINAL_COMMAND_STATUS, SPINAL_COMMAND_TIMEOUT_MS, SPINAL_COMMAND_TYPE, SpinalCommandAction } from "../../utils/constants";
 import { Pm2Service } from "../../system/Pm2Service";
+import SystemOverviewService from "../../system/SystemOverviewService";
 import { ActionResponse } from "../../interfaces/IResponses";
 import type { SpinalContext } from "spinal-model-graph";
 import { generateUniqId } from "../../utils";
@@ -20,9 +21,10 @@ class SpinalCommand extends Model {
 		});
 	}
 
-	async execute(pm2ServiceInstance?: Pm2Service): Promise<ActionResponse[]> {
+	async execute(): Promise<ActionResponse[]> {
 		try {
-			if (!pm2ServiceInstance) pm2ServiceInstance = Pm2Service.getInstance();
+			const pm2ServiceInstance = Pm2Service.getInstance();
+			const systemOverviewServiceInstance = SystemOverviewService.getInstance();
 
 			this.status.set(SPINAL_COMMAND_STATUS.in_progress);
 			const type = this.type.get();
@@ -46,6 +48,10 @@ class SpinalCommand extends Model {
 					break;
 				case SPINAL_COMMAND_TYPE.delete:
 					results = await pm2ServiceInstance.deletePm2Process(keys);
+					break;
+				case SPINAL_COMMAND_TYPE.clearLinuxPageCache:
+					await systemOverviewServiceInstance.executeAdminAction("clear-linux-page-cache");
+					results = [{ success: true, message: "Linux page cache cleared" }];
 					break;
 				default:
 					throw new Error(`Unsupported command type: ${type}`);

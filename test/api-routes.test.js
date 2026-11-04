@@ -9,7 +9,6 @@ const { ValidateError } = require("tsoa");
 const { RegisterRoutes } = require("../src/api/routes");
 const { GraphService } = require("../src/api/services/GraphService");
 const EndpointService = require("../src/api/services/EndpointService").default;
-const SystemOverviewService = require("../src/system/SystemOverviewService").default;
 const UserService = require("../src/api/services/UserService").default;
 const TEST_BEARER_TOKEN = "test-tsoa-bearer-token";
 
@@ -88,6 +87,7 @@ const vmMetrics = ["cpu_usage", "ram_usage", "disk_usage"];
 const monitoringRoutes = [
     { method: "GET", path: "/monitoring/health" },
     { method: "GET", path: "/monitoring/all_vms" },
+    { method: "POST", path: `/monitoring/${vmKey}/cache/clear` },
     { method: "GET", path: `/monitoring/${vmKey}` },
     { method: "GET", path: `/monitoring/${vmKey}/system` },
     { method: "GET", path: `/monitoring/${vmKey}/apps` },
@@ -158,24 +158,6 @@ async function withPatchedEndpointService(overrides, callback) {
     } finally {
         for (const key of Object.keys(overrides)) {
             endpointService[key] = originals[key];
-        }
-    }
-}
-
-async function withPatchedSystemOverviewService(overrides, callback) {
-    const systemOverviewService = SystemOverviewService.getInstance();
-    const originals = {};
-
-    for (const key of Object.keys(overrides)) {
-        originals[key] = systemOverviewService[key];
-        systemOverviewService[key] = overrides[key];
-    }
-
-    try {
-        await callback();
-    } finally {
-        for (const key of Object.keys(overrides)) {
-            systemOverviewService[key] = originals[key];
         }
     }
 }
@@ -252,21 +234,38 @@ test("business: GET /monitoring/health returns status ok", async () => {
     assert.deepEqual(result.payload, { status: "ok" });
 });
 
-test("business: POST /monitoring/cache/clear clears Linux page cache", async () => {
-    let clearCalled = false;
-    await withPatchedSystemOverviewService(
+test("business: POST /monitoring/:vmKey/cache/clear dispatches command to VM", async () => {
+    const vm = { id: "vm" };
+    await withPatchedGraphService(
         {
-            clearLinuxPageCache: async () => {
-                clearCalled = true;
+            getVirtualMachine: async () => vm,
+            executeCommand: async (targetVm, action, keys) => {
+                assert.equal(targetVm, vm);
+                assert.equal(action, "clear-linux-page-cache");
+                assert.deepEqual(keys, []);
+                return [{ success: true, message: "Linux page cache cleared" }];
             },
         },
         async () => {
-            const result = await callRoute(createApp(), "POST", "/monitoring/cache/clear");
+            const result = await callRoute(createApp(), "POST", `/monitoring/${vmKey}/cache/clear`);
             assert.equal(result.status, 200);
-            assert.deepEqual(result.payload, { success: true, message: "Linux page cache cleared" });
+            assert.deepEqual(result.payload, {
+                cleared: [{ success: true, message: "Linux page cache cleared" }],
+                failed: [],
+            });
         },
     );
-    assert.equal(clearCalled, true);
+});
+
+test("business: POST /monitoring/:vmKey/cache/clear returns 404 for unknown VM", async () => {
+    await withPatchedGraphService(
+        { getVirtualMachine: async () => null },
+        async () => {
+            const result = await callRoute(createApp(), "POST", `/monitoring/${vmKey}/cache/clear`);
+            assert.equal(result.status, 404);
+            assert.deepEqual(result.payload, { error: "Virtual machine not found" });
+        },
+    );
 });
 
 test("business: POST /monitoring/:vmKey/apps/start partitions action results", async () => {

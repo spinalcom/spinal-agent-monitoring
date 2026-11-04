@@ -38,7 +38,7 @@ function getServices() {
         zabbixSenderService: system_1.ZabbixSenderService.getInstance(),
     };
 }
-async function bindCommandList(vmNode, services) {
+async function bindCommandList(vmNode) {
     const commandList = await vmNode.info.pm2_commands?.load();
     vmNode.info.lastCommand.bind(async () => {
         if (!commandList) {
@@ -54,7 +54,7 @@ async function bindCommandList(vmNode, services) {
                 continue;
             }
             commandExecuted[commandModel.id.get()] = true;
-            await commandModel.execute(services.pm2Service);
+            await commandModel.execute();
         }
     });
 }
@@ -139,7 +139,7 @@ function startZabbixPushIfConfigured(zabbixSenderService) {
     try {
         const services = getServices();
         const vmContext = await initializeGraphContext(services);
-        bindCommandList(vmContext, services);
+        bindCommandList(vmContext);
         startPeriodicMetricsUpdate(services, vmContext);
         await startPm2Listeners(services, vmContext);
         startZabbixPushIfConfigured(services.zabbixSenderService);

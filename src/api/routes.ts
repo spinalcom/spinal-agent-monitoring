@@ -224,8 +224,9 @@ export function RegisterRoutes(app: Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         const argsMonitoringController_clearCache: Record<string, TsoaRoute.ParameterSchema> = {
+                vmKey: {"in":"path","name":"vmKey","required":true,"dataType":"string"},
         };
-        app.post('/monitoring/cache/clear',
+        app.post('/monitoring/:vmKey/cache/clear',
             ...(fetchMiddlewares<RequestHandler>(MonitoringController)),
             ...(fetchMiddlewares<RequestHandler>(MonitoringController.prototype.clearCache)),
 

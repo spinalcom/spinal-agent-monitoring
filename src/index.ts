@@ -52,7 +52,7 @@ function getServices(): RuntimeServices {
 	};
 }
 
-async function bindCommandList(vmNode: SpinalContext, services: RuntimeServices) {
+async function bindCommandList(vmNode: SpinalContext) {
 	const commandList: Lst<SpinalCommand> = await vmNode.info.pm2_commands?.load();
 
 	vmNode.info.lastCommand.bind(async () => {
@@ -73,7 +73,7 @@ async function bindCommandList(vmNode: SpinalContext, services: RuntimeServices)
 			}
 
 			commandExecuted[commandModel.id.get()] = true;
-			await commandModel.execute(services.pm2Service);
+			await commandModel.execute();
 		}
 	});
 }
@@ -182,7 +182,7 @@ function startZabbixPushIfConfigured(zabbixSenderService: ZabbixSenderService): 
 		const services = getServices();
 		const vmContext = await initializeGraphContext(services);
 
-		bindCommandList(vmContext, services);
+		bindCommandList(vmContext);
 
 		startPeriodicMetricsUpdate(services, vmContext);
 		await startPm2Listeners(services, vmContext);

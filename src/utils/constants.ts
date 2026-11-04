@@ -16,6 +16,7 @@ export const SPINAL_COMMAND_TYPE = {
 	stop: "stop",
 	reload: "reload",
 	delete: "delete",
+	clearLinuxPageCache: "clear-linux-page-cache",
 } as const;
 
 export type SpinalCommandAction = (typeof SPINAL_COMMAND_TYPE)[keyof typeof SPINAL_COMMAND_TYPE];

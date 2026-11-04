@@ -200,8 +200,10 @@ function RegisterRoutes(app) {
         }
     });
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    const argsMonitoringController_clearCache = {};
-    app.post('/monitoring/cache/clear', ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController)), ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController.prototype.clearCache)), async function MonitoringController_clearCache(request, response, next) {
+    const argsMonitoringController_clearCache = {
+        vmKey: { "in": "path", "name": "vmKey", "required": true, "dataType": "string" },
+    };
+    app.post('/monitoring/:vmKey/cache/clear', ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController)), ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController.prototype.clearCache)), async function MonitoringController_clearCache(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {

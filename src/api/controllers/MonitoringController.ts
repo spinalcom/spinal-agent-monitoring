@@ -1,6 +1,5 @@
 import { Body, Controller, Get, Path, Post, Query, Response, Route, SuccessResponse, Tags } from "tsoa";
 import { GraphService } from "../services/GraphService";
-import SystemOverviewService from "../../system/SystemOverviewService";
 import ZabbixSenderService, { Pm2Discovery } from "../../system/ZabbixSenderService";
 import { ActionResponse, ErrorResponse, HealthResponse, Pm2LogType, Pm2ProcessLogsResponse, Pm2ProcessMetricsResponse, Pm2ProcessResponse, Pm2StatusSummaryResponse } from "../../interfaces/IResponses";
 import { IVMResponse } from "../../interfaces/IVMResponse";
@@ -32,17 +31,29 @@ export class MonitoringController extends Controller {
 	}
 
 	/**
-	 * Clears the Linux page cache on the monitored host.
+	 * Clears the Linux page cache on a monitored virtual machine.
 	 */
-	@Post("/cache/clear")
+	@Post("{vmKey}/cache/clear")
 	@Tags("vm")
 	@SuccessResponse("200", "Linux page cache cleared")
-	@Response<ErrorResponse>(500, "Unable to clear Linux page cache")
-	public async clearCache(): Promise<ActionResponse | ErrorResponse> {
+	@Response<ErrorResponse>(400, "Unable to clear Linux page cache")
+	@Response<ErrorResponse>(404, "Virtual machine not found")
+	public async clearCache(@Path() vmKey: string): Promise<{ cleared: ActionResponse[]; failed: ActionResponse[] } | ErrorResponse> {
 		try {
-			await SystemOverviewService.getInstance().clearLinuxPageCache();
-			this.setStatus(HTTP_RESPONSES.OK.code);
-			return { success: true, message: "Linux page cache cleared" };
+			const vm = await this.graphService.getVirtualMachine(vmKey);
+			if (!vm) {
+				this.setStatus(HTTP_RESPONSES.NOT_FOUND.code);
+				return { error: "Virtual machine not found" };
+			}
+
+			try {
+				const results = await this.graphService.executeCommand(vm, "clear-linux-page-cache", []);
+				this.setStatus(HTTP_RESPONSES.OK.code);
+				return partitionResults(results, "cleared");
+			} catch (error) {
+				this.setStatus(HTTP_RESPONSES.BAD_REQUEST.code);
+				return { error: error instanceof Error ? error.message : "Unable to clear Linux page cache" };
+			}
 		} catch (error) {
 			this.setStatus(HTTP_RESPONSES.INTERNAL_SERVER_ERROR.code);
 			return { error: error instanceof Error ? error.message : "Unable to clear Linux page cache" };

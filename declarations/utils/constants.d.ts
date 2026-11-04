@@ -13,6 +13,7 @@ export declare const SPINAL_COMMAND_TYPE: {
     readonly stop: "stop";
     readonly reload: "reload";
     readonly delete: "delete";
+    readonly clearLinuxPageCache: "clear-linux-page-cache";
 };
 export type SpinalCommandAction = (typeof SPINAL_COMMAND_TYPE)[keyof typeof SPINAL_COMMAND_TYPE];
 export declare const SPINAL_COMMAND_TIMEOUT_MS = 10000;

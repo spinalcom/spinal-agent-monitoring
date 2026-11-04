@@ -1,9 +1,13 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SpinalCommand = void 0;
 const spinal_core_connectorjs_1 = require("spinal-core-connectorjs");
 const constants_1 = require("../../utils/constants");
 const Pm2Service_1 = require("../../system/Pm2Service");
+const SystemOverviewService_1 = __importDefault(require("../../system/SystemOverviewService"));
 const utils_1 = require("../../utils");
 class SpinalCommand extends spinal_core_connectorjs_1.Model {
     constructor(type, processesIds, vmNode) {
@@ -19,10 +23,10 @@ class SpinalCommand extends spinal_core_connectorjs_1.Model {
             vmNode,
         });
     }
-    async execute(pm2ServiceInstance) {
+    async execute() {
         try {
-            if (!pm2ServiceInstance)
-                pm2ServiceInstance = Pm2Service_1.Pm2Service.getInstance();
+            const pm2ServiceInstance = Pm2Service_1.Pm2Service.getInstance();
+            const systemOverviewServiceInstance = SystemOverviewService_1.default.getInstance();
             this.status.set(constants_1.SPINAL_COMMAND_STATUS.in_progress);
             const type = this.type.get();
             const processesIds = this.processesIds.get();
@@ -43,6 +47,10 @@ class SpinalCommand extends spinal_core_connectorjs_1.Model {
                     break;
                 case constants_1.SPINAL_COMMAND_TYPE.delete:
                     results = await pm2ServiceInstance.deletePm2Process(keys);
+                    break;
+                case constants_1.SPINAL_COMMAND_TYPE.clearLinuxPageCache:
+                    await systemOverviewServiceInstance.executeAdminAction("clear-linux-page-cache");
+                    results = [{ success: true, message: "Linux page cache cleared" }];
                     break;
                 default:
                     throw new Error(`Unsupported command type: ${type}`);

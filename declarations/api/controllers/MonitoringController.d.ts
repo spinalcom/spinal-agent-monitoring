@@ -8,9 +8,12 @@ export declare class MonitoringController extends Controller {
      */
     getHealth(): HealthResponse | ErrorResponse;
     /**
-     * Clears the Linux page cache on the monitored host.
+     * Clears the Linux page cache on a monitored virtual machine.
      */
-    clearCache(): Promise<ActionResponse | ErrorResponse>;
+    clearCache(vmKey: string): Promise<{
+        cleared: ActionResponse[];
+        failed: ActionResponse[];
+    } | ErrorResponse>;
     getAllVirtualMachines(): Promise<IVMResponse[] | ErrorResponse>;
     getVirtualMachine(vmKey: string): Promise<IVMResponse | ErrorResponse>;
     /**
