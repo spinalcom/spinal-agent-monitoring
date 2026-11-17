@@ -91,6 +91,9 @@ test("admin initialization creates credentials and protects API routes with bear
         }
         assert.equal(loginResponse.tokenType, "Bearer");
         assert.equal(loginResponse.expiresIn, 8 * 60 * 60);
+        assert.equal(loginResponse.access_token, loginResponse.token);
+        assert.equal(loginResponse.token_type, "bearer");
+        assert.equal(loginResponse.expires_in, loginResponse.expiresIn);
         assert.equal(userService.isTokenValid(loginResponse.token), true);
 
         const middlewareUserService = UserService.getInstance;
@@ -120,7 +123,15 @@ test("admin initialization creates credentials and protects API routes with bear
             assert.equal(swaggerSpecification.status, 200);
             const specification = await swaggerSpecification.json();
             assert.equal(specification.openapi, "3.0.0");
-            assert.equal(specification.components.securitySchemes.jwt.scheme, "bearer");
+            assert.deepEqual(specification.components.securitySchemes.jwt, {
+                type: "oauth2",
+                flows: {
+                    password: {
+                        tokenUrl: "/auth/login",
+                        scopes: {},
+                    },
+                },
+            });
             assert.deepEqual(specification.paths["/monitoring/all_vms"].get.security, [{ jwt: [] }]);
             assert.deepEqual(specification.paths["/monitoring/health"].get.security, []);
             assert.deepEqual(specification.paths["/auth/login"].post.security, []);
@@ -158,6 +169,7 @@ test("SpinalApiMiddleware protects API routes while leaving health and Swagger p
         UserService.getInstance = () => userService;
         const app = express();
         app.use(express.json());
+        app.use(express.urlencoded({ extended: false }));
         app.use(SpinalApiMiddleware.checkMonitoringToken);
         InitSwagger(app);
         RegisterRoutes(app);
@@ -184,6 +196,25 @@ test("SpinalApiMiddleware protects API routes while leaving health and Swagger p
                 body: JSON.stringify({ username: "admin", password: credentials.password }),
             });
             assert.equal(publicLogin.status, 200);
+            const jsonLogin = await publicLogin.json();
+            assert.equal(jsonLogin.access_token, jsonLogin.token);
+            assert.equal(jsonLogin.token_type, "bearer");
+            assert.equal(jsonLogin.expires_in, jsonLogin.expiresIn);
+
+            const oauthLogin = await fetch(`http://127.0.0.1:${port}/auth/login`, {
+                method: "POST",
+                headers: { "content-type": "application/x-www-form-urlencoded" },
+                body: new URLSearchParams({
+                    grant_type: "password",
+                    username: "admin",
+                    password: credentials.password,
+                }),
+            });
+            assert.equal(oauthLogin.status, 200);
+            const oauthToken = await oauthLogin.json();
+            assert.equal(typeof oauthToken.access_token, "string");
+            assert.equal(oauthToken.token_type, "bearer");
+            assert.equal(userService.isTokenValid(oauthToken.access_token), true);
 
             const health = await fetch(`http://127.0.0.1:${port}/monitoring/health`);
             assert.equal(health.status, 200);

@@ -110,9 +110,6 @@ class WebsocketMiddleware {
                 this.sendStreamLogsToAllClients(logPath);
                 break;
             }
-            case constants_1.ZABBIX_PUSH_EVENT_TYPE:
-                this._addClientToType(constants_1.ZABBIX_PUSH_EVENT_TYPE, client);
-                break;
             default:
                 this.sendError(client, "Unknown request type");
         }
@@ -167,9 +164,6 @@ class WebsocketMiddleware {
                 client.emit(constants_1.MONITORING_MESSAGE_TYPE, message);
             }
         }
-    }
-    sendZabbixPushEvent(data) {
-        this._sendDataToAllClients({ type: constants_1.ZABBIX_PUSH_EVENT_TYPE, data });
     }
     sendStreamLogsToAllClients(logPath) {
         console.log("Starting to stream logs from:", logPath);

@@ -17,5 +17,4 @@ Object.defineProperty(exports, "__esModule", { value: true });
 __exportStar(require("./constants"), exports);
 __exportStar(require("./pm2Utils"), exports);
 __exportStar(require("./systemUtils"), exports);
-__exportStar(require("./zabbixFunctions"), exports);
 //# sourceMappingURL=index.js.map

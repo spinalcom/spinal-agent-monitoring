@@ -40,8 +40,6 @@ exports.getHeapInfo = getHeapInfo;
 exports.waitUntil = waitUntil;
 exports.formatProcess = formatProcess;
 exports.executeCommand = executeCommand;
-exports.getProcessId = getProcessId;
-exports.getProcessStatusCode = getProcessStatusCode;
 exports.getProcessLogPath = getProcessLogPath;
 exports.uploadFileNewData = uploadFileNewData;
 exports.readFileContent = readFileContent;
@@ -50,11 +48,15 @@ exports._initLogPathInHub = _initLogPathInHub;
 exports.splitActionResults = splitActionResults;
 exports.partitionResults = partitionResults;
 exports.generateUniqId = generateUniqId;
+exports.getHubDataForProcess = getHubDataForProcess;
+exports.hubDataIsValid = hubDataIsValid;
+exports.isSameHub = isSameHub;
 const pm2_1 = __importDefault(require("pm2"));
 const spinal_core_connectorjs_1 = require("spinal-core-connectorjs");
 // import { Pm2Process } from "../spinal-monitoring-service/models";
 const fs = __importStar(require("fs"));
 const axios_1 = __importDefault(require("axios"));
+const systemUtils_1 = require("./systemUtils");
 function getHeapInfo(process) {
     const pm2Env = process.pm2_env;
     const axmMonitor = pm2Env?.axm_monitor;
@@ -108,26 +110,6 @@ async function executeCommand(command, key) {
             }
         });
     });
-}
-function getProcessId(process) {
-    if (typeof process.pm_id === "number") {
-        return process.pm_id.toString();
-    }
-    if (typeof process.pid === "number") {
-        return process.pid.toString();
-    }
-    return process.name || "unknown";
-}
-function getProcessStatusCode(process) {
-    const rawStatus = process.pm2_env?.status || "";
-    const status = rawStatus.toLowerCase();
-    if (status === "online") {
-        return 1;
-    }
-    if (status === "stopped" || status === "stopping" || status === "errored") {
-        return 0;
-    }
-    return -1;
 }
 function getProcessLogPath(process, logType) {
     const formattedProcess = formatProcess(process); // Ensure the process is formatted before accessing log paths
@@ -199,5 +181,39 @@ function partitionResults(result, successKey) {
 }
 function generateUniqId() {
     return `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+}
+function getHubDataForProcess(pm2Process, ipAddress = "") {
+    const envData = pm2Process.pm2_env?.env || {};
+    const hubData = { host: "", port: "", bosName: process.env.BOS_NAME || "" };
+    const host_key = ["HUB_HOST", "HUB_IP", "SPINALHUB_IP", "SPINALHUB_HOST", "SPINAL_HUB_HOST", "SPINAL_HUB_IP", "SPINAL_HUB_HOSTNAME", "SPINALHOST", "SPINALIP"].map((k) => k.toUpperCase());
+    const port_key = ["HUB_PORT", "SPINAL_HUB_PORT", "SPINALHUB_PORT", "HUBPORT", "SPINALHUBPORT"].map((k) => k.toUpperCase());
+    const name_key = ["HUB_NAME", "SPINAL_HUB_NAME", "SPINALHUB_NAME", "SPINALHUBNAME", "BOS_NAME", "BOSNAME"].map((k) => k.toUpperCase());
+    for (const key in envData) {
+        const upperKey = key.toUpperCase();
+        if (host_key.includes(upperKey) && !hubData.host) {
+            let tempIp = envData[key];
+            if ((0, systemUtils_1.isLocalAddress)(tempIp))
+                tempIp = ipAddress;
+            hubData.host = tempIp;
+        }
+        else if (port_key.includes(upperKey) && !hubData.port) {
+            let port = envData[key].toString();
+            if (!/^\d+$/.test(port))
+                continue; // Skip if port is not a valid number
+            if (!port.endsWith("0"))
+                port = port.replace(/.$/, "0"); // Ensure the port ends with 0
+            hubData.port = port;
+        }
+        else if (name_key.includes(upperKey) && !hubData.bosName) {
+            hubData.bosName = envData[key];
+        }
+    }
+    return hubData;
+}
+function hubDataIsValid(hubData) {
+    return typeof hubData.host === "string" && hubData.host.length > 0 && typeof hubData.port === "string" && /^\d+$/.test(hubData.port);
+}
+function isSameHub(hubData1, hubData2) {
+    return hubData1?.host == hubData2?.host && hubData1?.port == hubData2?.port;
 }
 //# sourceMappingURL=pm2Utils.js.map

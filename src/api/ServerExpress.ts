@@ -14,6 +14,7 @@ export async function runExpressServer(port?: number | string): Promise<{ app: e
 
 	await UserService.getInstance().initialize();
 	app.use(express.json());
+	app.use(express.urlencoded({ extended: false }));
 	app.use(morgan("dev")); // Add morgan middleware for logging
 	app.use(SpinalApiMiddleware.checkMonitoringToken);
 

@@ -11,15 +11,6 @@ export declare const config: {
         serverPort: string | undefined;
         systemInfoIntervalMs: string | number;
     };
-    zabbixConfig: {
-        enabled: boolean;
-        serverHost: string | undefined;
-        serverPort: string | number;
-        hostName: string | undefined;
-        pushIntervalMs: string | number;
-        retryBaseMs: string | number;
-        retryMaxMs: string | number;
-    };
 };
 export declare function getConfig(): {
     monitoringPath: string;

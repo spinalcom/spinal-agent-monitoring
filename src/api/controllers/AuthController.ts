@@ -11,6 +11,9 @@ interface AdminLoginResponse {
 	token: string;
 	tokenType: "Bearer";
 	expiresIn: number;
+	access_token: string;
+	token_type: "bearer";
+	expires_in: number;
 }
 
 @Route("auth")
@@ -30,6 +33,9 @@ export class AuthController extends Controller {
 		return {
 			...result,
 			tokenType: "Bearer",
+			access_token: result.token,
+			token_type: "bearer",
+			expires_in: result.expiresIn,
 		};
 	}
 }

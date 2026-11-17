@@ -7,6 +7,7 @@ import { IMemoryInfo } from "../interfaces/IMemoryInfo";
 import { getDiskInfoSync } from "node-disk-info";
 import { ISystemMetrics } from "../interfaces/interfaces";
 import Pm2Service from "./Pm2Service";
+import { getIpAddress } from "../lib";
 
 const execFileAsync = promisify(execFile);
 
@@ -25,17 +26,7 @@ export default class SystemOverviewService {
 	}
 
 	public getIpAddress(): string {
-		const networkInterfaces = os.networkInterfaces();
-		for (const iface of Object.values(networkInterfaces)) {
-			if (iface) {
-				for (const details of iface) {
-					if (!details.internal && details.family === "IPv4") {
-						return details.address;
-					}
-				}
-			}
-		}
-		return "Unknown";
+		return getIpAddress();
 	}
 
 	public getMacAddress(): string | undefined {

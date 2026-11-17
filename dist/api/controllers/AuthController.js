@@ -32,6 +32,9 @@ let AuthController = class AuthController extends tsoa_1.Controller {
         return {
             ...result,
             tokenType: "Bearer",
+            access_token: result.token,
+            token_type: "bearer",
+            expires_in: result.expiresIn,
         };
     }
 };

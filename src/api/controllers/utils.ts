@@ -65,7 +65,8 @@ export function _formatPm2ProcessMetrics(pm2Process: SpinalNode): Pm2ProcessMetr
 }
 
 export function _getBosData(info: IPm2Response): Record<string, any> {
-	const bosName = info.hubData?.bosName || getBosNameFromPath(info.cwd);
+	// const bosName = info.hubData?.bosName || getBosNameFromPath(info.cwd);
+	const bosName = info.hubData?.bosName || info.hubData?.name || formatUrl(info.hubData as { host: string; port: string });
 	return {
 		bosName,
 		...(info.hubData || {}),
@@ -82,4 +83,8 @@ export function getBosNameFromPath(path: string): string {
 	}
 
 	return "";
+}
+
+export function formatUrl(hubData: { host: string; port: string }): string {
+	return `${hubData.host}:${hubData.port}`;
 }

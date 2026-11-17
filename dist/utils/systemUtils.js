@@ -34,7 +34,9 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getDefaultSystemMetrics = getDefaultSystemMetrics;
-exports.getAgentHostName = getAgentHostName;
+exports.isLocalAddress = isLocalAddress;
+exports.getIpAddress = getIpAddress;
+exports.getHubInfo = getHubInfo;
 const os = __importStar(require("os"));
 function getDefaultSystemMetrics() {
     return {
@@ -51,7 +53,34 @@ function getDefaultSystemMetrics() {
         diskUsagePercent: 0,
     };
 }
-function getAgentHostName() {
-    return process.env.AGENT_NAME || os.hostname();
+function isLocalAddress(ipAddress) {
+    const localAddresses = ["127.0.0.1", "localhost"];
+    return localAddresses.includes(ipAddress);
+}
+function getIpAddress() {
+    const networkInterfaces = os.networkInterfaces();
+    for (const iface of Object.values(networkInterfaces)) {
+        if (iface) {
+            for (const details of iface) {
+                if (!details.internal && details.family === "IPv4") {
+                    return details.address;
+                }
+            }
+        }
+    }
+    return "Unknown";
+}
+function getHubInfo() {
+    let host = process.env.SPINALHUB_IP || "";
+    let port = process.env.SPINALHUB_PORT || "";
+    if (port.length === 0)
+        return null;
+    if (!port.endsWith("0"))
+        port = port.replace(/.$/, "0");
+    if (!host)
+        return null;
+    if (isLocalAddress(host))
+        host = getIpAddress();
+    return { host, port: Number(port) };
 }
 //# sourceMappingURL=systemUtils.js.map

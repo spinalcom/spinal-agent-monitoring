@@ -350,6 +350,7 @@ class GraphService {
                 out: pm2Env?.pm_out_log_path,
                 err: pm2Env?.pm_err_log_path,
             },
+            hubData: pm2Process.hubData,
         };
     }
     _updateOrganConfigData(processNode, configData) {

@@ -17,6 +17,34 @@ export function getDefaultSystemMetrics(): ISystemMetrics {
 	};
 }
 
-export function getAgentHostName(): string {
-	return process.env.AGENT_NAME || os.hostname();
+export function isLocalAddress(ipAddress: string): boolean {
+	const localAddresses = ["127.0.0.1", "localhost"];
+	return localAddresses.includes(ipAddress);
+}
+
+export function getIpAddress(): string {
+	const networkInterfaces = os.networkInterfaces();
+	for (const iface of Object.values(networkInterfaces)) {
+		if (iface) {
+			for (const details of iface) {
+				if (!details.internal && details.family === "IPv4") {
+					return details.address;
+				}
+			}
+		}
+	}
+	return "Unknown";
+}
+
+export function getHubInfo(): { host: string; port: number } | null {
+	let host = process.env.SPINALHUB_IP || "";
+	let port = process.env.SPINALHUB_PORT || "";
+
+	if (port.length === 0) return null;
+	if (!port.endsWith("0")) port = port.replace(/.$/, "0");
+
+	if (!host) return null;
+
+	if (isLocalAddress(host)) host = getIpAddress();
+	return { host, port: Number(port) };
 }

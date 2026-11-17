@@ -1,14 +1,15 @@
 import pm2, { ProcessDescription } from "pm2";
-import { executeCommand, formatProcess } from "../utils/pm2Utils";
+import { executeCommand, formatProcess, getHubDataForProcess, hubDataIsValid, isSameHub } from "../utils/pm2Utils";
 import { ActionResponse, Pm2LogType, Pm2ProcessLogsResponse, Pm2ProcessMetricsResponse, Pm2StatusSummaryResponse } from "../interfaces/IResponses";
 import { SpinalNode } from "spinal-model-graph";
-import { _initLogPathInHub, PROCESS_EVENT, PROCESS_ONLINE, PROCESS_EXIT, PROCESS_DELETE, PROCESS_KILL, PROCESS_EXCEPTION, PROCESS_CONFIG_DATA_CHANGE, PROCESS_HUB_DATA_RESPONSE } from "../utils";
+import { _initLogPathInHub, PROCESS_EVENT, PROCESS_ONLINE, PROCESS_EXIT, PROCESS_DELETE, PROCESS_KILL, PROCESS_EXCEPTION, PROCESS_CONFIG_DATA_CHANGE, PROCESS_HUB_DATA_RESPONSE, getHubInfo, getIpAddress } from "../utils";
 import * as fs from "fs";
 import path from "path";
 import { execFile } from "child_process";
 import { promisify } from "util";
 import { EventEmitter } from "events";
-import { IPm2EventData } from "../interfaces";
+import { IPm2EventData, ISystemMetrics } from "../interfaces";
+import { SystemOverviewService } from ".";
 
 const execFileAsync = promisify(execFile);
 const pm2CliPath = path.join(path.dirname(require.resolve("pm2")), "bin", "pm2");
@@ -24,7 +25,7 @@ class Pm2Service extends EventEmitter {
 	private _pm2LogWatchCallback?: Pm2LogCallback;
 	private _pm2LogWatchSyncTimer?: NodeJS.Timeout;
 	private _isPm2LogBusSubscribed: boolean = false;
-	private _processIdToHubData: Map<string | number, any> = new Map();
+	// private _processIdToHubData: Map<string | number, any> = new Map();
 
 	private constructor() {
 		super();
@@ -537,7 +538,29 @@ class Pm2Service extends EventEmitter {
 				if (err) {
 					reject(err);
 				} else {
-					resolve(processDescriptionList);
+					// return resolve(processDescriptionList);
+
+					const validProcesses = [];
+					const agentHubData = getHubInfo();
+					const localIp = getIpAddress();
+
+					for (const process of processDescriptionList) {
+						const hubData = getHubDataForProcess(process, localIp);
+						(process as any).hubData = hubData;
+
+						if (hubDataIsValid((process as any).hubData) && isSameHub(hubData, agentHubData!)) {
+							validProcesses.push(process);
+						}
+					}
+
+					resolve(validProcesses);
+
+					// const formattedList = processDescriptionList.map((process: any) => {
+					// 	process.hubData = getHubDataForProcess(process);
+					// 	console.log("Hub data for process:", process.pm_id ?? process.name, "is", process.hubData);
+					// 	return process;
+					// });
+					// resolve(formattedList);
 				}
 			});
 		});

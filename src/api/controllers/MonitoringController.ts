@@ -1,6 +1,5 @@
 import { Body, Controller, Get, Path, Post, Query, Response, Route, SuccessResponse, Tags } from "tsoa";
 import { GraphService } from "../services/GraphService";
-import ZabbixSenderService, { Pm2Discovery } from "../../system/ZabbixSenderService";
 import { ActionResponse, ErrorResponse, HealthResponse, Pm2LogType, Pm2ProcessLogsResponse, Pm2ProcessMetricsResponse, Pm2ProcessResponse, Pm2StatusSummaryResponse } from "../../interfaces/IResponses";
 import { IVMResponse } from "../../interfaces/IVMResponse";
 
@@ -13,7 +12,6 @@ export class MonitoringController extends Controller {
 	private readonly graphService = GraphService.getInstance();
 	// private readonly pm2Service = Pm2Service.getInstance();
 	// private readonly systemOverviewService = SystemOverviewService.getInstance();
-	// private readonly zabbixSenderService = ZabbixSenderService.getInstance();
 
 	/**
 	 * Returns a simple health status to confirm the monitoring API is reachable.
@@ -512,18 +510,4 @@ export class MonitoringController extends Controller {
 	// 	}
 	// }
 
-	/**
-	 * Returns a Zabbix LLD-compatible discovery payload for PM2 processes.
-	 */
-	// @Get("{vmKey}/zabbix/discovery")
-	// @SuccessResponse("200", "OK")
-	// public async getZabbixDiscovery(@Path() vmKey: string): Promise<Pm2Discovery | ErrorResponse> {
-	// 	try {
-	// 		void vmKey;
-	// 		return await this.zabbixSenderService.getPm2Discovery();
-	// 	} catch (error: Error | any) {
-	// 		this.setStatus(HTTP_RESPONSES.INTERNAL_SERVER_ERROR.code);
-	// 		return { error: error.message || "Unable to build PM2 discovery payload" };
-	// 	}
-	// }
 }

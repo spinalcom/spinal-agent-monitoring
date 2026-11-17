@@ -16,5 +16,4 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 Object.defineProperty(exports, "__esModule", { value: true });
 __exportStar(require("./Pm2Service"), exports);
 __exportStar(require("./SystemOverviewService"), exports);
-__exportStar(require("./ZabbixSenderService"), exports);
 //# sourceMappingURL=index.js.map

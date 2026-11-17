@@ -2,7 +2,7 @@ import { runExpressServer } from "./api";
 import { ConfigFileService, GraphService } from "./api/services";
 import { SpinalhubService } from "./api/services/SpinalhubService";
 import type { SpinalContext } from "spinal-model-graph";
-import { Pm2LogPayload, Pm2Service, SystemOverviewService, ZabbixSenderService } from "./system";
+import { Pm2LogPayload, Pm2Service, SystemOverviewService } from "./system";
 import os from "os";
 import lodash from "lodash";
 import { IPm2EventData } from "./interfaces";
@@ -19,7 +19,6 @@ type RuntimeServices = {
 	graphService: GraphService;
 	systemOverviewService: SystemOverviewService;
 	pm2Service: Pm2Service;
-	zabbixSenderService: ZabbixSenderService;
 };
 
 function connectToSpinalhub(): spinal.FileSystem {
@@ -48,7 +47,6 @@ function getServices(): RuntimeServices {
 		graphService: GraphService.getInstance(),
 		systemOverviewService: SystemOverviewService.getInstance(),
 		pm2Service: Pm2Service.getInstance(),
-		zabbixSenderService: ZabbixSenderService.getInstance(),
 	};
 }
 
@@ -170,13 +168,6 @@ async function startPm2Listeners(services: RuntimeServices, vmContext: any): Pro
 	});
 }
 
-function startZabbixPushIfConfigured(zabbixSenderService: ZabbixSenderService): void {
-	if (!zabbixSenderService.isCorrectlyConfigured()) return;
-
-	const interval = process.env.ZABBIX_PUSH_INTERVAL_MS || 15000;
-	zabbixSenderService.startPeriodicPush(Number(interval));
-}
-
 (async () => {
 	try {
 		const services = getServices();
@@ -186,7 +177,6 @@ function startZabbixPushIfConfigured(zabbixSenderService: ZabbixSenderService): 
 
 		startPeriodicMetricsUpdate(services, vmContext);
 		await startPm2Listeners(services, vmContext);
-		startZabbixPushIfConfigured(services.zabbixSenderService);
 
 		const port = Number.parseInt(process.env.SERVER_PORT || "3000", 10);
 		await runExpressServer(port);

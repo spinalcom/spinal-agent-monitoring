@@ -18,9 +18,6 @@ export declare class WebsocketMiddleware {
     startSendingPm2Metrics(): void;
     startSendingPm2Events(): Promise<void>;
     private _sendDataToAllClients;
-    sendZabbixPushEvent(data: {
-        [key: string]: any;
-    }): void;
     sendStreamLogsToAllClients(logPath: string): void;
 }
 export default WebsocketMiddleware;

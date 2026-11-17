@@ -5,6 +5,7 @@ exports._formatPm2Process = _formatPm2Process;
 exports._formatPm2ProcessMetrics = _formatPm2ProcessMetrics;
 exports._getBosData = _getBosData;
 exports.getBosNameFromPath = getBosNameFromPath;
+exports.formatUrl = formatUrl;
 function _formatVmNode(vmNode) {
     const info = vmNode.info.get();
     return {
@@ -63,7 +64,8 @@ function _formatPm2ProcessMetrics(pm2Process) {
     };
 }
 function _getBosData(info) {
-    const bosName = info.hubData?.bosName || getBosNameFromPath(info.cwd);
+    // const bosName = info.hubData?.bosName || getBosNameFromPath(info.cwd);
+    const bosName = info.hubData?.bosName || info.hubData?.name || formatUrl(info.hubData);
     return {
         bosName,
         ...(info.hubData || {}),
@@ -76,5 +78,8 @@ function getBosNameFromPath(path) {
         return splittedPath[spinalcomIndex + 1];
     }
     return "";
+}
+function formatUrl(hubData) {
+    return `${hubData.host}:${hubData.port}`;
 }
 //# sourceMappingURL=utils.js.map

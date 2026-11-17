@@ -10,6 +10,7 @@ const fs_1 = require("fs");
 const util_1 = require("util");
 const node_disk_info_1 = require("node-disk-info");
 const Pm2Service_1 = __importDefault(require("./Pm2Service"));
+const lib_1 = require("../lib");
 const execFileAsync = (0, util_1.promisify)(child_process_1.execFile);
 class SystemOverviewService {
     constructor() { }
@@ -20,17 +21,7 @@ class SystemOverviewService {
         return this._instance;
     }
     getIpAddress() {
-        const networkInterfaces = os_1.default.networkInterfaces();
-        for (const iface of Object.values(networkInterfaces)) {
-            if (iface) {
-                for (const details of iface) {
-                    if (!details.internal && details.family === "IPv4") {
-                        return details.address;
-                    }
-                }
-            }
-        }
-        return "Unknown";
+        return (0, lib_1.getIpAddress)();
     }
     getMacAddress() {
         const interfaces = os_1.default.networkInterfaces();

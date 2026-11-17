@@ -55,24 +55,9 @@ let MonitoringController = class MonitoringController extends tsoa_1.Controller 
         // 		return { error: error.message || "Unable to execute PM2 action" };
         // 	}
         // }
-        /**
-         * Returns a Zabbix LLD-compatible discovery payload for PM2 processes.
-         */
-        // @Get("{vmKey}/zabbix/discovery")
-        // @SuccessResponse("200", "OK")
-        // public async getZabbixDiscovery(@Path() vmKey: string): Promise<Pm2Discovery | ErrorResponse> {
-        // 	try {
-        // 		void vmKey;
-        // 		return await this.zabbixSenderService.getPm2Discovery();
-        // 	} catch (error: Error | any) {
-        // 		this.setStatus(HTTP_RESPONSES.INTERNAL_SERVER_ERROR.code);
-        // 		return { error: error.message || "Unable to build PM2 discovery payload" };
-        // 	}
-        // }
     }
     // private readonly pm2Service = Pm2Service.getInstance();
     // private readonly systemOverviewService = SystemOverviewService.getInstance();
-    // private readonly zabbixSenderService = ZabbixSenderService.getInstance();
     /**
      * Returns a simple health status to confirm the monitoring API is reachable.
      */

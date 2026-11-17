@@ -17,6 +17,7 @@ async function runExpressServer(port) {
     const app = (0, express_1.default)();
     await UserService_1.default.getInstance().initialize();
     app.use(express_1.default.json());
+    app.use(express_1.default.urlencoded({ extended: false }));
     app.use((0, morgan_1.default)("dev")); // Add morgan middleware for logging
     app.use(SpinalApiMiddleware_1.default.checkMonitoringToken);
     (0, swagger_1.InitSwagger)(app);

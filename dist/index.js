@@ -35,7 +35,6 @@ function getServices() {
         graphService: services_1.GraphService.getInstance(),
         systemOverviewService: system_1.SystemOverviewService.getInstance(),
         pm2Service: system_1.Pm2Service.getInstance(),
-        zabbixSenderService: system_1.ZabbixSenderService.getInstance(),
     };
 }
 async function bindCommandList(vmNode) {
@@ -129,12 +128,6 @@ async function startPm2Listeners(services, vmContext) {
         await services.graphService.updatePm2LogFileContent(pm2Node, logType, data.content);
     });
 }
-function startZabbixPushIfConfigured(zabbixSenderService) {
-    if (!zabbixSenderService.isCorrectlyConfigured())
-        return;
-    const interval = process.env.ZABBIX_PUSH_INTERVAL_MS || 15000;
-    zabbixSenderService.startPeriodicPush(Number(interval));
-}
 (async () => {
     try {
         const services = getServices();
@@ -142,7 +135,6 @@ function startZabbixPushIfConfigured(zabbixSenderService) {
         bindCommandList(vmContext);
         startPeriodicMetricsUpdate(services, vmContext);
         await startPm2Listeners(services, vmContext);
-        startZabbixPushIfConfigured(services.zabbixSenderService);
         const port = Number.parseInt(process.env.SERVER_PORT || "3000", 10);
         await (0, api_1.runExpressServer)(port);
     }

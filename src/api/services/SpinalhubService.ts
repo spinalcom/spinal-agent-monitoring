@@ -3,6 +3,7 @@ import { FileSystem, spinalCore } from "spinal-core-connectorjs";
 import type { SpinalGraph } from "spinal-model-graph";
 import { connect } from "tls";
 import ConfigFileService from "./ConfigFileService";
+import { getIpAddress, isLocalAddress } from "../../lib";
 
 export default class SpinalhubService {
 	private static _instance: SpinalhubService;

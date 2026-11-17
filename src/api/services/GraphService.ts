@@ -1,5 +1,5 @@
 import { SPINAL_RELATION_PTR_LST_TYPE, SpinalContext, SpinalGraph, SpinalNode } from "spinal-model-graph";
-import { _initLogPathInHub, getHeapInfo, HAS_LOG, HAS_PM2_PROCESS_RELATION_NAME, METRICS_ENDPOINTS, PM2_LOG_NODE_TYPE, PM2_PROCESS_NODE_TYPE, PROCESS_CONFIG_DATA_CHANGE, PROCESS_DELETE, PROCESS_HUB_DATA_RESPONSE, readFileContent, SPINAL_COMMAND_STATUS, SPINAL_COMMAND_TIMEOUT_MS, uploadFileNewData, VM_CONTEXT_NODE_TYPE, waitUntil, SpinalCommandAction } from "../../utils";
+import { _initLogPathInHub, getHeapInfo, HAS_LOG, HAS_PM2_PROCESS_RELATION_NAME, METRICS_ENDPOINTS, PM2_LOG_NODE_TYPE, PM2_PROCESS_NODE_TYPE, PROCESS_CONFIG_DATA_CHANGE, PROCESS_DELETE, PROCESS_HUB_DATA_RESPONSE, readFileContent, SPINAL_COMMAND_STATUS, SPINAL_COMMAND_TIMEOUT_MS, uploadFileNewData, VM_CONTEXT_NODE_TYPE, waitUntil, SpinalCommandAction, getHubDataForProcess, hubDataIsValid } from "../../utils";
 import { ActionResponse, IPm2EventData, ISystemMetrics, Pm2ProcessLogsResponse } from "../../interfaces";
 import { EndpointService } from "./EndpointService";
 import { SpinalCommand } from "../models";
@@ -337,12 +337,14 @@ export class GraphService {
 			} else if (!processAlreadyExist || processAlreadyExist.getName().get() !== pm2Process.name) {
 				if (processAlreadyExist) {
 					await this.removePm2ProcessFromGraph(context, processAlreadyExist);
+
 					for (const [key, node] of Object.entries(existingPm2Processes)) {
 						if (node === processAlreadyExist) delete existingPm2Processes[key];
 					}
 				}
 
 				processAlreadyExist = await this._addPm2ProcessToGraph(context, pm2Process);
+
 				if (processAlreadyExist) {
 					if (pm2Process.pm_id !== undefined && pm2Process.pm_id !== null) existingPm2Processes[pm2Process.pm_id] = processAlreadyExist;
 					if (pm2Process.name) existingPm2Processes[pm2Process.name] = processAlreadyExist;
@@ -400,6 +402,8 @@ export class GraphService {
 				out: pm2Env?.pm_out_log_path,
 				err: pm2Env?.pm_err_log_path,
 			},
+
+			hubData: (pm2Process as any).hubData,
 		};
 	}
 

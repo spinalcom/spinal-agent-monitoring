@@ -1,4 +1,4 @@
-import { LOG_STREAM_EVENT_TYPE, MONITORING_MESSAGE_TYPE, PM2_PROCESS_EVENT_TYPE, SYSTEM_METRICS_EVENT_TYPE, ZABBIX_PUSH_EVENT_TYPE } from "../../utils/constants";
+import { LOG_STREAM_EVENT_TYPE, MONITORING_MESSAGE_TYPE, PM2_PROCESS_EVENT_TYPE, SYSTEM_METRICS_EVENT_TYPE } from "../../utils/constants";
 import SystemOverviewService from "../../system/SystemOverviewService";
 import { Pm2Service } from "../../system/Pm2Service";
 import fs from "fs";
@@ -130,10 +130,6 @@ export class WebsocketMiddleware {
 				break;
 			}
 
-			case ZABBIX_PUSH_EVENT_TYPE:
-				this._addClientToType(ZABBIX_PUSH_EVENT_TYPE, client);
-				break;
-
 			default:
 				this.sendError(client, "Unknown request type");
 		}
@@ -196,10 +192,6 @@ export class WebsocketMiddleware {
 				client.emit(MONITORING_MESSAGE_TYPE, message);
 			}
 		}
-	}
-
-	public sendZabbixPushEvent(data: { [key: string]: any }) {
-		this._sendDataToAllClients({ type: ZABBIX_PUSH_EVENT_TYPE, data });
 	}
 
 	public sendStreamLogsToAllClients(logPath: string) {

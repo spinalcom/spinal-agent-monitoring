@@ -3,19 +3,16 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.RegisterRoutes = RegisterRoutes;
 const runtime_1 = require("@tsoa/runtime");
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-const MonitoringController_1 = require("./controllers/MonitoringController");
-// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 const EndpointController_1 = require("./controllers/EndpointController");
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 const AuthController_1 = require("./controllers/AuthController");
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+const MonitoringController_1 = require("./controllers/MonitoringController");
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 const models = {
-    "HealthResponse": {
-        "dataType": "refObject",
-        "properties": {
-            "status": { "dataType": "string", "required": true },
-        },
-        "additionalProperties": false,
+    "EndpointValueResponse": {
+        "dataType": "refAlias",
+        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "unit": { "dataType": "union", "subSchemas": [{ "dataType": "string" }, { "dataType": "enum", "enums": [null] }], "required": true }, "currentValue": { "dataType": "union", "subSchemas": [{ "dataType": "string" }, { "dataType": "double" }, { "dataType": "boolean" }, { "dataType": "enum", "enums": [null] }], "required": true }, "name": { "dataType": "string", "required": true }, "id": { "dataType": "string", "required": true } }, "validators": {} },
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "ErrorResponse": {
@@ -28,12 +25,52 @@ const models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "EndpointTimeSeriesResponse": {
+        "dataType": "refAlias",
+        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "values": { "dataType": "array", "array": { "dataType": "nestedObjectLiteral", "nestedProperties": { "value": { "dataType": "union", "subSchemas": [{ "dataType": "double" }, { "dataType": "boolean" }], "required": true }, "date": { "dataType": "double", "required": true } } }, "required": true }, "name": { "dataType": "string", "required": true }, "id": { "dataType": "string", "required": true } }, "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "ActionResponse": {
         "dataType": "refObject",
         "properties": {
             "message": { "dataType": "string", "required": true },
             "success": { "dataType": "boolean" },
             "key": { "dataType": "union", "subSchemas": [{ "dataType": "string" }, { "dataType": "double" }] },
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "UpdateMaxDayBody": {
+        "dataType": "refAlias",
+        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "maxDay": { "dataType": "union", "subSchemas": [{ "dataType": "double" }, { "dataType": "string" }], "required": true } }, "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "AdminLoginResponse": {
+        "dataType": "refObject",
+        "properties": {
+            "token": { "dataType": "string", "required": true },
+            "tokenType": { "dataType": "enum", "enums": ["Bearer"], "required": true },
+            "expiresIn": { "dataType": "double", "required": true },
+            "access_token": { "dataType": "string", "required": true },
+            "token_type": { "dataType": "enum", "enums": ["bearer"], "required": true },
+            "expires_in": { "dataType": "double", "required": true },
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "AdminLoginRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "username": { "dataType": "string", "required": true },
+            "password": { "dataType": "string", "required": true },
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "HealthResponse": {
+        "dataType": "refObject",
+        "properties": {
+            "status": { "dataType": "string", "required": true },
         },
         "additionalProperties": false,
     },
@@ -137,40 +174,6 @@ const models = {
         "type": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["out"] }, { "dataType": "enum", "enums": ["err"] }, { "dataType": "enum", "enums": ["all"] }], "validators": {} },
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "EndpointValueResponse": {
-        "dataType": "refAlias",
-        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "unit": { "dataType": "union", "subSchemas": [{ "dataType": "string" }, { "dataType": "enum", "enums": [null] }], "required": true }, "currentValue": { "dataType": "union", "subSchemas": [{ "dataType": "string" }, { "dataType": "double" }, { "dataType": "boolean" }, { "dataType": "enum", "enums": [null] }], "required": true }, "name": { "dataType": "string", "required": true }, "id": { "dataType": "string", "required": true } }, "validators": {} },
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "EndpointTimeSeriesResponse": {
-        "dataType": "refAlias",
-        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "values": { "dataType": "array", "array": { "dataType": "nestedObjectLiteral", "nestedProperties": { "value": { "dataType": "union", "subSchemas": [{ "dataType": "double" }, { "dataType": "boolean" }], "required": true }, "date": { "dataType": "double", "required": true } } }, "required": true }, "name": { "dataType": "string", "required": true }, "id": { "dataType": "string", "required": true } }, "validators": {} },
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "UpdateMaxDayBody": {
-        "dataType": "refAlias",
-        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "maxDay": { "dataType": "union", "subSchemas": [{ "dataType": "double" }, { "dataType": "string" }], "required": true } }, "validators": {} },
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "AdminLoginResponse": {
-        "dataType": "refObject",
-        "properties": {
-            "token": { "dataType": "string", "required": true },
-            "tokenType": { "dataType": "enum", "enums": ["Bearer"], "required": true },
-            "expiresIn": { "dataType": "double", "required": true },
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "AdminLoginRequest": {
-        "dataType": "refObject",
-        "properties": {
-            "username": { "dataType": "string", "required": true },
-            "password": { "dataType": "string", "required": true },
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 };
 const templateService = new runtime_1.ExpressTemplateService(models, { "noImplicitAdditionalProperties": "silently-remove-extras", "bodyCoercion": true });
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
@@ -179,428 +182,6 @@ function RegisterRoutes(app) {
     //  NOTE: If you do not see routes for all of your controllers in this file, then you might not have informed tsoa of where to look
     //      Please look into the "controllerPathGlobs" config option described in the readme: https://github.com/lukeautry/tsoa
     // ###########################################################################################################
-    const argsMonitoringController_getHealth = {};
-    app.get('/monitoring/health', ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController)), ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController.prototype.getHealth)), async function MonitoringController_getHealth(request, response, next) {
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        let validatedArgs = [];
-        try {
-            validatedArgs = templateService.getValidatedArgs({ args: argsMonitoringController_getHealth, request, response });
-            const controller = new MonitoringController_1.MonitoringController();
-            await templateService.apiHandler({
-                methodName: 'getHealth',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: 200,
-            });
-        }
-        catch (err) {
-            return next(err);
-        }
-    });
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    const argsMonitoringController_clearCache = {
-        vmKey: { "in": "path", "name": "vmKey", "required": true, "dataType": "string" },
-    };
-    app.post('/monitoring/:vmKey/cache/clear', ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController)), ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController.prototype.clearCache)), async function MonitoringController_clearCache(request, response, next) {
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        let validatedArgs = [];
-        try {
-            validatedArgs = templateService.getValidatedArgs({ args: argsMonitoringController_clearCache, request, response });
-            const controller = new MonitoringController_1.MonitoringController();
-            await templateService.apiHandler({
-                methodName: 'clearCache',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: 200,
-            });
-        }
-        catch (err) {
-            return next(err);
-        }
-    });
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    const argsMonitoringController_getAllVirtualMachines = {};
-    app.get('/monitoring/all_vms', ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController)), ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController.prototype.getAllVirtualMachines)), async function MonitoringController_getAllVirtualMachines(request, response, next) {
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        let validatedArgs = [];
-        try {
-            validatedArgs = templateService.getValidatedArgs({ args: argsMonitoringController_getAllVirtualMachines, request, response });
-            const controller = new MonitoringController_1.MonitoringController();
-            await templateService.apiHandler({
-                methodName: 'getAllVirtualMachines',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: 200,
-            });
-        }
-        catch (err) {
-            return next(err);
-        }
-    });
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    const argsMonitoringController_getVirtualMachine = {
-        vmKey: { "in": "path", "name": "vmKey", "required": true, "dataType": "string" },
-    };
-    app.get('/monitoring/:vmKey', ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController)), ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController.prototype.getVirtualMachine)), async function MonitoringController_getVirtualMachine(request, response, next) {
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        let validatedArgs = [];
-        try {
-            validatedArgs = templateService.getValidatedArgs({ args: argsMonitoringController_getVirtualMachine, request, response });
-            const controller = new MonitoringController_1.MonitoringController();
-            await templateService.apiHandler({
-                methodName: 'getVirtualMachine',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: 200,
-            });
-        }
-        catch (err) {
-            return next(err);
-        }
-    });
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    const argsMonitoringController_getSystemMetrics = {
-        vmKey: { "in": "path", "name": "vmKey", "required": true, "dataType": "string" },
-    };
-    app.get('/monitoring/:vmKey/system', ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController)), ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController.prototype.getSystemMetrics)), async function MonitoringController_getSystemMetrics(request, response, next) {
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        let validatedArgs = [];
-        try {
-            validatedArgs = templateService.getValidatedArgs({ args: argsMonitoringController_getSystemMetrics, request, response });
-            const controller = new MonitoringController_1.MonitoringController();
-            await templateService.apiHandler({
-                methodName: 'getSystemMetrics',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: 200,
-            });
-        }
-        catch (err) {
-            return next(err);
-        }
-    });
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    const argsMonitoringController_getApps = {
-        vmKey: { "in": "path", "name": "vmKey", "required": true, "dataType": "string" },
-        classifyByBos: { "in": "query", "name": "classifyByBos", "dataType": "boolean" },
-    };
-    app.get('/monitoring/:vmKey/apps', ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController)), ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController.prototype.getApps)), async function MonitoringController_getApps(request, response, next) {
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        let validatedArgs = [];
-        try {
-            validatedArgs = templateService.getValidatedArgs({ args: argsMonitoringController_getApps, request, response });
-            const controller = new MonitoringController_1.MonitoringController();
-            await templateService.apiHandler({
-                methodName: 'getApps',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: 200,
-            });
-        }
-        catch (err) {
-            return next(err);
-        }
-    });
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    const argsMonitoringController_getClassifiedApps = {
-        vmKey: { "in": "path", "name": "vmKey", "required": true, "dataType": "string" },
-    };
-    app.get('/monitoring/:vmKey/apps/classified', ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController)), ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController.prototype.getClassifiedApps)), async function MonitoringController_getClassifiedApps(request, response, next) {
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        let validatedArgs = [];
-        try {
-            validatedArgs = templateService.getValidatedArgs({ args: argsMonitoringController_getClassifiedApps, request, response });
-            const controller = new MonitoringController_1.MonitoringController();
-            await templateService.apiHandler({
-                methodName: 'getClassifiedApps',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: 200,
-            });
-        }
-        catch (err) {
-            return next(err);
-        }
-    });
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    const argsMonitoringController_getAppsByBosName = {
-        vmKey: { "in": "path", "name": "vmKey", "required": true, "dataType": "string" },
-        bosName: { "in": "query", "name": "bosName", "required": true, "dataType": "string" },
-    };
-    app.get('/monitoring/:vmKey/apps/by-bos-name', ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController)), ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController.prototype.getAppsByBosName)), async function MonitoringController_getAppsByBosName(request, response, next) {
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        let validatedArgs = [];
-        try {
-            validatedArgs = templateService.getValidatedArgs({ args: argsMonitoringController_getAppsByBosName, request, response });
-            const controller = new MonitoringController_1.MonitoringController();
-            await templateService.apiHandler({
-                methodName: 'getAppsByBosName',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: 200,
-            });
-        }
-        catch (err) {
-            return next(err);
-        }
-    });
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    const argsMonitoringController_getAppsMetrics = {
-        vmKey: { "in": "path", "name": "vmKey", "required": true, "dataType": "string" },
-    };
-    app.get('/monitoring/:vmKey/apps/metrics', ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController)), ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController.prototype.getAppsMetrics)), async function MonitoringController_getAppsMetrics(request, response, next) {
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        let validatedArgs = [];
-        try {
-            validatedArgs = templateService.getValidatedArgs({ args: argsMonitoringController_getAppsMetrics, request, response });
-            const controller = new MonitoringController_1.MonitoringController();
-            await templateService.apiHandler({
-                methodName: 'getAppsMetrics',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: 200,
-            });
-        }
-        catch (err) {
-            return next(err);
-        }
-    });
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    const argsMonitoringController_getAppsStatusSummary = {
-        vmKey: { "in": "path", "name": "vmKey", "required": true, "dataType": "string" },
-    };
-    app.get('/monitoring/:vmKey/apps/status/summary', ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController)), ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController.prototype.getAppsStatusSummary)), async function MonitoringController_getAppsStatusSummary(request, response, next) {
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        let validatedArgs = [];
-        try {
-            validatedArgs = templateService.getValidatedArgs({ args: argsMonitoringController_getAppsStatusSummary, request, response });
-            const controller = new MonitoringController_1.MonitoringController();
-            await templateService.apiHandler({
-                methodName: 'getAppsStatusSummary',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: 200,
-            });
-        }
-        catch (err) {
-            return next(err);
-        }
-    });
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    const argsMonitoringController_getAppByKey = {
-        vmKey: { "in": "path", "name": "vmKey", "required": true, "dataType": "string" },
-        key: { "in": "path", "name": "key", "required": true, "dataType": "string" },
-    };
-    app.get('/monitoring/:vmKey/apps/:key', ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController)), ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController.prototype.getAppByKey)), async function MonitoringController_getAppByKey(request, response, next) {
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        let validatedArgs = [];
-        try {
-            validatedArgs = templateService.getValidatedArgs({ args: argsMonitoringController_getAppByKey, request, response });
-            const controller = new MonitoringController_1.MonitoringController();
-            await templateService.apiHandler({
-                methodName: 'getAppByKey',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: undefined,
-            });
-        }
-        catch (err) {
-            return next(err);
-        }
-    });
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    const argsMonitoringController_getAppMetricsByKey = {
-        vmKey: { "in": "path", "name": "vmKey", "required": true, "dataType": "string" },
-        key: { "in": "path", "name": "key", "required": true, "dataType": "string" },
-    };
-    app.get('/monitoring/:vmKey/apps/:key/metrics', ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController)), ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController.prototype.getAppMetricsByKey)), async function MonitoringController_getAppMetricsByKey(request, response, next) {
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        let validatedArgs = [];
-        try {
-            validatedArgs = templateService.getValidatedArgs({ args: argsMonitoringController_getAppMetricsByKey, request, response });
-            const controller = new MonitoringController_1.MonitoringController();
-            await templateService.apiHandler({
-                methodName: 'getAppMetricsByKey',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: undefined,
-            });
-        }
-        catch (err) {
-            return next(err);
-        }
-    });
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    const argsMonitoringController_getAppLogsByKey = {
-        vmKey: { "in": "path", "name": "vmKey", "required": true, "dataType": "string" },
-        key: { "in": "path", "name": "key", "required": true, "dataType": "string" },
-        tail: { "default": 100, "in": "query", "name": "tail", "dataType": "double" },
-        logType: { "default": "all", "in": "query", "name": "logType", "ref": "Pm2LogType" },
-    };
-    app.get('/monitoring/:vmKey/apps/:key/logs', ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController)), ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController.prototype.getAppLogsByKey)), async function MonitoringController_getAppLogsByKey(request, response, next) {
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        let validatedArgs = [];
-        try {
-            validatedArgs = templateService.getValidatedArgs({ args: argsMonitoringController_getAppLogsByKey, request, response });
-            const controller = new MonitoringController_1.MonitoringController();
-            await templateService.apiHandler({
-                methodName: 'getAppLogsByKey',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: undefined,
-            });
-        }
-        catch (err) {
-            return next(err);
-        }
-    });
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    const argsMonitoringController_startApp = {
-        vmKey: { "in": "path", "name": "vmKey", "required": true, "dataType": "string" },
-        data: { "in": "body", "name": "data", "required": true, "dataType": "nestedObjectLiteral", "nestedProperties": { "keys": { "dataType": "array", "array": { "dataType": "union", "subSchemas": [{ "dataType": "string" }, { "dataType": "double" }] }, "required": true } } },
-    };
-    app.post('/monitoring/:vmKey/apps/start', ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController)), ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController.prototype.startApp)), async function MonitoringController_startApp(request, response, next) {
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        let validatedArgs = [];
-        try {
-            validatedArgs = templateService.getValidatedArgs({ args: argsMonitoringController_startApp, request, response });
-            const controller = new MonitoringController_1.MonitoringController();
-            await templateService.apiHandler({
-                methodName: 'startApp',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: undefined,
-            });
-        }
-        catch (err) {
-            return next(err);
-        }
-    });
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    const argsMonitoringController_stopApp = {
-        vmKey: { "in": "path", "name": "vmKey", "required": true, "dataType": "string" },
-        data: { "in": "body", "name": "data", "required": true, "dataType": "nestedObjectLiteral", "nestedProperties": { "keys": { "dataType": "array", "array": { "dataType": "union", "subSchemas": [{ "dataType": "string" }, { "dataType": "double" }] }, "required": true } } },
-    };
-    app.post('/monitoring/:vmKey/apps/stop', ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController)), ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController.prototype.stopApp)), async function MonitoringController_stopApp(request, response, next) {
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        let validatedArgs = [];
-        try {
-            validatedArgs = templateService.getValidatedArgs({ args: argsMonitoringController_stopApp, request, response });
-            const controller = new MonitoringController_1.MonitoringController();
-            await templateService.apiHandler({
-                methodName: 'stopApp',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: undefined,
-            });
-        }
-        catch (err) {
-            return next(err);
-        }
-    });
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    const argsMonitoringController_restartApp = {
-        vmKey: { "in": "path", "name": "vmKey", "required": true, "dataType": "string" },
-        data: { "in": "body", "name": "data", "required": true, "dataType": "nestedObjectLiteral", "nestedProperties": { "keys": { "dataType": "array", "array": { "dataType": "union", "subSchemas": [{ "dataType": "string" }, { "dataType": "double" }] }, "required": true } } },
-    };
-    app.post('/monitoring/:vmKey/apps/restart', ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController)), ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController.prototype.restartApp)), async function MonitoringController_restartApp(request, response, next) {
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        let validatedArgs = [];
-        try {
-            validatedArgs = templateService.getValidatedArgs({ args: argsMonitoringController_restartApp, request, response });
-            const controller = new MonitoringController_1.MonitoringController();
-            await templateService.apiHandler({
-                methodName: 'restartApp',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: undefined,
-            });
-        }
-        catch (err) {
-            return next(err);
-        }
-    });
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    const argsMonitoringController_reloadApp = {
-        vmKey: { "in": "path", "name": "vmKey", "required": true, "dataType": "string" },
-        data: { "in": "body", "name": "data", "required": true, "dataType": "nestedObjectLiteral", "nestedProperties": { "keys": { "dataType": "array", "array": { "dataType": "union", "subSchemas": [{ "dataType": "string" }, { "dataType": "double" }] }, "required": true } } },
-    };
-    app.post('/monitoring/:vmKey/apps/reload', ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController)), ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController.prototype.reloadApp)), async function MonitoringController_reloadApp(request, response, next) {
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        let validatedArgs = [];
-        try {
-            validatedArgs = templateService.getValidatedArgs({ args: argsMonitoringController_reloadApp, request, response });
-            const controller = new MonitoringController_1.MonitoringController();
-            await templateService.apiHandler({
-                methodName: 'reloadApp',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: undefined,
-            });
-        }
-        catch (err) {
-            return next(err);
-        }
-    });
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    const argsMonitoringController_deleteApp = {
-        vmKey: { "in": "path", "name": "vmKey", "required": true, "dataType": "string" },
-        data: { "in": "body", "name": "data", "required": true, "dataType": "nestedObjectLiteral", "nestedProperties": { "keys": { "dataType": "array", "array": { "dataType": "union", "subSchemas": [{ "dataType": "string" }, { "dataType": "double" }] }, "required": true } } },
-    };
-    app.post('/monitoring/:vmKey/apps/delete', ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController)), ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController.prototype.deleteApp)), async function MonitoringController_deleteApp(request, response, next) {
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        let validatedArgs = [];
-        try {
-            validatedArgs = templateService.getValidatedArgs({ args: argsMonitoringController_deleteApp, request, response });
-            const controller = new MonitoringController_1.MonitoringController();
-            await templateService.apiHandler({
-                methodName: 'deleteApp',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: undefined,
-            });
-        }
-        catch (err) {
-            return next(err);
-        }
-    });
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     const argsEndpointController_getPm2RamHistoryValue = {
         vmKey: { "in": "path", "name": "vmKey", "required": true, "dataType": "string" },
         pm2Key: { "in": "path", "name": "pm2Key", "required": true, "dataType": "string" },
@@ -1162,6 +743,428 @@ function RegisterRoutes(app) {
                 next,
                 validatedArgs,
                 successStatus: 200,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsMonitoringController_getHealth = {};
+    app.get('/monitoring/health', ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController)), ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController.prototype.getHealth)), async function MonitoringController_getHealth(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsMonitoringController_getHealth, request, response });
+            const controller = new MonitoringController_1.MonitoringController();
+            await templateService.apiHandler({
+                methodName: 'getHealth',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsMonitoringController_clearCache = {
+        vmKey: { "in": "path", "name": "vmKey", "required": true, "dataType": "string" },
+    };
+    app.post('/monitoring/:vmKey/cache/clear', ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController)), ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController.prototype.clearCache)), async function MonitoringController_clearCache(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsMonitoringController_clearCache, request, response });
+            const controller = new MonitoringController_1.MonitoringController();
+            await templateService.apiHandler({
+                methodName: 'clearCache',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsMonitoringController_getAllVirtualMachines = {};
+    app.get('/monitoring/all_vms', ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController)), ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController.prototype.getAllVirtualMachines)), async function MonitoringController_getAllVirtualMachines(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsMonitoringController_getAllVirtualMachines, request, response });
+            const controller = new MonitoringController_1.MonitoringController();
+            await templateService.apiHandler({
+                methodName: 'getAllVirtualMachines',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsMonitoringController_getVirtualMachine = {
+        vmKey: { "in": "path", "name": "vmKey", "required": true, "dataType": "string" },
+    };
+    app.get('/monitoring/:vmKey', ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController)), ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController.prototype.getVirtualMachine)), async function MonitoringController_getVirtualMachine(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsMonitoringController_getVirtualMachine, request, response });
+            const controller = new MonitoringController_1.MonitoringController();
+            await templateService.apiHandler({
+                methodName: 'getVirtualMachine',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsMonitoringController_getSystemMetrics = {
+        vmKey: { "in": "path", "name": "vmKey", "required": true, "dataType": "string" },
+    };
+    app.get('/monitoring/:vmKey/system', ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController)), ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController.prototype.getSystemMetrics)), async function MonitoringController_getSystemMetrics(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsMonitoringController_getSystemMetrics, request, response });
+            const controller = new MonitoringController_1.MonitoringController();
+            await templateService.apiHandler({
+                methodName: 'getSystemMetrics',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsMonitoringController_getApps = {
+        vmKey: { "in": "path", "name": "vmKey", "required": true, "dataType": "string" },
+        classifyByBos: { "in": "query", "name": "classifyByBos", "dataType": "boolean" },
+    };
+    app.get('/monitoring/:vmKey/apps', ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController)), ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController.prototype.getApps)), async function MonitoringController_getApps(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsMonitoringController_getApps, request, response });
+            const controller = new MonitoringController_1.MonitoringController();
+            await templateService.apiHandler({
+                methodName: 'getApps',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsMonitoringController_getClassifiedApps = {
+        vmKey: { "in": "path", "name": "vmKey", "required": true, "dataType": "string" },
+    };
+    app.get('/monitoring/:vmKey/apps/classified', ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController)), ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController.prototype.getClassifiedApps)), async function MonitoringController_getClassifiedApps(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsMonitoringController_getClassifiedApps, request, response });
+            const controller = new MonitoringController_1.MonitoringController();
+            await templateService.apiHandler({
+                methodName: 'getClassifiedApps',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsMonitoringController_getAppsByBosName = {
+        vmKey: { "in": "path", "name": "vmKey", "required": true, "dataType": "string" },
+        bosName: { "in": "query", "name": "bosName", "required": true, "dataType": "string" },
+    };
+    app.get('/monitoring/:vmKey/apps/by-bos-name', ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController)), ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController.prototype.getAppsByBosName)), async function MonitoringController_getAppsByBosName(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsMonitoringController_getAppsByBosName, request, response });
+            const controller = new MonitoringController_1.MonitoringController();
+            await templateService.apiHandler({
+                methodName: 'getAppsByBosName',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsMonitoringController_getAppsMetrics = {
+        vmKey: { "in": "path", "name": "vmKey", "required": true, "dataType": "string" },
+    };
+    app.get('/monitoring/:vmKey/apps/metrics', ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController)), ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController.prototype.getAppsMetrics)), async function MonitoringController_getAppsMetrics(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsMonitoringController_getAppsMetrics, request, response });
+            const controller = new MonitoringController_1.MonitoringController();
+            await templateService.apiHandler({
+                methodName: 'getAppsMetrics',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsMonitoringController_getAppsStatusSummary = {
+        vmKey: { "in": "path", "name": "vmKey", "required": true, "dataType": "string" },
+    };
+    app.get('/monitoring/:vmKey/apps/status/summary', ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController)), ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController.prototype.getAppsStatusSummary)), async function MonitoringController_getAppsStatusSummary(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsMonitoringController_getAppsStatusSummary, request, response });
+            const controller = new MonitoringController_1.MonitoringController();
+            await templateService.apiHandler({
+                methodName: 'getAppsStatusSummary',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsMonitoringController_getAppByKey = {
+        vmKey: { "in": "path", "name": "vmKey", "required": true, "dataType": "string" },
+        key: { "in": "path", "name": "key", "required": true, "dataType": "string" },
+    };
+    app.get('/monitoring/:vmKey/apps/:key', ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController)), ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController.prototype.getAppByKey)), async function MonitoringController_getAppByKey(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsMonitoringController_getAppByKey, request, response });
+            const controller = new MonitoringController_1.MonitoringController();
+            await templateService.apiHandler({
+                methodName: 'getAppByKey',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsMonitoringController_getAppMetricsByKey = {
+        vmKey: { "in": "path", "name": "vmKey", "required": true, "dataType": "string" },
+        key: { "in": "path", "name": "key", "required": true, "dataType": "string" },
+    };
+    app.get('/monitoring/:vmKey/apps/:key/metrics', ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController)), ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController.prototype.getAppMetricsByKey)), async function MonitoringController_getAppMetricsByKey(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsMonitoringController_getAppMetricsByKey, request, response });
+            const controller = new MonitoringController_1.MonitoringController();
+            await templateService.apiHandler({
+                methodName: 'getAppMetricsByKey',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsMonitoringController_getAppLogsByKey = {
+        vmKey: { "in": "path", "name": "vmKey", "required": true, "dataType": "string" },
+        key: { "in": "path", "name": "key", "required": true, "dataType": "string" },
+        tail: { "default": 100, "in": "query", "name": "tail", "dataType": "double" },
+        logType: { "default": "all", "in": "query", "name": "logType", "ref": "Pm2LogType" },
+    };
+    app.get('/monitoring/:vmKey/apps/:key/logs', ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController)), ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController.prototype.getAppLogsByKey)), async function MonitoringController_getAppLogsByKey(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsMonitoringController_getAppLogsByKey, request, response });
+            const controller = new MonitoringController_1.MonitoringController();
+            await templateService.apiHandler({
+                methodName: 'getAppLogsByKey',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsMonitoringController_startApp = {
+        vmKey: { "in": "path", "name": "vmKey", "required": true, "dataType": "string" },
+        data: { "in": "body", "name": "data", "required": true, "dataType": "nestedObjectLiteral", "nestedProperties": { "keys": { "dataType": "array", "array": { "dataType": "union", "subSchemas": [{ "dataType": "string" }, { "dataType": "double" }] }, "required": true } } },
+    };
+    app.post('/monitoring/:vmKey/apps/start', ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController)), ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController.prototype.startApp)), async function MonitoringController_startApp(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsMonitoringController_startApp, request, response });
+            const controller = new MonitoringController_1.MonitoringController();
+            await templateService.apiHandler({
+                methodName: 'startApp',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsMonitoringController_stopApp = {
+        vmKey: { "in": "path", "name": "vmKey", "required": true, "dataType": "string" },
+        data: { "in": "body", "name": "data", "required": true, "dataType": "nestedObjectLiteral", "nestedProperties": { "keys": { "dataType": "array", "array": { "dataType": "union", "subSchemas": [{ "dataType": "string" }, { "dataType": "double" }] }, "required": true } } },
+    };
+    app.post('/monitoring/:vmKey/apps/stop', ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController)), ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController.prototype.stopApp)), async function MonitoringController_stopApp(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsMonitoringController_stopApp, request, response });
+            const controller = new MonitoringController_1.MonitoringController();
+            await templateService.apiHandler({
+                methodName: 'stopApp',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsMonitoringController_restartApp = {
+        vmKey: { "in": "path", "name": "vmKey", "required": true, "dataType": "string" },
+        data: { "in": "body", "name": "data", "required": true, "dataType": "nestedObjectLiteral", "nestedProperties": { "keys": { "dataType": "array", "array": { "dataType": "union", "subSchemas": [{ "dataType": "string" }, { "dataType": "double" }] }, "required": true } } },
+    };
+    app.post('/monitoring/:vmKey/apps/restart', ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController)), ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController.prototype.restartApp)), async function MonitoringController_restartApp(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsMonitoringController_restartApp, request, response });
+            const controller = new MonitoringController_1.MonitoringController();
+            await templateService.apiHandler({
+                methodName: 'restartApp',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsMonitoringController_reloadApp = {
+        vmKey: { "in": "path", "name": "vmKey", "required": true, "dataType": "string" },
+        data: { "in": "body", "name": "data", "required": true, "dataType": "nestedObjectLiteral", "nestedProperties": { "keys": { "dataType": "array", "array": { "dataType": "union", "subSchemas": [{ "dataType": "string" }, { "dataType": "double" }] }, "required": true } } },
+    };
+    app.post('/monitoring/:vmKey/apps/reload', ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController)), ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController.prototype.reloadApp)), async function MonitoringController_reloadApp(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsMonitoringController_reloadApp, request, response });
+            const controller = new MonitoringController_1.MonitoringController();
+            await templateService.apiHandler({
+                methodName: 'reloadApp',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsMonitoringController_deleteApp = {
+        vmKey: { "in": "path", "name": "vmKey", "required": true, "dataType": "string" },
+        data: { "in": "body", "name": "data", "required": true, "dataType": "nestedObjectLiteral", "nestedProperties": { "keys": { "dataType": "array", "array": { "dataType": "union", "subSchemas": [{ "dataType": "string" }, { "dataType": "double" }] }, "required": true } } },
+    };
+    app.post('/monitoring/:vmKey/apps/delete', ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController)), ...((0, runtime_1.fetchMiddlewares)(MonitoringController_1.MonitoringController.prototype.deleteApp)), async function MonitoringController_deleteApp(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsMonitoringController_deleteApp, request, response });
+            const controller = new MonitoringController_1.MonitoringController();
+            await templateService.apiHandler({
+                methodName: 'deleteApp',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
             });
         }
         catch (err) {

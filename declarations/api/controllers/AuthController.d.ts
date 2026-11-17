@@ -8,6 +8,9 @@ interface AdminLoginResponse {
     token: string;
     tokenType: "Bearer";
     expiresIn: number;
+    access_token: string;
+    token_type: "bearer";
+    expires_in: number;
 }
 export declare class AuthController extends Controller {
     private readonly userService;

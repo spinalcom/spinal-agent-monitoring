@@ -7,17 +7,41 @@
 		"requestBodies": {},
 		"responses": {},
 		"schemas": {
-			"HealthResponse": {
+			"EndpointValueResponse": {
 				"properties": {
-					"status": {
+					"unit": {
+						"type": "string",
+						"nullable": true
+					},
+					"currentValue": {
+						"anyOf": [
+							{
+								"type": "string"
+							},
+							{
+								"type": "number",
+								"format": "double"
+							},
+							{
+								"type": "boolean"
+							}
+						],
+						"nullable": true
+					},
+					"name": {
+						"type": "string"
+					},
+					"id": {
 						"type": "string"
 					}
 				},
 				"required": [
-					"status"
+					"unit",
+					"currentValue",
+					"name",
+					"id"
 				],
-				"type": "object",
-				"additionalProperties": false
+				"type": "object"
 			},
 			"ErrorResponse": {
 				"properties": {
@@ -34,6 +58,49 @@
 				},
 				"type": "object",
 				"additionalProperties": false
+			},
+			"EndpointTimeSeriesResponse": {
+				"properties": {
+					"values": {
+						"items": {
+							"properties": {
+								"value": {
+									"anyOf": [
+										{
+											"type": "number",
+											"format": "double"
+										},
+										{
+											"type": "boolean"
+										}
+									]
+								},
+								"date": {
+									"type": "number",
+									"format": "double"
+								}
+							},
+							"required": [
+								"value",
+								"date"
+							],
+							"type": "object"
+						},
+						"type": "array"
+					},
+					"name": {
+						"type": "string"
+					},
+					"id": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"values",
+					"name",
+					"id"
+				],
+				"type": "object"
 			},
 			"ActionResponse": {
 				"properties": {
@@ -57,6 +124,95 @@
 				},
 				"required": [
 					"message"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"UpdateMaxDayBody": {
+				"properties": {
+					"maxDay": {
+						"anyOf": [
+							{
+								"type": "number",
+								"format": "double"
+							},
+							{
+								"type": "string"
+							}
+						]
+					}
+				},
+				"required": [
+					"maxDay"
+				],
+				"type": "object"
+			},
+			"AdminLoginResponse": {
+				"properties": {
+					"token": {
+						"type": "string"
+					},
+					"tokenType": {
+						"type": "string",
+						"enum": [
+							"Bearer"
+						],
+						"nullable": false
+					},
+					"expiresIn": {
+						"type": "number",
+						"format": "double"
+					},
+					"access_token": {
+						"type": "string"
+					},
+					"token_type": {
+						"type": "string",
+						"enum": [
+							"bearer"
+						],
+						"nullable": false
+					},
+					"expires_in": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"token",
+					"tokenType",
+					"expiresIn",
+					"access_token",
+					"token_type",
+					"expires_in"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"AdminLoginRequest": {
+				"properties": {
+					"username": {
+						"type": "string"
+					},
+					"password": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"username",
+					"password"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"HealthResponse": {
+				"properties": {
+					"status": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"status"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -314,152 +470,17 @@
 					"err",
 					"all"
 				]
-			},
-			"EndpointValueResponse": {
-				"properties": {
-					"unit": {
-						"type": "string",
-						"nullable": true
-					},
-					"currentValue": {
-						"anyOf": [
-							{
-								"type": "string"
-							},
-							{
-								"type": "number",
-								"format": "double"
-							},
-							{
-								"type": "boolean"
-							}
-						],
-						"nullable": true
-					},
-					"name": {
-						"type": "string"
-					},
-					"id": {
-						"type": "string"
-					}
-				},
-				"required": [
-					"unit",
-					"currentValue",
-					"name",
-					"id"
-				],
-				"type": "object"
-			},
-			"EndpointTimeSeriesResponse": {
-				"properties": {
-					"values": {
-						"items": {
-							"properties": {
-								"value": {
-									"anyOf": [
-										{
-											"type": "number",
-											"format": "double"
-										},
-										{
-											"type": "boolean"
-										}
-									]
-								},
-								"date": {
-									"type": "number",
-									"format": "double"
-								}
-							},
-							"required": [
-								"value",
-								"date"
-							],
-							"type": "object"
-						},
-						"type": "array"
-					},
-					"name": {
-						"type": "string"
-					},
-					"id": {
-						"type": "string"
-					}
-				},
-				"required": [
-					"values",
-					"name",
-					"id"
-				],
-				"type": "object"
-			},
-			"UpdateMaxDayBody": {
-				"properties": {
-					"maxDay": {
-						"anyOf": [
-							{
-								"type": "number",
-								"format": "double"
-							},
-							{
-								"type": "string"
-							}
-						]
-					}
-				},
-				"required": [
-					"maxDay"
-				],
-				"type": "object"
-			},
-			"AdminLoginResponse": {
-				"properties": {
-					"token": {
-						"type": "string"
-					},
-					"tokenType": {
-						"type": "string",
-						"enum": [
-							"Bearer"
-						],
-						"nullable": false
-					},
-					"expiresIn": {
-						"type": "number",
-						"format": "double"
-					}
-				},
-				"required": [
-					"token",
-					"tokenType",
-					"expiresIn"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"AdminLoginRequest": {
-				"properties": {
-					"username": {
-						"type": "string"
-					},
-					"password": {
-						"type": "string"
-					}
-				},
-				"required": [
-					"username",
-					"password"
-				],
-				"type": "object",
-				"additionalProperties": false
 			}
 		},
 		"securitySchemes": {
 			"jwt": {
-				"type": "http",
-				"scheme": "bearer",
-				"bearerFormat": "JWT"
+				"type": "oauth2",
+				"flows": {
+					"password": {
+						"tokenUrl": "/auth/login",
+						"scopes": {}
+					}
+				}
 			}
 		}
 	},
@@ -476,1139 +497,6 @@
 		}
 	},
 	"paths": {
-		"/monitoring/health": {
-			"get": {
-				"operationId": "GetHealth",
-				"responses": {
-					"200": {
-						"description": "OK",
-						"content": {
-							"application/json": {
-								"schema": {
-									"anyOf": [
-										{
-											"$ref": "#/components/schemas/HealthResponse"
-										},
-										{
-											"$ref": "#/components/schemas/ErrorResponse"
-										}
-									]
-								}
-							}
-						}
-					}
-				},
-				"description": "Returns a simple health status to confirm the monitoring API is reachable.",
-				"tags": [
-					"vm"
-				],
-				"security": [],
-				"parameters": []
-			}
-		},
-		"/monitoring/{vmKey}/cache/clear": {
-			"post": {
-				"operationId": "ClearCache",
-				"responses": {
-					"200": {
-						"description": "Linux page cache cleared",
-						"content": {
-							"application/json": {
-								"schema": {
-									"anyOf": [
-										{
-											"properties": {
-												"failed": {
-													"items": {
-														"$ref": "#/components/schemas/ActionResponse"
-													},
-													"type": "array"
-												},
-												"cleared": {
-													"items": {
-														"$ref": "#/components/schemas/ActionResponse"
-													},
-													"type": "array"
-												}
-											},
-											"required": [
-												"failed",
-												"cleared"
-											],
-											"type": "object"
-										},
-										{
-											"$ref": "#/components/schemas/ErrorResponse"
-										}
-									]
-								}
-							}
-						}
-					},
-					"400": {
-						"description": "Unable to clear Linux page cache",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ErrorResponse"
-								}
-							}
-						}
-					},
-					"404": {
-						"description": "Virtual machine not found",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ErrorResponse"
-								}
-							}
-						}
-					}
-				},
-				"description": "Clears the Linux page cache on a monitored virtual machine.",
-				"tags": [
-					"vm"
-				],
-				"security": [],
-				"parameters": [
-					{
-						"in": "path",
-						"name": "vmKey",
-						"required": true,
-						"schema": {
-							"type": "string"
-						}
-					}
-				]
-			}
-		},
-		"/monitoring/all_vms": {
-			"get": {
-				"operationId": "GetAllVirtualMachines",
-				"responses": {
-					"200": {
-						"description": "OK",
-						"content": {
-							"application/json": {
-								"schema": {
-									"anyOf": [
-										{
-											"items": {
-												"$ref": "#/components/schemas/IVMResponse"
-											},
-											"type": "array"
-										},
-										{
-											"$ref": "#/components/schemas/ErrorResponse"
-										}
-									]
-								}
-							}
-						}
-					}
-				},
-				"tags": [
-					"vm"
-				],
-				"security": [],
-				"parameters": []
-			}
-		},
-		"/monitoring/{vmKey}": {
-			"get": {
-				"operationId": "GetVirtualMachine",
-				"responses": {
-					"200": {
-						"description": "OK",
-						"content": {
-							"application/json": {
-								"schema": {
-									"anyOf": [
-										{
-											"$ref": "#/components/schemas/IVMResponse"
-										},
-										{
-											"$ref": "#/components/schemas/ErrorResponse"
-										}
-									]
-								}
-							}
-						}
-					}
-				},
-				"tags": [
-					"vm"
-				],
-				"security": [],
-				"parameters": [
-					{
-						"in": "path",
-						"name": "vmKey",
-						"required": true,
-						"schema": {
-							"type": "string"
-						}
-					}
-				]
-			}
-		},
-		"/monitoring/{vmKey}/system": {
-			"get": {
-				"operationId": "GetSystemMetrics",
-				"responses": {
-					"200": {
-						"description": "OK",
-						"content": {
-							"application/json": {
-								"schema": {
-									"anyOf": [
-										{
-											"$ref": "#/components/schemas/IVMResponse"
-										},
-										{
-											"$ref": "#/components/schemas/ErrorResponse"
-										}
-									]
-								}
-							}
-						}
-					}
-				},
-				"description": "Returns current CPU, memory, and system-level metrics collected by the agent.",
-				"tags": [
-					"vm"
-				],
-				"security": [],
-				"parameters": [
-					{
-						"in": "path",
-						"name": "vmKey",
-						"required": true,
-						"schema": {
-							"type": "string"
-						}
-					}
-				]
-			}
-		},
-		"/monitoring/{vmKey}/apps": {
-			"get": {
-				"operationId": "GetApps",
-				"responses": {
-					"200": {
-						"description": "OK",
-						"content": {
-							"application/json": {
-								"schema": {
-									"anyOf": [
-										{
-											"items": {
-												"$ref": "#/components/schemas/Pm2ProcessResponse"
-											},
-											"type": "array"
-										},
-										{
-											"$ref": "#/components/schemas/ErrorResponse"
-										}
-									]
-								}
-							}
-						}
-					}
-				},
-				"description": "Lists all PM2-managed applications with their current runtime state.",
-				"tags": [
-					"pm2"
-				],
-				"security": [],
-				"parameters": [
-					{
-						"in": "path",
-						"name": "vmKey",
-						"required": true,
-						"schema": {
-							"type": "string"
-						}
-					},
-					{
-						"in": "query",
-						"name": "classifyByBos",
-						"required": false,
-						"schema": {
-							"type": "boolean"
-						}
-					}
-				]
-			}
-		},
-		"/monitoring/{vmKey}/apps/classified": {
-			"get": {
-				"operationId": "GetClassifiedApps",
-				"responses": {
-					"200": {
-						"description": "OK",
-						"content": {
-							"application/json": {
-								"schema": {
-									"anyOf": [
-										{
-											"items": {
-												"properties": {
-													"processes": {
-														"items": {
-															"$ref": "#/components/schemas/Pm2ProcessResponse"
-														},
-														"type": "array"
-													}
-												},
-												"additionalProperties": {},
-												"required": [
-													"processes"
-												],
-												"type": "object"
-											},
-											"type": "array"
-										},
-										{
-											"$ref": "#/components/schemas/ErrorResponse"
-										}
-									]
-								}
-							}
-						}
-					}
-				},
-				"tags": [
-					"pm2"
-				],
-				"security": [],
-				"parameters": [
-					{
-						"in": "path",
-						"name": "vmKey",
-						"required": true,
-						"schema": {
-							"type": "string"
-						}
-					}
-				]
-			}
-		},
-		"/monitoring/{vmKey}/apps/by-bos-name": {
-			"get": {
-				"operationId": "GetAppsByBosName",
-				"responses": {
-					"200": {
-						"description": "OK",
-						"content": {
-							"application/json": {
-								"schema": {
-									"anyOf": [
-										{
-											"items": {
-												"$ref": "#/components/schemas/Pm2ProcessResponse"
-											},
-											"type": "array"
-										},
-										{
-											"$ref": "#/components/schemas/ErrorResponse"
-										}
-									]
-								}
-							}
-						}
-					}
-				},
-				"tags": [
-					"pm2"
-				],
-				"security": [],
-				"parameters": [
-					{
-						"in": "path",
-						"name": "vmKey",
-						"required": true,
-						"schema": {
-							"type": "string"
-						}
-					},
-					{
-						"in": "query",
-						"name": "bosName",
-						"required": true,
-						"schema": {
-							"type": "string"
-						}
-					}
-				]
-			}
-		},
-		"/monitoring/{vmKey}/apps/metrics": {
-			"get": {
-				"operationId": "GetAppsMetrics",
-				"responses": {
-					"200": {
-						"description": "OK",
-						"content": {
-							"application/json": {
-								"schema": {
-									"anyOf": [
-										{
-											"items": {
-												"$ref": "#/components/schemas/Pm2ProcessMetricsResponse"
-											},
-											"type": "array"
-										},
-										{
-											"$ref": "#/components/schemas/ErrorResponse"
-										}
-									]
-								}
-							}
-						}
-					}
-				},
-				"description": "Lists PM2 metrics (cpu, memory, uptime, status) for all applications.",
-				"tags": [
-					"pm2"
-				],
-				"security": [],
-				"parameters": [
-					{
-						"in": "path",
-						"name": "vmKey",
-						"required": true,
-						"schema": {
-							"type": "string"
-						}
-					}
-				]
-			}
-		},
-		"/monitoring/{vmKey}/apps/status/summary": {
-			"get": {
-				"operationId": "GetAppsStatusSummary",
-				"responses": {
-					"200": {
-						"description": "OK",
-						"content": {
-							"application/json": {
-								"schema": {
-									"anyOf": [
-										{
-											"$ref": "#/components/schemas/Pm2StatusSummaryResponse"
-										},
-										{
-											"$ref": "#/components/schemas/ErrorResponse"
-										}
-									]
-								}
-							}
-						}
-					}
-				},
-				"description": "Returns PM2 process counts grouped by status.",
-				"tags": [
-					"pm2"
-				],
-				"security": [],
-				"parameters": [
-					{
-						"in": "path",
-						"name": "vmKey",
-						"required": true,
-						"schema": {
-							"type": "string"
-						}
-					}
-				]
-			}
-		},
-		"/monitoring/{vmKey}/apps/{key}": {
-			"get": {
-				"operationId": "GetAppByKey",
-				"responses": {
-					"200": {
-						"description": "Ok",
-						"content": {
-							"application/json": {
-								"schema": {
-									"anyOf": [
-										{
-											"$ref": "#/components/schemas/Pm2ProcessResponse"
-										},
-										{
-											"$ref": "#/components/schemas/ErrorResponse"
-										}
-									]
-								}
-							}
-						}
-					},
-					"404": {
-						"description": "Process not found",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ErrorResponse"
-								}
-							}
-						}
-					}
-				},
-				"description": "Returns details for a single PM2 application by name or identifier key.",
-				"tags": [
-					"pm2"
-				],
-				"security": [],
-				"parameters": [
-					{
-						"in": "path",
-						"name": "vmKey",
-						"required": true,
-						"schema": {
-							"type": "string"
-						}
-					},
-					{
-						"description": "PM2 process key used to find the app.",
-						"in": "path",
-						"name": "key",
-						"required": true,
-						"schema": {
-							"type": "string"
-						}
-					}
-				]
-			}
-		},
-		"/monitoring/{vmKey}/apps/{key}/metrics": {
-			"get": {
-				"operationId": "GetAppMetricsByKey",
-				"responses": {
-					"200": {
-						"description": "Ok",
-						"content": {
-							"application/json": {
-								"schema": {
-									"anyOf": [
-										{
-											"$ref": "#/components/schemas/Pm2ProcessMetricsResponse"
-										},
-										{
-											"$ref": "#/components/schemas/ErrorResponse"
-										}
-									]
-								}
-							}
-						}
-					},
-					"404": {
-						"description": "Process not found",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ErrorResponse"
-								}
-							}
-						}
-					}
-				},
-				"description": "Returns PM2 runtime metrics for one application.",
-				"tags": [
-					"pm2"
-				],
-				"security": [],
-				"parameters": [
-					{
-						"in": "path",
-						"name": "vmKey",
-						"required": true,
-						"schema": {
-							"type": "string"
-						}
-					},
-					{
-						"description": "PM2 process key used to find the app.",
-						"in": "path",
-						"name": "key",
-						"required": true,
-						"schema": {
-							"type": "string"
-						}
-					}
-				]
-			}
-		},
-		"/monitoring/{vmKey}/apps/{key}/logs": {
-			"get": {
-				"operationId": "GetAppLogsByKey",
-				"responses": {
-					"200": {
-						"description": "Ok",
-						"content": {
-							"application/json": {
-								"schema": {
-									"anyOf": [
-										{
-											"$ref": "#/components/schemas/Pm2ProcessLogsResponse"
-										},
-										{
-											"$ref": "#/components/schemas/ErrorResponse"
-										}
-									]
-								}
-							}
-						}
-					},
-					"404": {
-						"description": "Process not found",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ErrorResponse"
-								}
-							}
-						}
-					}
-				},
-				"description": "Returns tailed stdout/stderr logs for one PM2 application.",
-				"tags": [
-					"pm2"
-				],
-				"security": [],
-				"parameters": [
-					{
-						"in": "path",
-						"name": "vmKey",
-						"required": true,
-						"schema": {
-							"type": "string"
-						}
-					},
-					{
-						"description": "PM2 process key used to find the app.",
-						"in": "path",
-						"name": "key",
-						"required": true,
-						"schema": {
-							"type": "string"
-						}
-					},
-					{
-						"description": "Number of lines to return per stream (1..1000).",
-						"in": "query",
-						"name": "tail",
-						"required": false,
-						"schema": {
-							"default": 100,
-							"format": "double",
-							"type": "number"
-						}
-					},
-					{
-						"description": "Which stream to return: out, err, or all.",
-						"in": "query",
-						"name": "logType",
-						"required": false,
-						"schema": {
-							"$ref": "#/components/schemas/Pm2LogType"
-						}
-					}
-				]
-			}
-		},
-		"/monitoring/{vmKey}/apps/start": {
-			"post": {
-				"operationId": "StartApp",
-				"responses": {
-					"200": {
-						"description": "Ok",
-						"content": {
-							"application/json": {
-								"schema": {
-									"anyOf": [
-										{
-											"properties": {
-												"failed": {
-													"items": {
-														"$ref": "#/components/schemas/ActionResponse"
-													},
-													"type": "array"
-												},
-												"started": {
-													"items": {
-														"$ref": "#/components/schemas/ActionResponse"
-													},
-													"type": "array"
-												}
-											},
-											"required": [
-												"failed",
-												"started"
-											],
-											"type": "object"
-										},
-										{
-											"$ref": "#/components/schemas/ErrorResponse"
-										}
-									]
-								}
-							}
-						}
-					},
-					"400": {
-						"description": "Unable to start process",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ErrorResponse"
-								}
-							}
-						}
-					}
-				},
-				"description": "Starts one or more PM2 applications.",
-				"tags": [
-					"pm2"
-				],
-				"security": [],
-				"parameters": [
-					{
-						"in": "path",
-						"name": "vmKey",
-						"required": true,
-						"schema": {
-							"type": "string"
-						}
-					}
-				],
-				"requestBody": {
-					"description": "Request body containing the list of application keys to start.",
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": {
-								"properties": {
-									"keys": {
-										"items": {
-											"anyOf": [
-												{
-													"type": "string"
-												},
-												{
-													"type": "number",
-													"format": "double"
-												}
-											]
-										},
-										"type": "array"
-									}
-								},
-								"required": [
-									"keys"
-								],
-								"type": "object",
-								"description": "Request body containing the list of application keys to start."
-							}
-						}
-					}
-				}
-			}
-		},
-		"/monitoring/{vmKey}/apps/stop": {
-			"post": {
-				"operationId": "StopApp",
-				"responses": {
-					"200": {
-						"description": "Ok",
-						"content": {
-							"application/json": {
-								"schema": {
-									"anyOf": [
-										{
-											"properties": {
-												"failed": {
-													"items": {
-														"$ref": "#/components/schemas/ActionResponse"
-													},
-													"type": "array"
-												},
-												"stopped": {
-													"items": {
-														"$ref": "#/components/schemas/ActionResponse"
-													},
-													"type": "array"
-												}
-											},
-											"required": [
-												"failed",
-												"stopped"
-											],
-											"type": "object"
-										},
-										{
-											"$ref": "#/components/schemas/ErrorResponse"
-										}
-									]
-								}
-							}
-						}
-					},
-					"400": {
-						"description": "Unable to stop process",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ErrorResponse"
-								}
-							}
-						}
-					}
-				},
-				"description": "Stops one or more PM2 applications.",
-				"tags": [
-					"pm2"
-				],
-				"security": [],
-				"parameters": [
-					{
-						"in": "path",
-						"name": "vmKey",
-						"required": true,
-						"schema": {
-							"type": "string"
-						}
-					}
-				],
-				"requestBody": {
-					"description": "Request body containing the list of application keys to stop.",
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": {
-								"properties": {
-									"keys": {
-										"items": {
-											"anyOf": [
-												{
-													"type": "string"
-												},
-												{
-													"type": "number",
-													"format": "double"
-												}
-											]
-										},
-										"type": "array"
-									}
-								},
-								"required": [
-									"keys"
-								],
-								"type": "object",
-								"description": "Request body containing the list of application keys to stop."
-							}
-						}
-					}
-				}
-			}
-		},
-		"/monitoring/{vmKey}/apps/restart": {
-			"post": {
-				"operationId": "RestartApp",
-				"responses": {
-					"200": {
-						"description": "Ok",
-						"content": {
-							"application/json": {
-								"schema": {
-									"anyOf": [
-										{
-											"properties": {
-												"failed": {
-													"items": {
-														"$ref": "#/components/schemas/ActionResponse"
-													},
-													"type": "array"
-												},
-												"restarted": {
-													"items": {
-														"$ref": "#/components/schemas/ActionResponse"
-													},
-													"type": "array"
-												}
-											},
-											"required": [
-												"failed",
-												"restarted"
-											],
-											"type": "object"
-										},
-										{
-											"$ref": "#/components/schemas/ErrorResponse"
-										}
-									]
-								}
-							}
-						}
-					},
-					"400": {
-						"description": "Unable to restart process",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ErrorResponse"
-								}
-							}
-						}
-					}
-				},
-				"description": "Restarts one or more PM2 applications.",
-				"tags": [
-					"pm2"
-				],
-				"security": [],
-				"parameters": [
-					{
-						"in": "path",
-						"name": "vmKey",
-						"required": true,
-						"schema": {
-							"type": "string"
-						}
-					}
-				],
-				"requestBody": {
-					"description": "Request body containing the list of application keys to restart.",
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": {
-								"properties": {
-									"keys": {
-										"items": {
-											"anyOf": [
-												{
-													"type": "string"
-												},
-												{
-													"type": "number",
-													"format": "double"
-												}
-											]
-										},
-										"type": "array"
-									}
-								},
-								"required": [
-									"keys"
-								],
-								"type": "object",
-								"description": "Request body containing the list of application keys to restart."
-							}
-						}
-					}
-				}
-			}
-		},
-		"/monitoring/{vmKey}/apps/reload": {
-			"post": {
-				"operationId": "ReloadApp",
-				"responses": {
-					"200": {
-						"description": "Ok",
-						"content": {
-							"application/json": {
-								"schema": {
-									"anyOf": [
-										{
-											"properties": {
-												"failed": {
-													"items": {
-														"$ref": "#/components/schemas/ActionResponse"
-													},
-													"type": "array"
-												},
-												"reloaded": {
-													"items": {
-														"$ref": "#/components/schemas/ActionResponse"
-													},
-													"type": "array"
-												}
-											},
-											"required": [
-												"failed",
-												"reloaded"
-											],
-											"type": "object"
-										},
-										{
-											"$ref": "#/components/schemas/ErrorResponse"
-										}
-									]
-								}
-							}
-						}
-					},
-					"400": {
-						"description": "Unable to reload process",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ErrorResponse"
-								}
-							}
-						}
-					}
-				},
-				"description": "Reloads one or more PM2 applications.",
-				"tags": [
-					"pm2"
-				],
-				"security": [],
-				"parameters": [
-					{
-						"in": "path",
-						"name": "vmKey",
-						"required": true,
-						"schema": {
-							"type": "string"
-						}
-					}
-				],
-				"requestBody": {
-					"description": "Request body containing the list of application keys to reload.",
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": {
-								"properties": {
-									"keys": {
-										"items": {
-											"anyOf": [
-												{
-													"type": "string"
-												},
-												{
-													"type": "number",
-													"format": "double"
-												}
-											]
-										},
-										"type": "array"
-									}
-								},
-								"required": [
-									"keys"
-								],
-								"type": "object",
-								"description": "Request body containing the list of application keys to reload."
-							}
-						}
-					}
-				}
-			}
-		},
-		"/monitoring/{vmKey}/apps/delete": {
-			"post": {
-				"operationId": "DeleteApp",
-				"responses": {
-					"200": {
-						"description": "Ok",
-						"content": {
-							"application/json": {
-								"schema": {
-									"anyOf": [
-										{
-											"properties": {
-												"failed": {
-													"items": {
-														"$ref": "#/components/schemas/ActionResponse"
-													},
-													"type": "array"
-												},
-												"deleted": {
-													"items": {
-														"$ref": "#/components/schemas/ActionResponse"
-													},
-													"type": "array"
-												}
-											},
-											"required": [
-												"failed",
-												"deleted"
-											],
-											"type": "object"
-										},
-										{
-											"$ref": "#/components/schemas/ErrorResponse"
-										}
-									]
-								}
-							}
-						}
-					},
-					"400": {
-						"description": "Unable to delete process",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ErrorResponse"
-								}
-							}
-						}
-					}
-				},
-				"description": "Deletes one or more PM2 applications from the process list.",
-				"tags": [
-					"pm2"
-				],
-				"security": [],
-				"parameters": [
-					{
-						"in": "path",
-						"name": "vmKey",
-						"required": true,
-						"schema": {
-							"type": "string"
-						}
-					}
-				],
-				"requestBody": {
-					"description": "Request body containing the list of application keys to delete.",
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": {
-								"properties": {
-									"keys": {
-										"items": {
-											"anyOf": [
-												{
-													"type": "string"
-												},
-												{
-													"type": "number",
-													"format": "double"
-												}
-											]
-										},
-										"type": "array"
-									}
-								},
-								"required": [
-									"keys"
-								],
-								"type": "object",
-								"description": "Request body containing the list of application keys to delete."
-							}
-						}
-					}
-				}
-			}
-		},
 		"/monitoring/endpoints/{vmKey}/pm2/{pm2Key}/ram/value": {
 			"get": {
 				"operationId": "GetPm2RamHistoryValue",
@@ -2814,6 +1702,1139 @@
 						"application/json": {
 							"schema": {
 								"$ref": "#/components/schemas/AdminLoginRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/monitoring/health": {
+			"get": {
+				"operationId": "GetHealth",
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"application/json": {
+								"schema": {
+									"anyOf": [
+										{
+											"$ref": "#/components/schemas/HealthResponse"
+										},
+										{
+											"$ref": "#/components/schemas/ErrorResponse"
+										}
+									]
+								}
+							}
+						}
+					}
+				},
+				"description": "Returns a simple health status to confirm the monitoring API is reachable.",
+				"tags": [
+					"vm"
+				],
+				"security": [],
+				"parameters": []
+			}
+		},
+		"/monitoring/{vmKey}/cache/clear": {
+			"post": {
+				"operationId": "ClearCache",
+				"responses": {
+					"200": {
+						"description": "Linux page cache cleared",
+						"content": {
+							"application/json": {
+								"schema": {
+									"anyOf": [
+										{
+											"properties": {
+												"failed": {
+													"items": {
+														"$ref": "#/components/schemas/ActionResponse"
+													},
+													"type": "array"
+												},
+												"cleared": {
+													"items": {
+														"$ref": "#/components/schemas/ActionResponse"
+													},
+													"type": "array"
+												}
+											},
+											"required": [
+												"failed",
+												"cleared"
+											],
+											"type": "object"
+										},
+										{
+											"$ref": "#/components/schemas/ErrorResponse"
+										}
+									]
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Unable to clear Linux page cache",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponse"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Virtual machine not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponse"
+								}
+							}
+						}
+					}
+				},
+				"description": "Clears the Linux page cache on a monitored virtual machine.",
+				"tags": [
+					"vm"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "vmKey",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/monitoring/all_vms": {
+			"get": {
+				"operationId": "GetAllVirtualMachines",
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"application/json": {
+								"schema": {
+									"anyOf": [
+										{
+											"items": {
+												"$ref": "#/components/schemas/IVMResponse"
+											},
+											"type": "array"
+										},
+										{
+											"$ref": "#/components/schemas/ErrorResponse"
+										}
+									]
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"vm"
+				],
+				"security": [],
+				"parameters": []
+			}
+		},
+		"/monitoring/{vmKey}": {
+			"get": {
+				"operationId": "GetVirtualMachine",
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"application/json": {
+								"schema": {
+									"anyOf": [
+										{
+											"$ref": "#/components/schemas/IVMResponse"
+										},
+										{
+											"$ref": "#/components/schemas/ErrorResponse"
+										}
+									]
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"vm"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "vmKey",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/monitoring/{vmKey}/system": {
+			"get": {
+				"operationId": "GetSystemMetrics",
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"application/json": {
+								"schema": {
+									"anyOf": [
+										{
+											"$ref": "#/components/schemas/IVMResponse"
+										},
+										{
+											"$ref": "#/components/schemas/ErrorResponse"
+										}
+									]
+								}
+							}
+						}
+					}
+				},
+				"description": "Returns current CPU, memory, and system-level metrics collected by the agent.",
+				"tags": [
+					"vm"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "vmKey",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/monitoring/{vmKey}/apps": {
+			"get": {
+				"operationId": "GetApps",
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"application/json": {
+								"schema": {
+									"anyOf": [
+										{
+											"items": {
+												"$ref": "#/components/schemas/Pm2ProcessResponse"
+											},
+											"type": "array"
+										},
+										{
+											"$ref": "#/components/schemas/ErrorResponse"
+										}
+									]
+								}
+							}
+						}
+					}
+				},
+				"description": "Lists all PM2-managed applications with their current runtime state.",
+				"tags": [
+					"pm2"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "vmKey",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "classifyByBos",
+						"required": false,
+						"schema": {
+							"type": "boolean"
+						}
+					}
+				]
+			}
+		},
+		"/monitoring/{vmKey}/apps/classified": {
+			"get": {
+				"operationId": "GetClassifiedApps",
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"application/json": {
+								"schema": {
+									"anyOf": [
+										{
+											"items": {
+												"properties": {
+													"processes": {
+														"items": {
+															"$ref": "#/components/schemas/Pm2ProcessResponse"
+														},
+														"type": "array"
+													}
+												},
+												"additionalProperties": {},
+												"required": [
+													"processes"
+												],
+												"type": "object"
+											},
+											"type": "array"
+										},
+										{
+											"$ref": "#/components/schemas/ErrorResponse"
+										}
+									]
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"pm2"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "vmKey",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/monitoring/{vmKey}/apps/by-bos-name": {
+			"get": {
+				"operationId": "GetAppsByBosName",
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"application/json": {
+								"schema": {
+									"anyOf": [
+										{
+											"items": {
+												"$ref": "#/components/schemas/Pm2ProcessResponse"
+											},
+											"type": "array"
+										},
+										{
+											"$ref": "#/components/schemas/ErrorResponse"
+										}
+									]
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"pm2"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "vmKey",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "bosName",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/monitoring/{vmKey}/apps/metrics": {
+			"get": {
+				"operationId": "GetAppsMetrics",
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"application/json": {
+								"schema": {
+									"anyOf": [
+										{
+											"items": {
+												"$ref": "#/components/schemas/Pm2ProcessMetricsResponse"
+											},
+											"type": "array"
+										},
+										{
+											"$ref": "#/components/schemas/ErrorResponse"
+										}
+									]
+								}
+							}
+						}
+					}
+				},
+				"description": "Lists PM2 metrics (cpu, memory, uptime, status) for all applications.",
+				"tags": [
+					"pm2"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "vmKey",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/monitoring/{vmKey}/apps/status/summary": {
+			"get": {
+				"operationId": "GetAppsStatusSummary",
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"application/json": {
+								"schema": {
+									"anyOf": [
+										{
+											"$ref": "#/components/schemas/Pm2StatusSummaryResponse"
+										},
+										{
+											"$ref": "#/components/schemas/ErrorResponse"
+										}
+									]
+								}
+							}
+						}
+					}
+				},
+				"description": "Returns PM2 process counts grouped by status.",
+				"tags": [
+					"pm2"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "vmKey",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/monitoring/{vmKey}/apps/{key}": {
+			"get": {
+				"operationId": "GetAppByKey",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"anyOf": [
+										{
+											"$ref": "#/components/schemas/Pm2ProcessResponse"
+										},
+										{
+											"$ref": "#/components/schemas/ErrorResponse"
+										}
+									]
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Process not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponse"
+								}
+							}
+						}
+					}
+				},
+				"description": "Returns details for a single PM2 application by name or identifier key.",
+				"tags": [
+					"pm2"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "vmKey",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"description": "PM2 process key used to find the app.",
+						"in": "path",
+						"name": "key",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/monitoring/{vmKey}/apps/{key}/metrics": {
+			"get": {
+				"operationId": "GetAppMetricsByKey",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"anyOf": [
+										{
+											"$ref": "#/components/schemas/Pm2ProcessMetricsResponse"
+										},
+										{
+											"$ref": "#/components/schemas/ErrorResponse"
+										}
+									]
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Process not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponse"
+								}
+							}
+						}
+					}
+				},
+				"description": "Returns PM2 runtime metrics for one application.",
+				"tags": [
+					"pm2"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "vmKey",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"description": "PM2 process key used to find the app.",
+						"in": "path",
+						"name": "key",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/monitoring/{vmKey}/apps/{key}/logs": {
+			"get": {
+				"operationId": "GetAppLogsByKey",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"anyOf": [
+										{
+											"$ref": "#/components/schemas/Pm2ProcessLogsResponse"
+										},
+										{
+											"$ref": "#/components/schemas/ErrorResponse"
+										}
+									]
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Process not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponse"
+								}
+							}
+						}
+					}
+				},
+				"description": "Returns tailed stdout/stderr logs for one PM2 application.",
+				"tags": [
+					"pm2"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "vmKey",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"description": "PM2 process key used to find the app.",
+						"in": "path",
+						"name": "key",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"description": "Number of lines to return per stream (1..1000).",
+						"in": "query",
+						"name": "tail",
+						"required": false,
+						"schema": {
+							"default": 100,
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"description": "Which stream to return: out, err, or all.",
+						"in": "query",
+						"name": "logType",
+						"required": false,
+						"schema": {
+							"$ref": "#/components/schemas/Pm2LogType"
+						}
+					}
+				]
+			}
+		},
+		"/monitoring/{vmKey}/apps/start": {
+			"post": {
+				"operationId": "StartApp",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"anyOf": [
+										{
+											"properties": {
+												"failed": {
+													"items": {
+														"$ref": "#/components/schemas/ActionResponse"
+													},
+													"type": "array"
+												},
+												"started": {
+													"items": {
+														"$ref": "#/components/schemas/ActionResponse"
+													},
+													"type": "array"
+												}
+											},
+											"required": [
+												"failed",
+												"started"
+											],
+											"type": "object"
+										},
+										{
+											"$ref": "#/components/schemas/ErrorResponse"
+										}
+									]
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Unable to start process",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponse"
+								}
+							}
+						}
+					}
+				},
+				"description": "Starts one or more PM2 applications.",
+				"tags": [
+					"pm2"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "vmKey",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"description": "Request body containing the list of application keys to start.",
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"properties": {
+									"keys": {
+										"items": {
+											"anyOf": [
+												{
+													"type": "string"
+												},
+												{
+													"type": "number",
+													"format": "double"
+												}
+											]
+										},
+										"type": "array"
+									}
+								},
+								"required": [
+									"keys"
+								],
+								"type": "object",
+								"description": "Request body containing the list of application keys to start."
+							}
+						}
+					}
+				}
+			}
+		},
+		"/monitoring/{vmKey}/apps/stop": {
+			"post": {
+				"operationId": "StopApp",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"anyOf": [
+										{
+											"properties": {
+												"failed": {
+													"items": {
+														"$ref": "#/components/schemas/ActionResponse"
+													},
+													"type": "array"
+												},
+												"stopped": {
+													"items": {
+														"$ref": "#/components/schemas/ActionResponse"
+													},
+													"type": "array"
+												}
+											},
+											"required": [
+												"failed",
+												"stopped"
+											],
+											"type": "object"
+										},
+										{
+											"$ref": "#/components/schemas/ErrorResponse"
+										}
+									]
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Unable to stop process",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponse"
+								}
+							}
+						}
+					}
+				},
+				"description": "Stops one or more PM2 applications.",
+				"tags": [
+					"pm2"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "vmKey",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"description": "Request body containing the list of application keys to stop.",
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"properties": {
+									"keys": {
+										"items": {
+											"anyOf": [
+												{
+													"type": "string"
+												},
+												{
+													"type": "number",
+													"format": "double"
+												}
+											]
+										},
+										"type": "array"
+									}
+								},
+								"required": [
+									"keys"
+								],
+								"type": "object",
+								"description": "Request body containing the list of application keys to stop."
+							}
+						}
+					}
+				}
+			}
+		},
+		"/monitoring/{vmKey}/apps/restart": {
+			"post": {
+				"operationId": "RestartApp",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"anyOf": [
+										{
+											"properties": {
+												"failed": {
+													"items": {
+														"$ref": "#/components/schemas/ActionResponse"
+													},
+													"type": "array"
+												},
+												"restarted": {
+													"items": {
+														"$ref": "#/components/schemas/ActionResponse"
+													},
+													"type": "array"
+												}
+											},
+											"required": [
+												"failed",
+												"restarted"
+											],
+											"type": "object"
+										},
+										{
+											"$ref": "#/components/schemas/ErrorResponse"
+										}
+									]
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Unable to restart process",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponse"
+								}
+							}
+						}
+					}
+				},
+				"description": "Restarts one or more PM2 applications.",
+				"tags": [
+					"pm2"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "vmKey",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"description": "Request body containing the list of application keys to restart.",
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"properties": {
+									"keys": {
+										"items": {
+											"anyOf": [
+												{
+													"type": "string"
+												},
+												{
+													"type": "number",
+													"format": "double"
+												}
+											]
+										},
+										"type": "array"
+									}
+								},
+								"required": [
+									"keys"
+								],
+								"type": "object",
+								"description": "Request body containing the list of application keys to restart."
+							}
+						}
+					}
+				}
+			}
+		},
+		"/monitoring/{vmKey}/apps/reload": {
+			"post": {
+				"operationId": "ReloadApp",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"anyOf": [
+										{
+											"properties": {
+												"failed": {
+													"items": {
+														"$ref": "#/components/schemas/ActionResponse"
+													},
+													"type": "array"
+												},
+												"reloaded": {
+													"items": {
+														"$ref": "#/components/schemas/ActionResponse"
+													},
+													"type": "array"
+												}
+											},
+											"required": [
+												"failed",
+												"reloaded"
+											],
+											"type": "object"
+										},
+										{
+											"$ref": "#/components/schemas/ErrorResponse"
+										}
+									]
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Unable to reload process",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponse"
+								}
+							}
+						}
+					}
+				},
+				"description": "Reloads one or more PM2 applications.",
+				"tags": [
+					"pm2"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "vmKey",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"description": "Request body containing the list of application keys to reload.",
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"properties": {
+									"keys": {
+										"items": {
+											"anyOf": [
+												{
+													"type": "string"
+												},
+												{
+													"type": "number",
+													"format": "double"
+												}
+											]
+										},
+										"type": "array"
+									}
+								},
+								"required": [
+									"keys"
+								],
+								"type": "object",
+								"description": "Request body containing the list of application keys to reload."
+							}
+						}
+					}
+				}
+			}
+		},
+		"/monitoring/{vmKey}/apps/delete": {
+			"post": {
+				"operationId": "DeleteApp",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"anyOf": [
+										{
+											"properties": {
+												"failed": {
+													"items": {
+														"$ref": "#/components/schemas/ActionResponse"
+													},
+													"type": "array"
+												},
+												"deleted": {
+													"items": {
+														"$ref": "#/components/schemas/ActionResponse"
+													},
+													"type": "array"
+												}
+											},
+											"required": [
+												"failed",
+												"deleted"
+											],
+											"type": "object"
+										},
+										{
+											"$ref": "#/components/schemas/ErrorResponse"
+										}
+									]
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Unable to delete process",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponse"
+								}
+							}
+						}
+					}
+				},
+				"description": "Deletes one or more PM2 applications from the process list.",
+				"tags": [
+					"pm2"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "vmKey",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"description": "Request body containing the list of application keys to delete.",
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"properties": {
+									"keys": {
+										"items": {
+											"anyOf": [
+												{
+													"type": "string"
+												},
+												{
+													"type": "number",
+													"format": "double"
+												}
+											]
+										},
+										"type": "array"
+									}
+								},
+								"required": [
+									"keys"
+								],
+								"type": "object",
+								"description": "Request body containing the list of application keys to delete."
 							}
 						}
 					}

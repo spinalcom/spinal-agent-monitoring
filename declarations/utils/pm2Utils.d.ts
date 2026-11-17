@@ -9,8 +9,6 @@ export declare function getHeapInfo(process: ProcessDescription): {
 export declare function waitUntil(condition: () => boolean, intervalMs: number): Promise<void>;
 export declare function formatProcess(process: ProcessDescription): Pm2ProcessResponse;
 export declare function executeCommand(command: "restart" | "stop" | "start" | "reload" | "delete", key: string | number): Promise<boolean>;
-export declare function getProcessId(process: ProcessDescription): string;
-export declare function getProcessStatusCode(process: ProcessDescription): number;
 export declare function getProcessLogPath(process: ProcessDescription, logType: "out" | "err"): string | undefined;
 export declare function uploadFileNewData(pathModel: SpinalPath, newContent: Buffer): Promise<boolean>;
 export declare function readFileContent(pathModel: SpinalPath): Promise<string[] | null>;
@@ -26,3 +24,19 @@ export declare function partitionResults<T extends string>(result: ActionRespons
     failed: ActionResponse[];
 };
 export declare function generateUniqId(): string;
+export declare function getHubDataForProcess(pm2Process: ProcessDescription, ipAddress?: string): {
+    host: string;
+    port: string;
+    bosName: string;
+};
+export declare function hubDataIsValid(hubData: {
+    host: string;
+    port: string;
+}): boolean;
+export declare function isSameHub(hubData1: {
+    host: string;
+    port: string;
+}, hubData2: {
+    host: string;
+    port: any;
+}): boolean;

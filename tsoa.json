@@ -13,9 +13,13 @@
 		"specVersion": 3,
 		"securityDefinitions": {
 			"jwt": {
-				"type": "http",
-				"scheme": "bearer",
-				"bearerFormat": "JWT"
+				"type": "oauth2",
+				"flows": {
+					"password": {
+						"tokenUrl": "/auth/login",
+						"scopes": {}
+					}
+				}
 			}
 		}
 	},

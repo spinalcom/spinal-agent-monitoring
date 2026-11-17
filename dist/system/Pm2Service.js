@@ -48,13 +48,13 @@ const events_1 = require("events");
 const execFileAsync = (0, util_1.promisify)(child_process_1.execFile);
 const pm2CliPath = path_1.default.join(path_1.default.dirname(require.resolve("pm2")), "bin", "pm2");
 class Pm2Service extends events_1.EventEmitter {
+    // private _processIdToHubData: Map<string | number, any> = new Map();
     constructor() {
         super();
         this._isConnected = false;
         this.pm2Maps = new Map();
         this.logsWatcher = new Map();
         this._isPm2LogBusSubscribed = false;
-        this._processIdToHubData = new Map();
     }
     static getInstance() {
         if (!this._instance)
@@ -513,7 +513,24 @@ class Pm2Service extends events_1.EventEmitter {
                     reject(err);
                 }
                 else {
-                    resolve(processDescriptionList);
+                    // return resolve(processDescriptionList);
+                    const validProcesses = [];
+                    const agentHubData = (0, utils_1.getHubInfo)();
+                    const localIp = (0, utils_1.getIpAddress)();
+                    for (const process of processDescriptionList) {
+                        const hubData = (0, pm2Utils_1.getHubDataForProcess)(process, localIp);
+                        process.hubData = hubData;
+                        if ((0, pm2Utils_1.hubDataIsValid)(process.hubData) && (0, pm2Utils_1.isSameHub)(hubData, agentHubData)) {
+                            validProcesses.push(process);
+                        }
+                    }
+                    resolve(validProcesses);
+                    // const formattedList = processDescriptionList.map((process: any) => {
+                    // 	process.hubData = getHubDataForProcess(process);
+                    // 	console.log("Hub data for process:", process.pm_id ?? process.name, "is", process.hubData);
+                    // 	return process;
+                    // });
+                    // resolve(formattedList);
                 }
             });
         });

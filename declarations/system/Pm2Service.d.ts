@@ -19,7 +19,6 @@ declare class Pm2Service extends EventEmitter {
     private _pm2LogWatchCallback?;
     private _pm2LogWatchSyncTimer?;
     private _isPm2LogBusSubscribed;
-    private _processIdToHubData;
     private constructor();
     static getInstance(): Pm2Service;
     listenToPm2Actions(callback: (data: IPm2EventData) => void): Promise<void>;
