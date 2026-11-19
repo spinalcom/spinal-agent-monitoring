@@ -173,6 +173,8 @@ class GraphService {
         if (!processData)
             return null;
         const [processFound] = await this.updateOrCreatePm2Process(vmNode, [processData]);
+        if (!processFound)
+            return null;
         // change organ config_data
         if (event.type === utils_1.PROCESS_CONFIG_DATA_CHANGE) {
             return this._updateOrganConfigData(processFound, event.data);
@@ -266,11 +268,12 @@ class GraphService {
         if (!processFound)
             throw new Error(`Process is not in this vm`);
         const processes = await vmNode.getChildren(utils_1.HAS_PM2_PROCESS_RELATION_NAME);
-        if (!processes.some((process) => process._server_id === processFound._server_id)) {
+        const processIsInVm = processes.some((process) => process._server_id === processFound._server_id);
+        if (!processIsInVm) {
             throw new Error(`Process is not in this vm`);
         }
-        await vmNode.removeChild(processFound, utils_1.HAS_PM2_PROCESS_RELATION_NAME, spinal_model_graph_1.SPINAL_RELATION_PTR_LST_TYPE);
-        await processFound.removeRelation(utils_1.HAS_LOG, spinal_model_graph_1.SPINAL_RELATION_PTR_LST_TYPE);
+        await vmNode.removeChild(processFound, utils_1.HAS_PM2_PROCESS_RELATION_NAME, spinal_model_graph_1.SPINAL_RELATION_PTR_LST_TYPE).catch(() => { });
+        await processFound.removeRelation(utils_1.HAS_LOG, spinal_model_graph_1.SPINAL_RELATION_PTR_LST_TYPE).catch(() => { });
         return processFound;
     }
     async createOrRetrieveVmContext(graph, hostName) {

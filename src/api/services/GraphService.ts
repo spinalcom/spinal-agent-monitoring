@@ -195,6 +195,7 @@ export class GraphService {
 		if (!processData) return null;
 
 		const [processFound] = await this.updateOrCreatePm2Process(vmNode, [processData]);
+		if (!processFound) return null;
 
 		// change organ config_data
 		if (event.type === PROCESS_CONFIG_DATA_CHANGE) {
@@ -302,12 +303,13 @@ export class GraphService {
 		if (!processFound) throw new Error(`Process is not in this vm`);
 
 		const processes = await vmNode.getChildren(HAS_PM2_PROCESS_RELATION_NAME);
-		if (!processes.some((process) => process._server_id === processFound._server_id)) {
+		const processIsInVm = processes.some((process) => process._server_id === processFound._server_id);
+		if (!processIsInVm) {
 			throw new Error(`Process is not in this vm`);
 		}
 
-		await vmNode.removeChild(processFound, HAS_PM2_PROCESS_RELATION_NAME, SPINAL_RELATION_PTR_LST_TYPE);
-		await processFound.removeRelation(HAS_LOG, SPINAL_RELATION_PTR_LST_TYPE);
+		await vmNode.removeChild(processFound, HAS_PM2_PROCESS_RELATION_NAME, SPINAL_RELATION_PTR_LST_TYPE).catch(() => {});
+		await processFound.removeRelation(HAS_LOG, SPINAL_RELATION_PTR_LST_TYPE).catch(() => {});
 		return processFound;
 	}
 

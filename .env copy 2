@@ -1,0 +1,21 @@
+BOS_NAME="Mon BOS Local" #it will be used as bos name to all process connected to the same hub
+
+
+# hub info
+SPINALHUB_PROTOCOL="http"
+SPINAL_USER_ID="168"
+SPINAL_PASSWORD="u2H4U5yfwN5Tw4"
+SPINALHUB_IP="127.0.0.1"
+SPINALHUB_PORT="8010"
+
+
+# organ Info
+HOST_NAME="PC Test" # nom de la vm
+CONFIG_FILE_PATH="/etc/Organs/Monitoring/Test Agent Auth" # Lien du fichier de config doit se terminer avec le nom du fichier
+SERVER_PORT="2026" # Port du server d'api
+
+SYSTEM_INFO_SEND_INTERVAL_MS="30000" # interval d'envoie de données
+
+#TimeSeries Max Day
+TIMESERIES_MAX_DAY="60" #60 days
+JWT_SECRET=c05a76f74f656538a0a0c20535711a084bdd02c51ba94919e97dbbcbd5804a66b520518960fa8fc44862172c99ac07c63170db2d99990e06f5ec5f56b1f13bf6
