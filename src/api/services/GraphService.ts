@@ -35,9 +35,9 @@ export class GraphService {
 	}
 
 	async registerVirtualMachine(hostName: string, data?: { systemMetrics?: ISystemMetrics; pm2List?: ProcessDescription[] }): Promise<SpinalContext> {
-		let existingNode = await this.createOrRetrieveVmContext(this.getGraph()!, hostName);
+		let existingNode = await this.createOrRetrieveVmContext(this.getGraph()!, hostName, data?.systemMetrics!);
 		const { systemMetrics, pm2List } = data || {};
-		if (systemMetrics) await this.updateOrCreateSystemMetrics(existingNode, systemMetrics, true);
+		// if (systemMetrics) await this.updateOrCreateSystemMetrics(existingNode, systemMetrics, true);
 		if (pm2List) await this.updateOrCreatePm2Process(existingNode, pm2List, true, true);
 
 		await this._initCommandList(existingNode);
@@ -194,17 +194,18 @@ export class GraphService {
 		const processData = event.process;
 		if (!processData) return null;
 
+		if (event.type === PROCESS_CONFIG_DATA_CHANGE || event.type === PROCESS_HUB_DATA_RESPONSE) {
+			const processKey = processData.pm_id ?? processData.name;
+			if (processKey === undefined || processKey === null) return null;
+
+			const processNode = await this.getPm2ProcessNodeByKey(vmNode, processKey);
+			if (!processNode) return null;
+
+			return event.type === PROCESS_CONFIG_DATA_CHANGE ? this._updateOrganConfigData(processNode, event.data) : this._updateOrganHubData(processNode, event.data);
+		}
+
 		const [processFound] = await this.updateOrCreatePm2Process(vmNode, [processData]);
 		if (!processFound) return null;
-
-		// change organ config_data
-		if (event.type === PROCESS_CONFIG_DATA_CHANGE) {
-			return this._updateOrganConfigData(processFound, event.data);
-		}
-
-		if (event.type === PROCESS_HUB_DATA_RESPONSE) {
-			return this._updateOrganHubData(processFound, event.data);
-		}
 
 		return processFound;
 	}
@@ -229,13 +230,18 @@ export class GraphService {
 	private _updateInfo(pm2Node: SpinalNode, pm2Process: ProcessDescription) {
 		const info = this._buildPm2ProcessNodeInfo(pm2Process);
 
-		const memory = info.monit?.memory || 0;
-		const cpu = info.monit?.cpu || 0;
-		const heapInfo = info.heapMemory || {};
+		const monit = { memory: info.monit?.memory || 0, cpu: info.monit?.cpu || 0 };
+		if (!pm2Node.info.monit) pm2Node.info.add_attr("monit", monit);
+		else {
+			this._setOrAdd(pm2Node.info.monit, "memory", monit.memory);
+			this._setOrAdd(pm2Node.info.monit, "cpu", monit.cpu);
+		}
+		this._setOrAdd(pm2Node.info, "heapMemory", info.heapMemory || {});
+	}
 
-		pm2Node.info.monit.memory.set(memory);
-		pm2Node.info.monit.cpu.set(cpu);
-		pm2Node.info.heapMemory.set(heapInfo);
+	private _setOrAdd(model: any, key: string, value: any) {
+		if (model[key]) model[key].set(value);
+		else model.add_attr(key, value);
 	}
 
 	public async initializeOrRetrievePm2LogsNodes(processNode: SpinalNode, logType: "out" | "err" = "out"): Promise<{ node: SpinalNode; path: string; model: any } | null> {
@@ -303,23 +309,34 @@ export class GraphService {
 		if (!processFound) throw new Error(`Process is not in this vm`);
 
 		const processes = await vmNode.getChildren(HAS_PM2_PROCESS_RELATION_NAME);
-		const processIsInVm = processes.some((process) => process._server_id === processFound._server_id);
-		if (!processIsInVm) {
+		if (!processes.some((process) => process._server_id === processFound._server_id)) {
 			throw new Error(`Process is not in this vm`);
 		}
 
-		await vmNode.removeChild(processFound, HAS_PM2_PROCESS_RELATION_NAME, SPINAL_RELATION_PTR_LST_TYPE).catch(() => {});
-		await processFound.removeRelation(HAS_LOG, SPINAL_RELATION_PTR_LST_TYPE).catch(() => {});
+		if (vmNode.hasRelation(HAS_PM2_PROCESS_RELATION_NAME, SPINAL_RELATION_PTR_LST_TYPE)) {
+			await vmNode.removeChild(processFound, HAS_PM2_PROCESS_RELATION_NAME, SPINAL_RELATION_PTR_LST_TYPE);
+		}
+		if (processFound.hasRelation(HAS_LOG, SPINAL_RELATION_PTR_LST_TYPE)) {
+			await processFound.removeRelation(HAS_LOG, SPINAL_RELATION_PTR_LST_TYPE);
+		}
+		await processFound.removeFromGraph();
 		return processFound;
 	}
 
-	public async createOrRetrieveVmContext(graph: SpinalGraph, hostName: string): Promise<SpinalContext> {
-		let existingNode = await graph.getContext(hostName);
+	public async createOrRetrieveVmContext(graph: SpinalGraph, hostName: string, systemMetrics: ISystemMetrics): Promise<SpinalContext> {
+		let vmRegistered = await graph.getChildren();
+		const macAddress = systemMetrics.macAddress;
 
-		if (!existingNode || existingNode.getType().get() !== VM_CONTEXT_NODE_TYPE) {
+		let existingNode = vmRegistered.find((node) => node.getType().get() === VM_CONTEXT_NODE_TYPE && node.info?.macAddress?.get() === macAddress);
+
+		if (!existingNode) {
 			existingNode = new SpinalContext(hostName, VM_CONTEXT_NODE_TYPE);
 			await graph.addContext(existingNode);
 		}
+
+		if (existingNode.getName().get() !== hostName) existingNode.info.hostName.set(hostName);
+
+		await this.updateOrCreateSystemMetrics(existingNode, systemMetrics, true);
 
 		await waitUntil(() => typeof existingNode._server_id !== "undefined", 1000);
 
@@ -428,7 +445,8 @@ export class GraphService {
 
 		for (const key in updatedInfo) {
 			const value = updatedInfo[key];
-			if (typeof value === "undefined") continue;
+			const isEmptyObj = value && typeof value === "object" && !Array.isArray(value) && Object.values(value).every((item) => typeof item === "undefined");
+			if (typeof value === "undefined" || isEmptyObj) continue;
 
 			if (processNode.info[key]) processNode.info[key].set(value);
 			else processNode.info.add_attr(key, value);

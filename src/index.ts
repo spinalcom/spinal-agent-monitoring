@@ -83,7 +83,7 @@ async function initializeGraphContext(services: RuntimeServices) {
 	SpinalhubService.getInstance().setConnection(connect);
 	console.log("Connected to Spinalhub successfully.");
 
-	const hostName = process.env.HOST_NAME || os.hostname();
+	const hostName = process.env.VM_NAME || os.hostname();
 	const configFilePath = process.env.CONFIG_FILE_PATH || `/etc/Organs/Monitoring/${os.hostname()}`;
 
 	console.log("initializing config file...");

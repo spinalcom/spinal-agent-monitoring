@@ -33,6 +33,7 @@ export declare class GraphService {
         [key: string]: SpinalNode;
     }, isInit?: boolean): Promise<void[]>;
     private _updateInfo;
+    private _setOrAdd;
     initializeOrRetrievePm2LogsNodes(processNode: SpinalNode, logType?: "out" | "err"): Promise<{
         node: SpinalNode;
         path: string;
@@ -42,7 +43,7 @@ export declare class GraphService {
     readPm2LogFileContent(processNode: SpinalNode, logType?: "out" | "err"): Promise<string[] | null>;
     getPm2ProcessLogsByKey(processNode: SpinalNode, tail?: number, logType?: "out" | "err" | "all"): Promise<Pm2ProcessLogsResponse | null>;
     removePm2ProcessFromGraph(vmNode: SpinalContext, processNode: SpinalNode | string): Promise<SpinalNode<any>>;
-    createOrRetrieveVmContext(graph: SpinalGraph, hostName: string): Promise<SpinalContext>;
+    createOrRetrieveVmContext(graph: SpinalGraph, hostName: string, systemMetrics: ISystemMetrics): Promise<SpinalContext>;
     private _syncPm2Processes;
     private _addPm2ProcessToGraph;
     private _addLogRelationToPm2Process;

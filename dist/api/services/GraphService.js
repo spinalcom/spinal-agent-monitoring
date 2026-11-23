@@ -33,10 +33,9 @@ class GraphService {
         return graph;
     }
     async registerVirtualMachine(hostName, data) {
-        let existingNode = await this.createOrRetrieveVmContext(this.getGraph(), hostName);
+        let existingNode = await this.createOrRetrieveVmContext(this.getGraph(), hostName, data?.systemMetrics);
         const { systemMetrics, pm2List } = data || {};
-        if (systemMetrics)
-            await this.updateOrCreateSystemMetrics(existingNode, systemMetrics, true);
+        // if (systemMetrics) await this.updateOrCreateSystemMetrics(existingNode, systemMetrics, true);
         if (pm2List)
             await this.updateOrCreatePm2Process(existingNode, pm2List, true, true);
         await this._initCommandList(existingNode);
@@ -172,16 +171,18 @@ class GraphService {
         const processData = event.process;
         if (!processData)
             return null;
+        if (event.type === utils_1.PROCESS_CONFIG_DATA_CHANGE || event.type === utils_1.PROCESS_HUB_DATA_RESPONSE) {
+            const processKey = processData.pm_id ?? processData.name;
+            if (processKey === undefined || processKey === null)
+                return null;
+            const processNode = await this.getPm2ProcessNodeByKey(vmNode, processKey);
+            if (!processNode)
+                return null;
+            return event.type === utils_1.PROCESS_CONFIG_DATA_CHANGE ? this._updateOrganConfigData(processNode, event.data) : this._updateOrganHubData(processNode, event.data);
+        }
         const [processFound] = await this.updateOrCreatePm2Process(vmNode, [processData]);
         if (!processFound)
             return null;
-        // change organ config_data
-        if (event.type === utils_1.PROCESS_CONFIG_DATA_CHANGE) {
-            return this._updateOrganConfigData(processFound, event.data);
-        }
-        if (event.type === utils_1.PROCESS_HUB_DATA_RESPONSE) {
-            return this._updateOrganHubData(processFound, event.data);
-        }
         return processFound;
     }
     async updatePm2ProcessesMetrics(vmNode, pm2Processes, existingNodes, isInit = false) {
@@ -201,12 +202,20 @@ class GraphService {
     }
     _updateInfo(pm2Node, pm2Process) {
         const info = this._buildPm2ProcessNodeInfo(pm2Process);
-        const memory = info.monit?.memory || 0;
-        const cpu = info.monit?.cpu || 0;
-        const heapInfo = info.heapMemory || {};
-        pm2Node.info.monit.memory.set(memory);
-        pm2Node.info.monit.cpu.set(cpu);
-        pm2Node.info.heapMemory.set(heapInfo);
+        const monit = { memory: info.monit?.memory || 0, cpu: info.monit?.cpu || 0 };
+        if (!pm2Node.info.monit)
+            pm2Node.info.add_attr("monit", monit);
+        else {
+            this._setOrAdd(pm2Node.info.monit, "memory", monit.memory);
+            this._setOrAdd(pm2Node.info.monit, "cpu", monit.cpu);
+        }
+        this._setOrAdd(pm2Node.info, "heapMemory", info.heapMemory || {});
+    }
+    _setOrAdd(model, key, value) {
+        if (model[key])
+            model[key].set(value);
+        else
+            model.add_attr(key, value);
     }
     async initializeOrRetrievePm2LogsNodes(processNode, logType = "out") {
         const pathNodes = await processNode.getChildren([utils_1.HAS_LOG]);
@@ -268,20 +277,29 @@ class GraphService {
         if (!processFound)
             throw new Error(`Process is not in this vm`);
         const processes = await vmNode.getChildren(utils_1.HAS_PM2_PROCESS_RELATION_NAME);
-        const processIsInVm = processes.some((process) => process._server_id === processFound._server_id);
-        if (!processIsInVm) {
+        if (!processes.some((process) => process._server_id === processFound._server_id)) {
             throw new Error(`Process is not in this vm`);
         }
-        await vmNode.removeChild(processFound, utils_1.HAS_PM2_PROCESS_RELATION_NAME, spinal_model_graph_1.SPINAL_RELATION_PTR_LST_TYPE).catch(() => { });
-        await processFound.removeRelation(utils_1.HAS_LOG, spinal_model_graph_1.SPINAL_RELATION_PTR_LST_TYPE).catch(() => { });
+        if (vmNode.hasRelation(utils_1.HAS_PM2_PROCESS_RELATION_NAME, spinal_model_graph_1.SPINAL_RELATION_PTR_LST_TYPE)) {
+            await vmNode.removeChild(processFound, utils_1.HAS_PM2_PROCESS_RELATION_NAME, spinal_model_graph_1.SPINAL_RELATION_PTR_LST_TYPE);
+        }
+        if (processFound.hasRelation(utils_1.HAS_LOG, spinal_model_graph_1.SPINAL_RELATION_PTR_LST_TYPE)) {
+            await processFound.removeRelation(utils_1.HAS_LOG, spinal_model_graph_1.SPINAL_RELATION_PTR_LST_TYPE);
+        }
+        await processFound.removeFromGraph();
         return processFound;
     }
-    async createOrRetrieveVmContext(graph, hostName) {
-        let existingNode = await graph.getContext(hostName);
-        if (!existingNode || existingNode.getType().get() !== utils_1.VM_CONTEXT_NODE_TYPE) {
+    async createOrRetrieveVmContext(graph, hostName, systemMetrics) {
+        let vmRegistered = await graph.getChildren();
+        const macAddress = systemMetrics.macAddress;
+        let existingNode = vmRegistered.find((node) => node.getType().get() === utils_1.VM_CONTEXT_NODE_TYPE && node.info?.macAddress?.get() === macAddress);
+        if (!existingNode) {
             existingNode = new spinal_model_graph_1.SpinalContext(hostName, utils_1.VM_CONTEXT_NODE_TYPE);
             await graph.addContext(existingNode);
         }
+        if (existingNode.getName().get() !== hostName)
+            existingNode.info.hostName.set(hostName);
+        await this.updateOrCreateSystemMetrics(existingNode, systemMetrics, true);
         await (0, utils_1.waitUntil)(() => typeof existingNode._server_id !== "undefined", 1000);
         return existingNode;
     }
@@ -374,7 +392,8 @@ class GraphService {
         const updatedInfo = this._buildPm2ProcessNodeInfo(pm2Process);
         for (const key in updatedInfo) {
             const value = updatedInfo[key];
-            if (typeof value === "undefined")
+            const isEmptyObj = value && typeof value === "object" && !Array.isArray(value) && Object.values(value).every((item) => typeof item === "undefined");
+            if (typeof value === "undefined" || isEmptyObj)
                 continue;
             if (processNode.info[key])
                 processNode.info[key].set(value);
