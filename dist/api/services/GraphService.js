@@ -178,7 +178,9 @@ class GraphService {
             const processNode = await this.getPm2ProcessNodeByKey(vmNode, processKey);
             if (!processNode)
                 return null;
-            return event.type === utils_1.PROCESS_CONFIG_DATA_CHANGE ? this._updateOrganConfigData(processNode, event.data) : this._updateOrganHubData(processNode, event.data);
+            if (event.type === utils_1.PROCESS_CONFIG_DATA_CHANGE)
+                this._updateOrganConfigData(processNode, event.data);
+            // else this._updateOrganHubData(processNode, event.data);
         }
         const [processFound] = await this.updateOrCreatePm2Process(vmNode, [processData]);
         if (!processFound)
