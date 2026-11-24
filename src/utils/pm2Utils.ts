@@ -4,6 +4,8 @@ import pm2 from "pm2";
 import { Path as SpinalPath, FileSystem, getUrlPath, File as SpinalFile } from "spinal-core-connectorjs";
 // import { Pm2Process } from "../spinal-monitoring-service/models";
 import * as fs from "fs";
+import * as path from "path";
+import { parse as parseDotenv } from "dotenv";
 import axios from "axios";
 import { isLocalAddress } from "./systemUtils";
 
@@ -155,31 +157,49 @@ export function generateUniqId(): string {
 	return `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 }
 
-export function getHubDataForProcess(pm2Process: ProcessDescription, ipAddress: string = "") {
-	const envData = (pm2Process.pm2_env as any)?.env || {};
+function readEnvFile(filePath: string): Record<string, string> {
+	try {
+		return parseDotenv(fs.readFileSync(filePath, "utf8"));
+	} catch {
+		return {};
+	}
+}
 
-	const hubData = { host: "", port: "", bosName: process.env.BOS_NAME || "" };
-	const host_key = ["HUB_HOST", "HUB_IP", "SPINALHUB_IP", "SPINALHUB_HOST", "SPINAL_HUB_HOST", "SPINAL_HUB_IP", "SPINAL_HUB_HOSTNAME", "SPINALHOST", "SPINALIP"].map((k) => k.toUpperCase());
-	const port_key = ["HUB_PORT", "SPINAL_HUB_PORT", "SPINALHUB_PORT", "HUBPORT", "SPINALHUBPORT"].map((k) => k.toUpperCase());
+export function getHubDataForProcess(pm2Process: ProcessDescription, ipAddress: string = "") {
+	const pm2Env = pm2Process.pm2_env as Record<string, any> | undefined;
+	const processCwd: string = (pm2Env?.pm_cwd ?? pm2Env?.cwd) || "";
+
+	let fileEnvData: Record<string, string> = readEnvFile(path.join(processCwd, ".env"));
+
+	// const pm2EnvData = pm2Env?.env && typeof pm2Env.env === "object" ? (pm2Env.env as Record<string, unknown>) : {};
+	// const envData: Record<string, any> = { ...pm2EnvData, ...fileEnvData };
+
+	const envData: Record<string, any> = Object.assign({}, pm2Env?.env ?? {}, fileEnvData);
+
+	const hubData = { host: "", port: "", bosName: "" };
+	const host_key = ["HUB_HOST", "HUB_IP", "SPINALHUB_IP", "SPINALHUB_HOST", "SPINAL_HUB_HOST", "SPINAL_HUB_IP", "SPINAL_HUB_HOSTNAME", "SPINALHOST", "SPINALIP", "HOST"].map((k) => k.toUpperCase());
+	const port_key = ["HUB_PORT", "SPINAL_HUB_PORT", "SPINALHUB_PORT", "HUBPORT", "SPINALHUBPORT", "PORT"].map((k) => k.toUpperCase());
 	const name_key = ["HUB_NAME", "SPINAL_HUB_NAME", "SPINALHUB_NAME", "SPINALHUBNAME", "BOS_NAME", "BOSNAME"].map((k) => k.toUpperCase());
 
 	for (const key in envData) {
 		const upperKey = key.toUpperCase();
 		if (host_key.includes(upperKey) && !hubData.host) {
-			let tempIp = envData[key];
+			let tempIp = String(envData[key]);
 
 			if (isLocalAddress(tempIp)) tempIp = ipAddress;
 			hubData.host = tempIp;
 		} else if (port_key.includes(upperKey) && !hubData.port) {
-			let port = envData[key].toString();
+			let port = String(envData[key]);
 
 			if (!/^\d+$/.test(port)) continue; // Skip if port is not a valid number
 			if (!port.endsWith("0")) port = port.replace(/.$/, "0"); // Ensure the port ends with 0
 			hubData.port = port;
 		} else if (name_key.includes(upperKey) && !hubData.bosName) {
-			hubData.bosName = envData[key];
+			hubData.bosName = String(envData[key]);
 		}
 	}
+
+	hubData.bosName ||= process.env.BOS_NAME || "";
 
 	return hubData;
 }
